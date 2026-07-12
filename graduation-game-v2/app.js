@@ -8,6 +8,7 @@ const SUPABASE_CONFIG = {
   url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
   anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
 };
+const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
 const BATTLE_PROJECT_ID = "project-graduation-game-main-battle";
 const BATTLE_PROJECT_SOURCE = "graduation-game-v2-main-battle";
 const BATTLE_TASK_SOURCE = "graduation-game-v2-planned-task";
@@ -1174,7 +1175,13 @@ async function signUpWithEmail() {
   setAccountBusy(true);
   setAccountMessage("正在注册账号...", "muted");
   try {
-    const { data, error } = await client.auth.signUp({ email, password });
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: AUTH_REDIRECT_URL,
+      },
+    });
     if (error) throw error;
     currentAuthUser = data?.user || currentAuthUser;
     updateAuthUI(currentAuthUser);

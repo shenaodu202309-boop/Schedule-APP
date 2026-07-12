@@ -3,6 +3,7 @@ const SUPABASE_CONFIG = {
   url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
   anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
 };
+const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const HOUR_HEIGHT = 64;
@@ -2457,7 +2458,13 @@ async function signUpWithEmail() {
   setAccountBusy(true);
   setAccountMessage("正在注册账号...", "muted");
   try {
-    const { data, error } = await client.auth.signUp({ email, password });
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: AUTH_REDIRECT_URL,
+      },
+    });
     if (error) throw error;
     currentAuthUser = data?.user || currentAuthUser;
     updateAuthUI(currentAuthUser);

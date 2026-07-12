@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#140B2A" />
+    <title>塔罗牌占卜 · 私人排期人生游戏挑战</title>
+    <link rel="stylesheet" href="./styles.css?v=198" />
+  </head>
+  <body class="tarot-page-body">
+    <main class="phone-shell tarot-page-shell app-page is-active" id="top" data-page="tarot">
+      <header class="tarot-page-header">
+        <a class="character-return-chip" href="./index.html#today-stage" data-action="return-game">返回</a>
+        <p class="eyebrow">Tarot Reading</p>
+        <h1>塔罗牌占卜</h1>
+        <p>写下今天的问题，选择牌阵，抽一组给自己的提醒。</p>
+      </header>
+
+      <section class="panel tarot-panel tarot-page-panel" id="tarot-zone" aria-labelledby="tarotTitle">
+        <div class="tarot-hero">
+          <p class="eyebrow">Daily Oracle</p>
+          <h2 id="tarotTitle">今日占卜</h2>
+          <p>这只是给自己整理思路的小仪式，不替代现实决策。</p>
+        </div>
+        <div class="tarot-spread-tabs" id="tarotSpreadTabs" role="group" aria-label="选择牌阵"></div>
+        <p class="tarot-spread-hint" id="tarotSpreadHint"></p>
+        <label class="tarot-question-field" id="tarotQuestionField">
+          <span>我的问题</span>
+          <textarea id="tarotQuestionInput" rows="3" placeholder="例如：今天我该把注意力放在哪里？"></textarea>
+        </label>
+        <div class="tarot-table" id="tarotTable" aria-label="塔罗牌阵"></div>
+        <div class="tarot-actions" id="tarotActions">
+          <button class="ghost-button" id="shuffleTarotButton" type="button" data-action="shuffle-tarot">洗牌</button>
+          <button class="primary-button" id="drawTarotButton" type="button" data-action="draw-tarot-spread">抽牌</button>
+        </div>
+        <div class="tarot-reading" id="tarotReading" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script src="./tarot.js"></script>
+  </body>
+</html>

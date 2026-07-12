@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#140B2A" />
+    <title>人生公司 · 私人排期人生游戏挑战</title>
+    <link rel="stylesheet" href="./styles.css?v=198" />
+    <script src="./company.js?v=194" defer></script>
+  </head>
+  <body class="company-page-body">
+    <main class="phone-shell company-page-shell app-page is-active" id="top" data-page="company">
+      <header class="company-page-header">
+        <a class="character-return-chip" href="./index.html#today-stage">返回</a>
+        <p class="eyebrow">Life Company</p>
+        <h1>人生公司</h1>
+        <p>用经营公司的方式，选择你的人生方向，安排长期目标和阶段项目。</p>
+      </header>
+
+      <section class="company-empty panel" id="companyEmptyState" hidden>
+        <span class="company-empty-icon" aria-hidden="true">社</span>
+        <h2>你还没有创建人生公司</h2>
+        <p>先选择一个方向，把它变成一家需要经营的公司。</p>
+        <button class="primary-button" type="button" data-company-action="open-create-company">创建人生公司</button>
+      </section>
+
+      <div class="company-system" id="companySystem" hidden>
+        <section class="company-overview-panel panel" aria-label="公司总览">
+          <div class="company-overview-top">
+            <div>
+              <p class="eyebrow" id="companyTypeLabel">公司类型</p>
+              <h2 id="companyName">人生公司</h2>
+            </div>
+            <button class="ghost-button" type="button" data-company-action="open-edit-company">编辑</button>
+          </div>
+          <p class="company-vision" id="companyVision"></p>
+          <div class="company-goal-card">
+            <span>大目标</span>
+            <strong id="companyMainGoal">未设置</strong>
+            <small id="companyMainGoalMeta">先设置截止日期</small>
+            <i><b id="companyMainGoalMeter"></b></i>
+          </div>
+          <div class="company-stat-grid" aria-label="公司状态">
+            <article>
+              <span>总进度</span>
+              <strong id="companyProgress">0%</strong>
+            </article>
+            <article>
+              <span>小项目</span>
+              <strong id="companyProjectCount">0</strong>
+            </article>
+            <article>
+              <span>今日任务</span>
+              <strong id="companyTaskCount">0</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="company-economy-panel panel" aria-label="公司经济">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Economy</p>
+              <h2>公司经济</h2>
+            </div>
+            <button class="primary-button" type="button" data-company-action="upgrade-company">升级公司</button>
+          </div>
+          <div class="company-economy-summary">
+            <article>
+              <span>可用金币</span>
+              <strong id="companyCoinBalance">◈ 0</strong>
+            </article>
+            <article>
+              <span>资产估值</span>
+              <strong id="companyAssetValue">◈ 0</strong>
+            </article>
+            <article>
+              <span>公司等级</span>
+              <strong id="companyLevelLabel">Lv.1 起步公司</strong>
+            </article>
+          </div>
+          <div class="company-exp-card">
+            <div>
+              <span id="companyExpLabel">经验值 0 / 100</span>
+              <strong id="companyNextLevelCost">升级需要 ◈ 300</strong>
+            </div>
+            <i><b id="companyExpMeter"></b></i>
+          </div>
+          <div class="company-economy-today">
+            <span id="companyTodayIncome">今日收入 +◈ 0</span>
+            <span id="companyTodaySpend">今日支出 -◈ 0</span>
+          </div>
+          <details class="company-transaction-panel" id="companyTransactionPanel">
+            <summary>查看账本 / 交易记录</summary>
+            <ol id="companyTransactionList"></ol>
+          </details>
+        </section>
+
+        <section class="company-board-panel panel" aria-label="部门">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Departments</p>
+              <h2>公司部门</h2>
+            </div>
+            <button class="primary-button" type="button" data-company-action="add-department">增加部门</button>
+          </div>
+          <div class="company-department-grid" id="companyDepartmentGrid"></div>
+        </section>
+
+        <section class="company-board-panel panel" aria-label="小项目">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Projects</p>
+              <h2>小项目时间</h2>
+            </div>
+            <button class="primary-button" type="button" data-company-action="open-create-project">新增项目</button>
+          </div>
+          <div class="company-project-list" id="companyProjectList"></div>
+        </section>
+
+        <section class="company-board-panel panel" aria-label="今日公司任务">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Execution</p>
+              <h2>今日公司任务</h2>
+            </div>
+          </div>
+          <div class="company-task-list" id="companyTaskList"></div>
+        </section>
+
+        <section class="company-board-panel panel" aria-label="推荐技能股">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Skill Stocks</p>
+              <h2>推荐技能股</h2>
+            </div>
+            <a class="company-inline-link" href="./skill-market.html">去股市</a>
+          </div>
+          <div class="company-stock-list" id="companyStockList"></div>
+        </section>
+
+        <section class="company-report-panel panel" aria-label="公司运营报告">
+          <div class="company-section-head">
+            <div>
+              <p class="eyebrow">Daily Report</p>
+              <h2>公司运营报告</h2>
+            </div>
+          </div>
+          <div class="company-report-body" id="companyReportBody"></div>
+        </section>
+      </div>
+
+      <dialog class="company-dialog" id="companyFormDialog">
+        <form class="dialog-card company-form" method="dialog" id="companyForm">
+          <button class="dialog-close" type="button" data-company-action="close-company-form" aria-label="关闭">×</button>
+          <p class="black-pill" id="companyFormPill">创建人生公司</p>
+          <h2 id="companyFormTitle">你正在经营哪种人生公司？</h2>
+          <label>
+            <span>公司名称</span>
+            <input id="companyNameInput" name="name" type="text" maxlength="24" placeholder="例如：蓝星动画公司" required />
+          </label>
+          <label>
+            <span>公司类型</span>
+            <select id="companyTypeInput" name="type"></select>
+          </label>
+          <label>
+            <span>公司愿景</span>
+            <textarea id="companyVisionInput" name="vision" rows="3" maxlength="120" placeholder="例如：6个月内完成作品集，并申请动画相关岗位。"></textarea>
+          </label>
+          <label>
+            <span>大目标</span>
+            <input id="companyMainGoalInput" name="mainGoal" type="text" maxlength="40" placeholder="例如：完成动画作品集" />
+          </label>
+          <label>
+            <span>大目标截止日期</span>
+            <input id="companyDeadlineInput" name="deadline" type="date" />
+          </label>
+          <button class="primary-button" type="submit">保存公司</button>
+        </form>
+      </dialog>
+
+      <dialog class="company-dialog" id="companyProjectDialog">
+        <form class="dialog-card company-form" method="dialog" id="companyProjectForm">
+          <button class="dialog-close" type="button" data-company-action="close-project-form" aria-label="关闭">×</button>
+          <p class="black-pill" id="companyProjectFormPill">新增小项目</p>
+          <h2 id="companyProjectFormTitle">这家公司下一步要交付什么？</h2>
+          <input id="companyProjectIdInput" name="projectId" type="hidden" />
+          <label>
+            <span>项目名称</span>
+            <input id="companyProjectTitleInput" name="title" type="text" maxlength="36" placeholder="例如：完成 showreel 剪辑" required />
+          </label>
+          <label>
+            <span>项目说明</span>
+            <textarea id="companyProjectDescriptionInput" name="description" rows="3" maxlength="120" placeholder="写下这个阶段要完成的具体成果。"></textarea>
+          </label>
+          <label>
+            <span>所属部门</span>
+            <select id="companyProjectDepartmentInput" name="departmentName"></select>
+          </label>
+          <div class="company-date-grid">
+            <label>
+              <span>开始日期</span>
+              <input id="companyProjectStartInput" name="startDate" type="date" />
+            </label>
+            <label>
+              <span>截止日期</span>
+              <input id="companyProjectDeadlineInput" name="deadline" type="date" />
+            </label>
+          </div>
+          <label>
+            <span>项目进度</span>
+            <input id="companyProjectProgressInput" name="progress" type="range" min="0" max="100" step="5" />
+            <strong id="companyProjectProgressValue">0%</strong>
+          </label>
+          <label>
+            <span>项目状态</span>
+            <select id="companyProjectStatusInput" name="status">
+              <option value="active">推进中</option>
+              <option value="paused">暂停</option>
+              <option value="completed">完成</option>
+              <option value="overdue">延期</option>
+            </select>
+          </label>
+          <button class="primary-button" type="submit">保存项目</button>
+        </form>
+      </dialog>
+
+      <dialog class="company-dialog" id="companyDepartmentDialog">
+        <form class="dialog-card company-form" method="dialog" id="companyDepartmentForm">
+          <button class="dialog-close" type="button" data-company-action="close-department-form" aria-label="关闭">×</button>
+          <p class="black-pill" id="companyDepartmentFormPill">编辑部门</p>
+          <h2>调整部门卡片</h2>
+          <input id="companyDepartmentIdInput" name="departmentId" type="hidden" />
+          <label>
+            <span>部门名字</span>
+            <input id="companyDepartmentNameInput" name="departmentName" type="text" maxlength="18" placeholder="例如：创作部" required />
+          </label>
+          <div class="company-date-grid">
+            <label>
+              <span>项目数量</span>
+              <input id="companyDepartmentProjectCountInput" name="projectCount" type="number" min="0" max="99" step="1" />
+            </label>
+            <label>
+              <span>任务数量</span>
+              <input id="companyDepartmentTaskCountInput" name="taskCount" type="number" min="0" max="99" step="1" />
+            </label>
+          </div>
+          <label>
+            <span>部门状态</span>
+            <select id="companyDepartmentStatusInput" name="departmentStatus">
+              <option value="normal">正常</option>
+              <option value="busy">繁忙</option>
+              <option value="stuck">停摆</option>
+              <option value="urgent">高压</option>
+              <option value="resting">休整中</option>
+            </select>
+          </label>
+          <div class="company-department-economy-row">
+            <span id="companyDepartmentLevelLabel">Lv.1</span>
+            <button class="ghost-button" type="button" data-company-action="upgrade-department">升级部门</button>
+          </div>
+          <div class="company-dialog-actions">
+            <button class="primary-button" type="submit">保存部门</button>
+            <button class="danger-button" type="button" data-company-action="delete-department">删除部门</button>
+          </div>
+        </form>
+      </dialog>
+
+      <div class="toast" id="companyToast" role="status" aria-live="polite" hidden></div>
+    </main>
+  </body>
+</html>

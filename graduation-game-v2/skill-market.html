@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#140B2A" />
+    <title>人生技能股市 · 私人排期人生游戏挑战</title>
+    <link rel="stylesheet" href="./styles.css?v=198" />
+    <script src="./skill-market.js?v=194" defer></script>
+  </head>
+  <body class="skill-market-page-body">
+    <main class="phone-shell skill-market-page-shell app-page is-active" id="top" data-page="skill-market">
+      <header class="skill-market-page-header">
+        <a class="character-return-chip" href="./index.html#today-stage">返回</a>
+        <p class="eyebrow">Life Skill Exchange</p>
+        <h1>人生技能股市</h1>
+        <p>把你的技能当作未来资产，在模拟盘里观察行动、情绪和市场波动如何影响价格。</p>
+      </header>
+
+      <section class="skill-market-gate panel" id="skillMarketGate" aria-label="进入确认" hidden>
+        <p class="eyebrow">Simulation Mode</p>
+        <h2>进入技能模拟盘？</h2>
+        <p>
+          这里是一套技能模拟盘。你购买的技能股会受到每日行动、市场情绪、板块轮动和随机事件共同影响。
+          完成任务会提高胜率，但不会保证上涨；没完成任务也可能被行情托住。
+          这是一个可选系统，是否开启？
+        </p>
+        <div class="skill-market-gate-actions">
+          <button class="primary-button" type="button" data-market-gate="enable">开启技能股市</button>
+          <button class="ghost-button" type="button" data-market-gate="leave">暂时不进入</button>
+        </div>
+      </section>
+
+      <div id="skillMarketSystem" hidden>
+      <section class="skill-market-dashboard panel" aria-label="我的持仓和压力指数">
+        <div class="skill-market-tape" id="skillMarketTape" aria-label="市场指数"></div>
+        <div class="skill-market-status-line" id="skillMarketStatus">模拟盘运行中 · 今日未收盘</div>
+        <div class="skill-market-account-grid">
+          <article>
+            <span>金币</span>
+            <strong id="skillMarketCash">--</strong>
+          </article>
+          <article>
+            <span>持仓市值</span>
+            <strong id="skillMarketHoldingsValue">--</strong>
+          </article>
+          <article>
+            <span>总资产</span>
+            <strong id="skillMarketEquity">--</strong>
+          </article>
+          <article>
+            <span>持仓盈亏</span>
+            <strong id="skillMarketPnl">--</strong>
+          </article>
+        </div>
+        <div class="skill-market-pressure-card" aria-label="市场压力指数">
+          <div>
+            <span>市场压力指数</span>
+            <strong id="skillMarketPressureValue">0</strong>
+          </div>
+          <i><b id="skillMarketPressureMeter"></b></i>
+          <em id="skillMarketPressureText">压力可控</em>
+        </div>
+        <div class="skill-market-close-report" id="skillMarketCloseReport" aria-label="今日收盘报告"></div>
+        <div class="skill-market-actions">
+          <button class="primary-button" type="button" data-market-action="settle">今日收盘结算</button>
+          <button class="ghost-button" type="button" data-market-action="reset">重置模拟盘</button>
+        </div>
+      </section>
+
+      <section class="skill-market-workbench" aria-label="行情与交易">
+        <section class="skill-market-portfolio-panel panel" aria-label="我的持仓">
+          <div class="skill-market-section-head">
+            <div>
+              <p class="eyebrow">Holdings</p>
+              <h2>我的持仓</h2>
+            </div>
+          </div>
+          <div class="skill-market-holdings" id="skillMarketHoldings"></div>
+        </section>
+
+        <section class="skill-market-task-panel panel" aria-label="今日技能股任务">
+          <div class="skill-market-section-head">
+            <div>
+              <p class="eyebrow">Execution</p>
+              <h2>今日任务卡</h2>
+            </div>
+          </div>
+          <div class="skill-market-tasks" id="skillMarketTasks"></div>
+        </section>
+
+        <section class="skill-market-leader-panel panel" aria-label="今日涨跌榜">
+          <div class="skill-market-section-head">
+            <div>
+              <p class="eyebrow">Ranking</p>
+              <h2>今日涨跌榜</h2>
+            </div>
+          </div>
+          <div class="skill-market-leaders" id="skillMarketLeaders"></div>
+        </section>
+
+        <section class="skill-market-list-panel panel" aria-label="技能股票行情">
+          <div class="skill-market-section-head">
+            <div>
+              <p class="eyebrow">Market</p>
+              <h2>技能市场</h2>
+            </div>
+            <div class="skill-market-market-actions">
+              <button class="skill-market-add-stock-button" type="button" data-market-action="add-custom-stock" aria-label="新增自定义股票">＋</button>
+              <span id="skillMarketCount">--</span>
+            </div>
+          </div>
+          <div class="skill-market-table" id="skillMarketList"></div>
+        </section>
+
+        <section class="skill-market-trade-panel panel" aria-label="技能股详情页">
+          <div class="skill-market-selected-head">
+            <div>
+              <span id="skillMarketSelectedSymbol">--</span>
+              <h2 id="skillMarketSelectedName">选择股票</h2>
+            </div>
+            <strong id="skillMarketSelectedPrice">--</strong>
+          </div>
+          <div class="skill-market-chart" aria-label="价格走势">
+            <svg id="skillMarketChart" viewBox="0 0 320 118" role="img" aria-label="分时走势"></svg>
+          </div>
+          <p class="skill-market-detail-text" id="skillMarketDetailText"></p>
+          <div class="skill-market-custom-editor" id="skillMarketCustomEditor"></div>
+          <div class="skill-market-metrics" id="skillMarketMetrics"></div>
+          <div class="skill-market-order-book" id="skillMarketOrderBook" aria-label="盘口"></div>
+
+          <form class="skill-market-order-form" id="skillMarketOrderForm">
+            <div class="skill-market-side-switch" role="group" aria-label="交易方向">
+              <button type="button" data-market-side="buy" class="is-active">买入</button>
+              <button type="button" data-market-side="sell">卖出</button>
+            </div>
+            <label>
+              <span>数量</span>
+              <input id="skillMarketQuantity" name="quantity" inputmode="numeric" min="1" step="1" value="1" />
+            </label>
+            <button class="primary-button" type="submit" id="skillMarketSubmit">确认买入</button>
+            <button class="ghost-button danger-button" type="button" id="skillMarketRemove" data-market-remove="" disabled>移除技能股</button>
+          </form>
+        </section>
+
+        <section class="skill-market-portfolio-panel panel" aria-label="成交回报">
+          <div class="skill-market-section-head">
+            <div>
+              <p class="eyebrow">Trades</p>
+              <h2>成交回报</h2>
+            </div>
+          </div>
+          <ol class="skill-market-log" id="skillMarketLog"></ol>
+        </section>
+      </section>
+      </div>
+    </main>
+  </body>
+</html>

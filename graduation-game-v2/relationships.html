@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#140B2A" />
+    <title>人际关系卡 · 私人排期人生游戏挑战</title>
+    <link rel="stylesheet" href="./styles.css?v=198" />
+  </head>
+  <body class="relationship-page-body">
+    <main class="phone-shell relationship-page-shell app-page is-active" id="top" data-page="relationships">
+      <header class="relationship-page-header">
+        <a class="character-return-chip" href="./index.html#today-stage">返回</a>
+        <p class="eyebrow">Relationship Cards</p>
+        <h1>人际小屋</h1>
+        <p>把你身边重要的人记录下来，看清自己的关系地图。</p>
+        <section id="relationshipReactionToolbelt" aria-label="关系互动道具"></section>
+      </header>
+
+      <section class="relationship-map-shelf" aria-label="关系场景">
+        <div class="relationship-hero relationship-map-preview panel" aria-label="关系地图">
+          <div class="relationship-map-preview-head">
+            <button type="button" data-action="open-map">添加角色</button>
+          </div>
+          <div class="relationship-map-preview-stage" id="relationshipMapPreview" aria-label="角色位置地图"></div>
+        </div>
+
+        <div class="relationship-shadow-entry panel" aria-label="关系不好的人的场景入口">
+          <button class="relationship-shadow-card" type="button" data-action="open-shadow-map">
+            <strong>暗影荒原</strong>
+          </button>
+        </div>
+      </section>
+
+      <section class="relationship-actions" aria-label="关系卡操作">
+        <button class="primary-button relationship-library-entry" type="button" data-action="open-library">角色关系卡库</button>
+        <button class="ghost-button" type="button" data-action="open-ghost-ar">捕捉幽灵朋友</button>
+        <button class="ghost-button" type="button" data-action="create-card">创建角色</button>
+        <button class="ghost-button" type="button" data-action="export-cards">导出角色卡</button>
+        <button class="ghost-button" type="button" data-action="trigger-import">导入角色卡</button>
+        <input id="relationshipImportInput" type="file" accept="application/json,.json" hidden />
+      </section>
+
+      <section class="relationship-card-grid" id="relationshipCardGrid" aria-live="polite"></section>
+
+      <section class="relationship-library-page" id="relationshipLibraryPage" hidden aria-label="角色关系卡库">
+        <div class="relationship-library-groups" id="relationshipLibraryGroups"></div>
+      </section>
+
+      <section class="relationship-reaction-leaderboards" id="relationshipReactionLeaderboards" aria-label="鲜花鸡蛋榜"></section>
+    </main>
+
+    <dialog class="relationship-editor-dialog" id="relationshipEditorDialog">
+      <form class="relationship-editor-form" id="relationshipEditorForm" method="dialog"></form>
+    </dialog>
+
+    <dialog class="relationship-detail-dialog" id="relationshipDetailDialog">
+      <div class="relationship-detail-body" id="relationshipDetailBody"></div>
+    </dialog>
+
+    <dialog class="relationship-avatar-dialog" id="relationshipAvatarDialog">
+      <div class="relationship-avatar-builder" id="relationshipAvatarBody"></div>
+      <input id="relationshipDressupImageInput" type="file" accept="image/*" multiple hidden />
+    </dialog>
+
+    <dialog class="relationship-map-dialog" id="relationshipMapDialog">
+      <div class="relationship-map-body" id="relationshipMapBody"></div>
+    </dialog>
+
+    <dialog class="relationship-file-library-dialog" id="relationshipFileLibraryDialog">
+      <div class="relationship-file-library-body" id="relationshipFileLibraryBody"></div>
+      <input id="relationshipFileLibraryInput" type="file" multiple hidden />
+    </dialog>
+
+    <dialog class="relationship-edit-confirm-dialog" id="relationshipEditConfirmDialog">
+      <div class="relationship-edit-confirm-card">
+        <h2>是否修改这张关系卡？</h2>
+        <p id="relationshipEditConfirmText">确认后会打开可编辑卡面。</p>
+        <div class="relationship-confirm-actions">
+          <button class="primary-button" type="button" data-action="confirm-edit-card">是</button>
+          <button class="ghost-button" type="button" data-action="cancel-edit-card">否</button>
+        </div>
+      </div>
+    </dialog>
+
+    <section class="ghost-ar-game" id="ghostArGame" hidden aria-label="幽灵朋友 AR 调查">
+      <video class="ghost-ar-camera" id="ghostArCamera" autoplay playsinline muted></video>
+      <div class="ghost-ar-fallback" id="ghostArFallback" aria-hidden="true"></div>
+      <div class="ghost-ar-noise" aria-hidden="true"></div>
+      <button class="ghost-ar-entity" id="ghostArEntity" type="button" data-action="capture-ghost" hidden aria-label="捕捉幽灵">
+        <span></span>
+      </button>
+      <header class="ghost-ar-hud">
+        <button type="button" data-action="close-ghost-ar">返回</button>
+        <div>
+          <p>Ghost Field AR</p>
+          <h2>灵异活动调查</h2>
+        </div>
+        <strong id="ghostArSignal">00%</strong>
+      </header>
+      <section class="ghost-ar-panel">
+        <div class="ghost-ar-meter">
+          <span>灵场强度</span>
+          <i><b id="ghostArMeter"></b></i>
+        </div>
+        <p id="ghostArStatus">启动摄像头，缓慢移动手机调查附近异常。</p>
+        <div class="ghost-ar-controls">
+          <button type="button" data-action="start-ghost-scan">检测</button>
+          <button type="button" data-action="lure-ghost">引诱</button>
+          <button type="button" data-action="record-ghost">记录</button>
+        </div>
+        <small id="ghostArMode">ARCore / WebXR 检测中</small>
+      </section>
+    </section>
+
+    <div class="toast" id="relationshipToast" role="status" aria-live="polite" hidden></div>
+    <script src="./dressup-assets.js?v=188"></script>
+    <script src="./relationships.js?v=194"></script>
+  </body>
+</html>

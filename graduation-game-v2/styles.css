@@ -6726,9 +6726,11 @@ body.skill-market-page-body {
 
 body.company-page-body {
   background:
-    radial-gradient(circle at 20% -6%, rgba(255, 216, 77, 0.24), transparent 15rem),
-    radial-gradient(circle at 94% 14%, rgba(106, 44, 255, 0.32), transparent 16rem),
-    repeating-linear-gradient(90deg, rgba(255, 248, 242, 0.04) 0 1px, transparent 1px 28px),
+    radial-gradient(circle at 17% 5%, rgba(255, 216, 77, 0.24), transparent 11rem),
+    radial-gradient(circle at 94% 14%, rgba(255, 79, 194, 0.22), transparent 13rem),
+    radial-gradient(circle at 35% 82%, rgba(147, 103, 255, 0.26), transparent 14rem),
+    repeating-linear-gradient(90deg, rgba(255, 248, 242, 0.045) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(255, 248, 242, 0.03) 0 1px, transparent 1px 28px),
     #140b2a;
 }
 
@@ -6739,7 +6741,7 @@ body.company-page-body {
 
 .company-page-shell {
   min-height: 100vh;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 58px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 36px);
 }
 
@@ -7663,9 +7665,99 @@ body.skill-market-page-body .skill-market-add-stock-button {
   stroke: #ff4d5a;
 }
 
+.company-page-body {
+  --company-purple: #2e1768;
+  --company-purple-dark: #1a0f3f;
+  --company-purple-soft: #7f4ad6;
+  --company-cream: #fff8ec;
+  --company-cream-2: #fff1dc;
+  --company-pink: #ff7aa8;
+  --company-pink-strong: #ff5f98;
+  --company-lilac: #ead9ff;
+  --company-green: #7fd99a;
+}
+
+.company-page-body .panel {
+  border: 2px solid rgba(18, 11, 31, 0.9);
+  border-radius: 18px;
+  box-shadow:
+    0 7px 0 rgba(18, 11, 31, 0.28),
+    0 0 0 3px rgba(255, 248, 236, 0.06);
+}
+
+.company-page-header {
+  position: relative;
+  min-height: 114px;
+  margin-bottom: 14px;
+  padding: 18px 16px 18px 94px;
+  overflow: hidden;
+  border: 2px solid rgba(18, 11, 31, 0.9);
+  border-radius: 20px;
+  color: #fff8ec;
+  background:
+    radial-gradient(circle at 88% 24%, rgba(255, 216, 77, 0.18), transparent 4.8rem),
+    linear-gradient(145deg, #3c1d7d 0%, #24115a 58%, #170c39 100%);
+  box-shadow: 0 7px 0 rgba(18, 11, 31, 0.32);
+}
+
+.company-page-header::before {
+  position: absolute;
+  left: 16px;
+  top: 20px;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 2px solid #120b1f;
+  border-radius: 18px;
+  content: "🏢";
+  background: linear-gradient(145deg, #fff8ec, #ffe2f0);
+  box-shadow: 0 5px 0 rgba(18, 11, 31, 0.28);
+  font-size: 30px;
+}
+
+.company-page-header::after {
+  position: absolute;
+  right: 12px;
+  bottom: 11px;
+  content: "★";
+  color: #ffd84d;
+  font-size: 28px;
+  text-shadow:
+    -58px -52px 0 rgba(255, 216, 77, 0.8),
+    -32px -8px 0 rgba(255, 248, 236, 0.68),
+    -88px 6px 0 rgba(255, 122, 168, 0.58);
+}
+
+.company-page-header .character-return-chip {
+  color: #fff8ec;
+  background: linear-gradient(180deg, #5b32ad, #301569);
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.32);
+}
+
+.company-page-header .eyebrow {
+  width: max-content;
+  padding: 4px 10px;
+  border: 2px solid rgba(18, 11, 31, 0.68);
+  border-radius: 999px;
+  color: #2d175e;
+  background: #ffd84d;
+  box-shadow: 0 3px 0 rgba(18, 11, 31, 0.2);
+}
+
+.company-page-header h1 {
+  margin-top: 2px;
+  font-size: 30px;
+}
+
+.company-page-header p:last-child {
+  max-width: 270px;
+  color: rgba(255, 248, 236, 0.86);
+}
+
 .company-system {
   display: grid;
-  gap: 12px;
+  gap: 13px;
 }
 
 .company-empty,
@@ -7673,29 +7765,63 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .company-economy-panel,
 .company-board-panel,
 .company-report-panel {
+  position: relative;
   display: grid;
   gap: 12px;
-  padding: 14px;
-  background: var(--panel);
+  padding: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 96% 90%, rgba(255, 122, 168, 0.12), transparent 6.5rem),
+    linear-gradient(180deg, var(--company-cream), #fff2df);
+}
+
+.company-empty::before,
+.company-overview-panel::before,
+.company-economy-panel::before,
+.company-board-panel::before,
+.company-report-panel::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 44px;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(circle at 28px 16px, #ffd84d 0 8px, transparent 9px),
+    radial-gradient(circle at 70px 14px, rgba(255, 248, 236, 0.9) 0 2px, transparent 3px),
+    linear-gradient(180deg, #3b1d7f, #26125f);
+}
+
+.company-overview-panel::before {
+  height: 76px;
+}
+
+.company-empty > *,
+.company-overview-panel > *,
+.company-economy-panel > *,
+.company-board-panel > *,
+.company-report-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .company-empty {
   min-height: 330px;
   align-content: center;
   justify-items: center;
+  padding-top: 58px;
   text-align: center;
 }
 
 .company-empty-icon {
   display: grid;
   place-items: center;
-  width: 74px;
-  height: 74px;
+  width: 76px;
+  height: 76px;
   border: 2px solid var(--line);
-  border-radius: 20px;
-  color: #fff;
-  background: var(--primary);
-  box-shadow: 0 7px 0 rgba(18, 11, 31, 0.2);
+  border-radius: 22px;
+  color: #fff8ec;
+  background: linear-gradient(145deg, #7b4cff, #311566);
+  box-shadow: 0 7px 0 rgba(18, 11, 31, 0.24);
   font-size: 28px;
   font-weight: 1000;
 }
@@ -7704,6 +7830,12 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .company-overview-panel h2,
 .company-section-head h2 {
   margin: 0;
+}
+
+.company-overview-panel h2,
+.company-section-head h2 {
+  color: #2d175e;
+  font-size: 19px;
 }
 
 .company-empty p,
@@ -7727,6 +7859,36 @@ body.skill-market-page-body .skill-market-add-stock-button {
   gap: 10px;
 }
 
+.company-overview-top,
+.company-section-head {
+  min-height: 42px;
+  margin: -2px -2px 2px;
+  padding: 0 2px;
+  color: #fff8ec;
+}
+
+.company-overview-top {
+  min-height: 70px;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.company-overview-top .ghost-button {
+  margin-top: 2px;
+}
+
+.company-overview-top .eyebrow,
+.company-section-head .eyebrow {
+  color: rgba(255, 248, 236, 0.82);
+  font-size: 11px;
+}
+
+.company-overview-top h2,
+.company-section-head h2 {
+  color: #fff8ec;
+  text-shadow: 0 2px 0 rgba(18, 11, 31, 0.24);
+}
+
 .company-overview-top .ghost-button,
 .company-section-head .primary-button,
 .company-inline-link {
@@ -7740,28 +7902,43 @@ body.skill-market-page-body .skill-market-add-stock-button {
   white-space: nowrap;
 }
 
+.company-overview-top .ghost-button,
+.company-section-head .primary-button {
+  background: linear-gradient(180deg, #ff98bd, var(--company-pink-strong));
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.22);
+}
+
+.company-section-head .primary-button:disabled {
+  color: rgba(18, 11, 31, 0.54);
+  background: #d7c5ef;
+  box-shadow: none;
+}
+
 .company-inline-link {
   display: inline-flex;
   align-items: center;
   color: var(--ink);
-  background: #9ff0d0;
+  background: linear-gradient(180deg, #fff8ec, #e7d4ff);
   box-shadow: 0 4px 0 rgba(18, 11, 31, 0.16);
 }
 
 .company-vision {
-  padding: 10px 12px;
-  border: 2px solid rgba(18, 11, 31, 0.14);
-  border-radius: 14px;
-  background: #fff;
+  padding: 11px 12px;
+  border: 2px solid rgba(18, 11, 31, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
 }
 
 .company-goal-card {
   display: grid;
   gap: 7px;
   padding: 12px;
-  border: 2px solid var(--line);
+  border: 2px solid #6f4aa4;
   border-radius: 16px;
-  background: linear-gradient(135deg, #fff0fa, #fff8f2);
+  background:
+    radial-gradient(circle at 92% 84%, rgba(255, 122, 168, 0.12), transparent 5rem),
+    linear-gradient(135deg, #fffdf7, #fff0fa);
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.1);
 }
 
 .company-goal-card span,
@@ -7782,13 +7959,14 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
 .company-goal-card i,
 .company-department-card i,
-.company-project-card > i {
+.company-project-card > i,
+.company-exp-card i {
   display: block;
-  height: 9px;
+  height: 10px;
   overflow: hidden;
-  border: 2px solid var(--line);
+  border: 2px solid rgba(18, 11, 31, 0.72);
   border-radius: 999px;
-  background: #f0e6fb;
+  background: #f2e6f6;
 }
 
 .company-goal-card b,
@@ -7797,7 +7975,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--mint);
+  background: linear-gradient(90deg, #7f4ad6, #c899ff);
 }
 
 .company-stat-grid {
@@ -7806,23 +7984,48 @@ body.skill-market-page-body .skill-market-add-stock-button {
   gap: 8px;
 }
 
+.company-stat-grid article,
+.company-economy-summary article,
+.company-exp-card,
+.company-economy-today span,
+.company-transaction-panel,
+.company-department-card,
+.company-project-card,
+.company-task-card,
+.company-empty-list,
+.company-report-body {
+  border: 2px solid rgba(18, 11, 31, 0.82);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.12);
+}
+
 .company-stat-grid article {
   display: grid;
   gap: 4px;
-  padding: 10px;
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
+  min-height: 70px;
+  padding: 10px 7px;
   text-align: center;
-  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), #fff1e2);
+}
+
+.company-stat-grid article:nth-child(2) {
+  background: linear-gradient(180deg, #fff8ec, #f0e4ff);
+}
+
+.company-stat-grid article:nth-child(3) {
+  background: linear-gradient(180deg, #fff8ec, #e9fff2);
 }
 
 .company-stat-grid strong {
+  color: #2d175e;
   font-size: 20px;
 }
 
 .company-economy-panel {
-  background: linear-gradient(135deg, #fff, #f3fff9);
+  background:
+    radial-gradient(circle at 94% 88%, rgba(127, 217, 154, 0.18), transparent 6rem),
+    linear-gradient(180deg, var(--company-cream), #f6fff6);
 }
 
 .company-economy-summary {
@@ -7831,19 +8034,9 @@ body.skill-market-page-body .skill-market-add-stock-button {
   gap: 8px;
 }
 
-.company-economy-summary article,
-.company-exp-card,
-.company-economy-today span,
-.company-transaction-panel {
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.1);
-}
-
 .company-economy-summary article {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   min-height: 76px;
   padding: 10px;
 }
@@ -7861,6 +8054,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
 }
 
 .company-economy-summary strong {
+  color: #2d175e;
   font-size: 17px;
   line-height: 1.08;
 }
@@ -7869,6 +8063,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   display: grid;
   gap: 8px;
   padding: 11px;
+  background: #fffdf7;
 }
 
 .company-exp-card > div {
@@ -7882,20 +8077,11 @@ body.skill-market-page-body .skill-market-add-stock-button {
   font-size: 12px;
 }
 
-.company-exp-card i {
-  display: block;
-  height: 10px;
-  overflow: hidden;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: #f0e6fb;
-}
-
 .company-exp-card b {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--yellow);
+  background: linear-gradient(90deg, var(--yellow), #ff98bd);
 }
 
 .company-economy-today {
@@ -7907,13 +8093,24 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .company-economy-today span {
   display: flex;
   align-items: center;
-  min-height: 34px;
+  min-height: 36px;
   padding: 8px 10px;
+}
+
+.company-economy-today span:first-child {
+  color: #12854f;
+  background: #edfff3;
+}
+
+.company-economy-today span:last-child {
+  color: #d64b5f;
+  background: #fff1f5;
 }
 
 .company-transaction-panel {
   padding: 0;
   overflow: hidden;
+  background: #fffdf7;
 }
 
 .company-transaction-panel summary {
@@ -7928,7 +8125,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 2px solid var(--line);
+  border-top: 2px solid rgba(18, 11, 31, 0.68);
 }
 
 .company-transaction-panel li {
@@ -7986,25 +8183,18 @@ body.skill-market-page-body .skill-market-add-stock-button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.company-department-card,
-.company-project-card,
-.company-task-card,
-.company-empty-list {
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.1);
-}
-
 .company-department-card {
   display: grid;
   gap: 7px;
-  min-height: 116px;
+  min-height: 122px;
   padding: 10px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-y;
+  background:
+    radial-gradient(circle at 92% 88%, rgba(255, 216, 77, 0.14), transparent 4.2rem),
+    #fffdf7;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -8022,7 +8212,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   display: inline-flex;
   align-items: center;
   min-height: 22px;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border: 2px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
@@ -8031,11 +8221,11 @@ body.skill-market-page-body .skill-market-add-stock-button {
 }
 
 .company-department-card > button {
-  min-height: 30px;
+  min-height: 31px;
   border: 2px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: #9ff0d0;
+  background: linear-gradient(180deg, #c7ffd9, #7fd99a);
   font-size: 11px;
   font-weight: 1000;
 }
@@ -8072,12 +8262,14 @@ body.skill-market-page-body .skill-market-add-stock-button {
   display: grid;
   gap: 4px;
   padding: 12px;
+  background: #fffdf7;
 }
 
 .company-project-card {
   display: grid;
   gap: 9px;
   padding: 11px;
+  background: #fffdf7;
 }
 
 .company-project-card.is-risk {
@@ -8106,13 +8298,13 @@ body.skill-market-page-body .skill-market-add-stock-button {
   border: 2px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: var(--panel-soft);
+  background: var(--company-lilac);
   font-size: 12px;
   font-weight: 1000;
 }
 
 .company-project-actions button:first-child {
-  background: var(--yellow);
+  background: linear-gradient(180deg, #ffe98a, #ffd84d);
 }
 
 .company-task-card {
@@ -8121,6 +8313,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   align-items: center;
   gap: 8px;
   padding: 9px;
+  background: #fffdf7;
 }
 
 .company-task-card > button:first-child {
@@ -8139,7 +8332,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   min-height: 30px;
   padding: 0;
   color: #fff;
-  background: var(--ink);
+  background: var(--company-purple-dark);
 }
 
 .company-task-card strong {
@@ -8163,6 +8356,19 @@ body.skill-market-page-body .skill-market-add-stock-button {
   background: var(--mint);
 }
 
+.company-task-coin-value {
+  display: inline-flex;
+  margin-top: 5px;
+  padding: 2px 7px;
+  border: 2px solid rgba(18, 11, 31, 0.55);
+  border-radius: 999px;
+  color: #2d175e;
+  background: #fff0fa;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 1000;
+}
+
 .company-stock-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -8174,7 +8380,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   padding: 7px 10px;
   border: 2px solid var(--line);
   border-radius: 999px;
-  background: #9ff0d0;
+  background: linear-gradient(180deg, #d7c5ff, #b88cff);
   font-size: 12px;
   font-weight: 1000;
   box-shadow: 0 3px 0 rgba(18, 11, 31, 0.12);
@@ -8182,9 +8388,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
 .company-report-body {
   padding: 12px;
-  border: 2px solid var(--line);
-  border-radius: 16px;
-  background: #fff;
+  background: #fffdf7;
 }
 
 .company-report-body strong {
@@ -8215,13 +8419,26 @@ body.skill-market-page-body .skill-market-add-stock-button {
 }
 
 .company-dialog::backdrop {
-  background: rgba(20, 11, 42, 0.72);
+  background: rgba(20, 11, 42, 0.76);
   backdrop-filter: blur(4px);
+}
+
+.company-dialog .dialog-card {
+  border-color: rgba(18, 11, 31, 0.92);
+  background:
+    radial-gradient(circle at 94% 10%, rgba(255, 216, 77, 0.18), transparent 5.5rem),
+    linear-gradient(180deg, #fff8ec, #fff0df);
+  box-shadow: 0 10px 0 rgba(18, 11, 31, 0.32);
 }
 
 .company-form {
   display: grid;
   gap: 10px;
+}
+
+.company-form .black-pill {
+  color: #fff8ec;
+  background: linear-gradient(180deg, #3b1d7f, #24125a);
 }
 
 .company-form label {
@@ -8238,10 +8455,10 @@ body.skill-market-page-body .skill-market-add-stock-button {
   width: 100%;
   min-height: 42px;
   padding: 9px 10px;
-  border: 2px solid var(--line);
+  border: 2px solid rgba(18, 11, 31, 0.78);
   border-radius: 14px;
   color: var(--ink);
-  background: #fff;
+  background: #fffdf7;
   font-weight: 850;
 }
 
@@ -8273,7 +8490,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  border: 2px solid var(--line);
+  border: 2px solid rgba(18, 11, 31, 0.78);
   border-radius: 14px;
   background: #fff8f2;
 }
@@ -8296,6 +8513,15 @@ body.skill-market-page-body .skill-market-add-stock-button {
   min-height: 42px;
   border-radius: 16px;
   font-size: 13px;
+}
+
+.company-page-body .primary-button {
+  background: linear-gradient(180deg, #ff98bd, var(--company-pink-strong));
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.22);
+}
+
+.company-page-body .ghost-button {
+  background: linear-gradient(180deg, #fff8ec, #ead9ff);
 }
 
 @media (max-width: 380px) {

@@ -504,7 +504,8 @@ button:active,
 .character-relationship-chip,
 .character-skill-market-chip,
 .character-tarot-chip,
-.character-blessing-chip {
+.character-blessing-chip,
+.character-account-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -546,6 +547,19 @@ button:active,
   color: var(--ink);
   background: #fff4a8;
   font-size: 10px;
+}
+
+.character-account-chip {
+  min-height: 20px;
+  padding: 2px 7px;
+  color: #fff8f2;
+  background: #2a183d;
+  font-size: 10px;
+}
+
+.character-account-chip.is-signed-in {
+  color: var(--ink);
+  background: #9ff0d0;
 }
 
 .character-panel-body {
@@ -4082,6 +4096,7 @@ textarea:focus {
 .battle-settings-dialog,
 .calendar-dialog,
 .delete-schedule-dialog,
+.account-dialog,
 .task-progress-dialog,
 .tarot-dialog,
 .modal {
@@ -4105,6 +4120,7 @@ textarea:focus {
 .battle-settings-dialog[open],
 .calendar-dialog[open],
 .delete-schedule-dialog[open],
+.account-dialog[open],
 .task-progress-dialog[open],
 .tarot-dialog[open],
 .modal.is-open {
@@ -4119,6 +4135,7 @@ textarea:focus {
 .battle-settings-dialog::backdrop,
 .calendar-dialog::backdrop,
 .delete-schedule-dialog::backdrop,
+.account-dialog::backdrop,
 .task-progress-dialog::backdrop,
 .tarot-dialog::backdrop,
 .modal-backdrop {
@@ -4135,6 +4152,7 @@ textarea:focus {
 .battle-settings-dialog[open]::backdrop,
 .calendar-dialog[open]::backdrop,
 .delete-schedule-dialog[open]::backdrop,
+.account-dialog[open]::backdrop,
 .task-progress-dialog[open]::backdrop,
 .tarot-dialog[open]::backdrop,
 .modal-backdrop.is-open {
@@ -4189,6 +4207,94 @@ textarea:focus {
 
 .dialog-card h2 {
   margin: 12px 0 6px;
+}
+
+.account-card {
+  display: grid;
+  gap: 12px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(255, 216, 77, 0.22), transparent 5rem),
+    linear-gradient(145deg, #fff8f2, #fff0fa);
+}
+
+.account-status-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.12);
+}
+
+.account-status-card span,
+.account-status-card small,
+.account-form-grid label span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.account-status-card strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.account-form-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.account-form-grid label {
+  display: grid;
+  gap: 5px;
+}
+
+.account-form-grid input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  background: #fff;
+  font-weight: 900;
+}
+
+.account-message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px solid rgba(18, 11, 31, 0.16);
+  border-radius: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.account-message[data-state="success"] {
+  border-color: rgba(64, 215, 138, 0.58);
+  color: #15794b;
+  background: #effff6;
+}
+
+.account-message[data-state="error"] {
+  border-color: rgba(255, 92, 92, 0.55);
+  color: #b73042;
+  background: #fff1f1;
+}
+
+.account-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.account-actions .danger-button {
+  grid-column: 1 / -1;
+  min-height: 42px;
+  border-radius: 16px;
 }
 
 .onboarding-card {

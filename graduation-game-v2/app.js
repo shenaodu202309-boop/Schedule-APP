@@ -4,6 +4,10 @@ const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
 const LIFE_COMPANY_STORAGE_KEY = "life-game-company-v1";
 const RELATIONSHIP_CARDS_KEY = "life-game-relationship-cards-v1";
 const COMIC_DIARY_KEY = "life-game-comic-diary-v1";
+const SUPABASE_CONFIG = {
+  url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
+  anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
+};
 const BATTLE_PROJECT_ID = "project-graduation-game-main-battle";
 const BATTLE_PROJECT_SOURCE = "graduation-game-v2-main-battle";
 const BATTLE_TASK_SOURCE = "graduation-game-v2-planned-task";
@@ -296,23 +300,35 @@ let invoiceAnimationTimer = null;
 let invoiceBookInteraction = null;
 let invoiceBookLongPressTimer = null;
 let invoiceBookLongPressFired = false;
+let supabaseClient = null;
+let currentAuthUser = null;
 
 const dom = {};
 
-document.addEventListener("DOMContentLoaded", () => {
+function bootApp() {
   cacheDom();
   state = loadState();
   ensureDay(selectedDate);
   ensureWeek(selectedDate);
   bindEvents();
   render();
+  void initSupabaseClient();
+  window.addEventListener("load", () => {
+    if (!supabaseClient && isSupabaseConfigured()) void initSupabaseClient();
+  }, { once: true });
   activateGamePage(gamePageForSelector(window.location.hash), false);
   window.setTimeout(maybeOpenOnboarding, 120);
   lifeTimerRenderTimer = window.setInterval(renderActiveTimers, 15000);
   window.addEventListener("storage", handleSharedStorageChange);
   window.addEventListener("skill-market-updated", render);
   window.addEventListener("life-company-updated", render);
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp, { once: true });
+} else {
+  bootApp();
+}
 
 function cacheDom() {
   [
@@ -327,6 +343,17 @@ function cacheDom() {
     "characterPanelBody",
     "characterRoleLine",
     "characterPicker",
+    "accountStatusChip",
+    "accountDialog",
+    "accountModeText",
+    "accountCurrentEmail",
+    "accountCloudText",
+    "accountEmailInput",
+    "accountPasswordInput",
+    "accountMessage",
+    "accountSignUpButton",
+    "accountSignInButton",
+    "accountSignOutButton",
     "reportCharacterSprite",
     "financeActiveBadge",
     "virtualCardBalance",
@@ -524,6 +551,11 @@ function bindEvents() {
     if (action === "cycle-character") cycleCharacter();
     if (action === "toggle-character-panel") toggleCharacterPanel();
     if (action === "select-character") selectCharacter(button.dataset.id);
+    if (action === "open-account-center") openAccountCenter();
+    if (action === "close-account-center") closeAccountCenter();
+    if (action === "account-sign-up") signUpWithEmail();
+    if (action === "account-sign-in") signInWithEmail();
+    if (action === "account-sign-out") signOutAccount();
     if (action === "open-blessing") openBlessingDialog();
     if (action === "close-blessing") closeBlessingDialog();
     if (action === "tap-wooden-fish") tapWoodenFish();
@@ -678,6 +710,14 @@ function bindEvents() {
       event.preventDefault();
       submitFinancePassword();
     }
+  });
+  [dom.accountEmailInput, dom.accountPasswordInput].forEach((input) => {
+    input?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        signInWithEmail();
+      }
+    });
   });
   dom.invoicePaperColorInput?.addEventListener("input", updateInvoiceColorFromInput);
   dom.invoiceInkColorInput?.addEventListener("input", updateInvoiceColorFromInput);
@@ -994,6 +1034,265 @@ function confirmDeleteSchedule() {
   }
   if (!pending) return;
   deleteScheduleItem(pending.type, pending.id);
+}
+
+function isSupabaseConfigured() {
+  return Boolean(
+    SUPABASE_CONFIG.url &&
+    SUPABASE_CONFIG.anonKey &&
+    !SUPABASE_CONFIG.url.includes("请在这里填入") &&
+    !SUPABASE_CONFIG.anonKey.includes("请在这里填入")
+  );
+}
+
+async function initSupabaseClient() {
+  renderAccountCenter();
+  if (!isSupabaseConfigured()) {
+    setAccountMessage("请先填入 Supabase Project URL 和 anon public key，未登录时仍可继续使用本地模式。", "muted");
+    updateAuthUI(null);
+    return null;
+  }
+  const supabaseSdk = await ensureSupabaseSdkLoaded();
+  if (!supabaseSdk?.createClient) {
+    setAccountMessage("Supabase SDK 没有加载成功，请检查网络或 CDN。", "error");
+    updateAuthUI(null);
+    return null;
+  }
+  try {
+    supabaseClient ||= supabaseSdk.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    setAccountMessage("Supabase 已连接。当前未登录，可以注册或登录。", "muted");
+    const { data, error } = await withTimeout(
+      supabaseClient.auth.getSession(),
+      8000,
+      "读取登录状态超时，请稍后重试。"
+    );
+    if (error) throw error;
+    currentAuthUser = data?.session?.user || null;
+    updateAuthUI(currentAuthUser);
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      currentAuthUser = session?.user || null;
+      updateAuthUI(currentAuthUser);
+    });
+    return supabaseClient;
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+    updateAuthUI(null);
+    return null;
+  }
+}
+
+function getCurrentUser() {
+  return currentAuthUser;
+}
+
+function getSupabaseGlobal() {
+  if (window.supabase?.createClient) return window.supabase;
+  if (globalThis.supabase?.createClient) return globalThis.supabase;
+  if (typeof supabase !== "undefined" && supabase?.createClient) return supabase;
+  return null;
+}
+
+function ensureSupabaseSdkLoaded() {
+  const existingSdk = getSupabaseGlobal();
+  if (existingSdk?.createClient) return Promise.resolve(existingSdk);
+  const sdkUrls = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+    "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
+  ];
+  return sdkUrls.reduce((chain, url) => (
+    chain.then((client) => client || loadSupabaseSdkScript(url))
+  ), Promise.resolve(null));
+}
+
+function loadSupabaseSdkScript(url) {
+  const existingSdk = getSupabaseGlobal();
+  if (existingSdk?.createClient) return Promise.resolve(existingSdk);
+  return new Promise((resolve) => {
+    const existingScript = document.querySelector(`script[data-supabase-sdk][src="${url}"]`);
+    if (existingScript) {
+      if (existingScript.dataset.loaded === "true") {
+        resolve(getSupabaseGlobal());
+        return;
+      }
+      existingScript.addEventListener("load", () => resolve(getSupabaseGlobal()), { once: true });
+      existingScript.addEventListener("error", () => resolve(null), { once: true });
+      window.setTimeout(() => resolve(getSupabaseGlobal()), 6000);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = true;
+    script.dataset.supabaseSdk = "true";
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve(getSupabaseGlobal());
+    };
+    script.onerror = () => resolve(null);
+    document.head.appendChild(script);
+    window.setTimeout(() => resolve(getSupabaseGlobal()), 6000);
+  });
+}
+
+function withTimeout(promise, delayMs, message = "请求超时。") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), delayMs);
+    }),
+  ]);
+}
+
+function openAccountCenter() {
+  renderAccountCenter();
+  if (typeof dom.accountDialog?.showModal === "function") {
+    if (!dom.accountDialog.open) dom.accountDialog.showModal();
+  } else {
+    dom.accountDialog?.setAttribute("open", "");
+  }
+}
+
+function closeAccountCenter() {
+  if (dom.accountDialog?.open) {
+    dom.accountDialog.close();
+  } else {
+    dom.accountDialog?.removeAttribute("open");
+  }
+}
+
+function accountCredentials() {
+  return {
+    email: String(dom.accountEmailInput?.value || "").trim(),
+    password: String(dom.accountPasswordInput?.value || ""),
+  };
+}
+
+async function signUpWithEmail() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email, password } = accountCredentials();
+  if (!validateAccountCredentials(email, password)) return;
+  setAccountBusy(true);
+  setAccountMessage("正在注册账号...", "muted");
+  try {
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) throw error;
+    currentAuthUser = data?.user || currentAuthUser;
+    updateAuthUI(currentAuthUser);
+    setAccountMessage(data?.session ? "注册成功，已登录。" : "注册成功，请按 Supabase 邮箱设置完成确认后再登录。", "success");
+    showToast("账号注册请求已发送。");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function signInWithEmail() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email, password } = accountCredentials();
+  if (!validateAccountCredentials(email, password)) return;
+  setAccountBusy(true);
+  setAccountMessage("正在登录...", "muted");
+  try {
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentAuthUser = data?.user || null;
+    updateAuthUI(currentAuthUser);
+    setAccountMessage("登录成功。你已进入云端账号模式，云备份功能下一步再开启。", "success");
+    showToast("账号已登录。");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function signOutAccount() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  setAccountBusy(true);
+  setAccountMessage("正在退出登录...", "muted");
+  try {
+    const { error } = await client.auth.signOut();
+    if (error) throw error;
+    currentAuthUser = null;
+    updateAuthUI(null);
+    setAccountMessage("已退出登录。现在继续使用本地模式。", "success");
+    showToast("已退出账号。");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function ensureSupabaseClientForAuth() {
+  if (!isSupabaseConfigured()) {
+    setAccountMessage("还没有配置 Supabase Project URL 和 anon public key。请先填入配置后再注册或登录。", "error");
+    return null;
+  }
+  if (!supabaseClient) await initSupabaseClient();
+  return supabaseClient;
+}
+
+function validateAccountCredentials(email, password) {
+  if (!email || !email.includes("@")) {
+    setAccountMessage("请输入有效邮箱。", "error");
+    dom.accountEmailInput?.focus();
+    return false;
+  }
+  if (!password || password.length < 6) {
+    setAccountMessage("密码至少需要 6 位。", "error");
+    dom.accountPasswordInput?.focus();
+    return false;
+  }
+  return true;
+}
+
+function renderAccountCenter() {
+  updateAuthUI(currentAuthUser);
+}
+
+function updateAuthUI(user = currentAuthUser) {
+  currentAuthUser = user || null;
+  const email = currentAuthUser?.email || "";
+  if (dom.accountStatusChip) {
+    dom.accountStatusChip.textContent = email ? "账号" : "本地模式";
+    dom.accountStatusChip.classList.toggle("is-signed-in", Boolean(email));
+    dom.accountStatusChip.title = email ? `已登录：${email}` : "当前为本地模式";
+  }
+  if (dom.accountModeText) {
+    dom.accountModeText.textContent = email
+      ? "你已登录，之后可以将本地数据同步到云端。"
+      : "你正在使用本地模式。登录后可以开启云端备份。";
+  }
+  if (dom.accountCurrentEmail) dom.accountCurrentEmail.textContent = email || "未登录";
+  if (dom.accountCloudText) dom.accountCloudText.textContent = email ? "云端功能：准备中" : "云端功能：未开启";
+  if (dom.accountSignOutButton) dom.accountSignOutButton.hidden = !email;
+  if (dom.accountSignInButton) dom.accountSignInButton.hidden = Boolean(email);
+  if (dom.accountSignUpButton) dom.accountSignUpButton.hidden = Boolean(email);
+}
+
+function setAccountMessage(message, type = "muted") {
+  if (!dom.accountMessage) return;
+  dom.accountMessage.textContent = message || "";
+  dom.accountMessage.dataset.state = type;
+}
+
+function setAccountBusy(isBusy) {
+  [dom.accountSignUpButton, dom.accountSignInButton, dom.accountSignOutButton].forEach((button) => {
+    if (button) button.disabled = Boolean(isBusy);
+  });
+}
+
+function authErrorMessage(error) {
+  const message = String(error?.message || error || "账号操作失败。");
+  if (message.includes("Invalid login credentials")) return "邮箱或密码不正确。";
+  if (message.includes("Email not confirmed")) return "邮箱还没有确认，请先检查邮箱确认邮件。";
+  if (message.includes("User already registered")) return "这个邮箱已经注册过了，请直接登录。";
+  if (message.includes("Password should be")) return "密码格式不符合要求，请换一个至少 6 位的密码。";
+  return message;
 }
 
 function getTarotSpread(id) {

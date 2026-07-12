@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="../icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png" />
     <title>30天计划 · 动画主线作战台</title>
-    <link rel="stylesheet" href="./styles.css?v=200" />
+    <link rel="stylesheet" href="./styles.css?v=201" />
   </head>
   <body>
     <main class="phone-shell" id="top">
@@ -40,6 +40,7 @@
         <a class="character-skill-market-chip" href="./skill-market.html" aria-label="打开人生技能股市">人生技能股市</a>
         <a class="character-tarot-chip" href="./tarot.html" aria-label="打开塔罗牌占卜">塔罗</a>
         <a class="character-blessing-chip" href="#blessing-zone" data-action="open-blessing" aria-label="打开祈福入口">祈福</a>
+        <button class="character-account-chip" id="accountStatusChip" type="button" data-action="open-account-center" aria-label="打开账号中心">本地模式</button>
         <button class="character-toggle" id="characterPanelToggle" type="button" data-action="toggle-character-panel" aria-expanded="false" aria-controls="characterPanelBody" aria-label="展开角色选择">
           <span></span><span></span><span></span>
         </button>
@@ -810,12 +811,46 @@
       </div>
     </dialog>
 
+    <dialog class="account-dialog" id="accountDialog">
+      <div class="dialog-card account-card">
+        <button class="dialog-close" type="button" data-action="close-account-center" aria-label="关闭">×</button>
+        <p class="black-pill">账号中心</p>
+        <h2>本地模式 / 云端账号</h2>
+        <p class="dialog-summary" id="accountModeText">你正在使用本地模式。登录后可以开启云端备份。</p>
+
+        <div class="account-status-card">
+          <span>当前账号</span>
+          <strong id="accountCurrentEmail">未登录</strong>
+          <small id="accountCloudText">云端功能：准备中</small>
+        </div>
+
+        <div class="account-form-grid">
+          <label>
+            <span>邮箱</span>
+            <input id="accountEmailInput" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+          <label>
+            <span>密码</span>
+            <input id="accountPasswordInput" type="password" autocomplete="current-password" placeholder="至少 6 位密码" />
+          </label>
+        </div>
+
+        <p class="account-message" id="accountMessage" role="status" aria-live="polite">正在检查账号登录状态...</p>
+
+        <div class="account-actions">
+          <button class="ghost-button" id="accountSignUpButton" type="button" data-action="account-sign-up">注册</button>
+          <button class="primary-button" id="accountSignInButton" type="button" data-action="account-sign-in">登录</button>
+          <button class="danger-button" id="accountSignOutButton" type="button" data-action="account-sign-out" hidden>退出登录</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog class="task-progress-dialog" id="taskProgressDialog">
       <div class="task-progress-card" id="taskProgressContent"></div>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="./app.js?v=198"></script>
+    <script src="./app.js?v=203"></script>
   </body>
 </html>

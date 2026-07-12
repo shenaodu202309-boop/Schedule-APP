@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=60" />
+    <link rel="stylesheet" href="./styles.css?v=61" />
   </head>
   <body>
     <div class="app-shell">
@@ -149,6 +149,14 @@
                 </span>
                 <em aria-hidden="true">›</em>
               </a>
+              <button id="accountCenterEntry" class="journal-account-entry" type="button" data-action="open-account-center" aria-label="打开账号中心">
+                <span class="journal-account-entry-icon" aria-hidden="true">＠</span>
+                <span>
+                  <strong>账号中心</strong>
+                  <small id="accountEntryStatus">本地模式</small>
+                </span>
+                <em aria-hidden="true">›</em>
+              </button>
               <div id="journalCoverPalette" class="journal-cover-palette" hidden aria-label="封面颜色 / Cover color"></div>
             </div>
 
@@ -183,12 +191,6 @@
                 </div>
               </div>
             </div>
-          </section>
-          <button id="relationshipArchiveEntry" class="relationship-archive-entry" type="button" data-action="open-relationship-archive" data-i18n="relationshipArchive">人际档案库</button>
-          <section id="relationshipArchiveView" class="relationship-archive-view" hidden>
-            <button class="icon-button relationship-back-button" type="button" data-action="back-journal-home" aria-label="返回日记 / Back to journal">‹</button>
-            <strong data-i18n="relationshipArchive">人际档案库</strong>
-            <p data-i18n="relationshipArchiveDeveloping">人际档案库正在研发中</p>
           </section>
         </section>
       </main>
@@ -384,6 +386,44 @@
 
     <div id="journalActionMenu" class="journal-action-menu" role="menu" hidden></div>
 
+    <dialog class="dialog account-dialog" id="accountDialog">
+      <div class="account-card">
+        <div class="dialog-header">
+          <div>
+            <p class="account-kicker">账号中心</p>
+            <h2>本地模式 / 云端账号</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-account-center" aria-label="关闭 / Close">×</button>
+        </div>
+        <p class="account-summary" id="accountModeText">你正在使用本地模式。登录后可以开启云端备份。</p>
+
+        <div class="account-status-card">
+          <span>当前账号</span>
+          <strong id="accountCurrentEmail">未登录</strong>
+          <small id="accountCloudText">云端功能：准备中</small>
+        </div>
+
+        <div class="account-form-grid">
+          <label>
+            <span>邮箱</span>
+            <input id="accountEmailInput" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+          <label>
+            <span>密码</span>
+            <input id="accountPasswordInput" type="password" autocomplete="current-password" placeholder="至少 6 位密码" />
+          </label>
+        </div>
+
+        <p class="account-message" id="accountMessage" role="status" aria-live="polite">正在检查账号登录状态...</p>
+
+        <div class="account-actions">
+          <button class="ghost-button" id="accountSignUpButton" type="button" data-action="account-sign-up">注册</button>
+          <button class="primary-button" id="accountSignInButton" type="button" data-action="account-sign-in">登录</button>
+          <button class="danger-button" id="accountSignOutButton" type="button" data-action="account-sign-out" hidden>退出登录</button>
+        </div>
+      </div>
+    </dialog>
+
     <nav class="bottom-nav" aria-label="主要导航 / Main navigation">
       <a class="bottom-nav-item active" href="#timelineSection">
         <span aria-hidden="true">▣</span>
@@ -403,8 +443,8 @@
       </a>
     </nav>
 
-    <script src="./native-notifications.js?v=60"></script>
-    <script src="./app.js?v=60"></script>
+    <script src="./native-notifications.js?v=61"></script>
+    <script src="./app.js?v=61"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

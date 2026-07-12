@@ -1,4 +1,8 @@
 const STORAGE_KEY = "private-schedule-app-v1";
+const SUPABASE_CONFIG = {
+  url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
+  anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const HOUR_HEIGHT = 64;
@@ -340,12 +344,15 @@ let journalInkSaveTimer = null;
 let journalInkSnapshotTimer = null;
 let reminderTimer = null;
 let nativeReminderSyncTimer = null;
+let supabaseClient = null;
+let currentAuthUser = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheDom();
   state = loadState();
   normalizeState();
   bindEvents();
+  void initSupabaseClient();
   render();
   scheduleMidnightRefresh();
   scheduleMinuteRefresh();
@@ -431,8 +438,18 @@ function cacheDom() {
   dom.journalShelfView = document.querySelector("#journalShelfView");
   dom.journalPanel = document.querySelector(".journal-panel");
   dom.journalNotebookView = document.querySelector("#journalNotebookView");
-  dom.relationshipArchiveEntry = document.querySelector("#relationshipArchiveEntry");
-  dom.relationshipArchiveView = document.querySelector("#relationshipArchiveView");
+  dom.accountDialog = document.querySelector("#accountDialog");
+  dom.accountCenterEntry = document.querySelector("#accountCenterEntry");
+  dom.accountEntryStatus = document.querySelector("#accountEntryStatus");
+  dom.accountModeText = document.querySelector("#accountModeText");
+  dom.accountCurrentEmail = document.querySelector("#accountCurrentEmail");
+  dom.accountCloudText = document.querySelector("#accountCloudText");
+  dom.accountEmailInput = document.querySelector("#accountEmailInput");
+  dom.accountPasswordInput = document.querySelector("#accountPasswordInput");
+  dom.accountMessage = document.querySelector("#accountMessage");
+  dom.accountSignUpButton = document.querySelector("#accountSignUpButton");
+  dom.accountSignInButton = document.querySelector("#accountSignInButton");
+  dom.accountSignOutButton = document.querySelector("#accountSignOutButton");
   dom.journalNotebookList = document.querySelector("#journalNotebookList");
   dom.journalNotebookTitle = document.querySelector("#journalNotebookTitle");
   dom.journalPageButton = document.querySelector("#journalPageButton");
@@ -1264,8 +1281,6 @@ function renderTaskProjectOptions() {
 
 function renderJournal() {
   if (!dom.journalShelfView || !dom.journalNotebookView) return;
-  if (dom.relationshipArchiveView) dom.relationshipArchiveView.hidden = true;
-  if (dom.relationshipArchiveEntry) dom.relationshipArchiveEntry.hidden = false;
   if (dom.journalPanel) dom.journalPanel.hidden = false;
   renderJournalShelf();
   renderJournalNotebook();
@@ -2304,13 +2319,270 @@ function closeJournalScreen() {
   showAppView("overviewSection");
 }
 
+function isSupabaseConfigured() {
+  return Boolean(
+    SUPABASE_CONFIG.url &&
+    SUPABASE_CONFIG.anonKey &&
+    !SUPABASE_CONFIG.url.includes("请在这里填入") &&
+    !SUPABASE_CONFIG.anonKey.includes("请在这里填入")
+  );
+}
+
+async function initSupabaseClient() {
+  renderAccountCenter();
+  if (!isSupabaseConfigured()) {
+    setAccountMessage("请先填入 Supabase Project URL 和 anon public key，未登录时仍可继续使用本地模式。", "muted");
+    updateAuthUI(null);
+    return null;
+  }
+  const supabaseSdk = await ensureSupabaseSdkLoaded();
+  if (!supabaseSdk?.createClient) {
+    setAccountMessage("Supabase SDK 没有加载成功，请检查网络或 CDN。", "error");
+    updateAuthUI(null);
+    return null;
+  }
+  try {
+    supabaseClient ||= supabaseSdk.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    setAccountMessage("Supabase 已连接。当前未登录，可以注册或登录。", "muted");
+    const { data, error } = await withTimeout(
+      supabaseClient.auth.getSession(),
+      8000,
+      "读取登录状态超时，请稍后重试。"
+    );
+    if (error) throw error;
+    currentAuthUser = data?.session?.user || null;
+    updateAuthUI(currentAuthUser);
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      currentAuthUser = session?.user || null;
+      updateAuthUI(currentAuthUser);
+    });
+    return supabaseClient;
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+    updateAuthUI(null);
+    return null;
+  }
+}
+
+function getCurrentUser() {
+  return currentAuthUser;
+}
+
+function getSupabaseGlobal() {
+  if (window.supabase?.createClient) return window.supabase;
+  if (globalThis.supabase?.createClient) return globalThis.supabase;
+  if (typeof supabase !== "undefined" && supabase?.createClient) return supabase;
+  return null;
+}
+
+function ensureSupabaseSdkLoaded() {
+  const existingSdk = getSupabaseGlobal();
+  if (existingSdk?.createClient) return Promise.resolve(existingSdk);
+  const sdkUrls = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+    "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
+  ];
+  return sdkUrls.reduce((chain, url) => (
+    chain.then((client) => client || loadSupabaseSdkScript(url))
+  ), Promise.resolve(null));
+}
+
+function loadSupabaseSdkScript(url) {
+  const existingSdk = getSupabaseGlobal();
+  if (existingSdk?.createClient) return Promise.resolve(existingSdk);
+  return new Promise((resolve) => {
+    const existingScript = document.querySelector(`script[data-supabase-sdk][src="${url}"]`);
+    if (existingScript) {
+      if (existingScript.dataset.loaded === "true") {
+        resolve(getSupabaseGlobal());
+        return;
+      }
+      existingScript.addEventListener("load", () => resolve(getSupabaseGlobal()), { once: true });
+      existingScript.addEventListener("error", () => resolve(null), { once: true });
+      window.setTimeout(() => resolve(getSupabaseGlobal()), 6000);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = true;
+    script.dataset.supabaseSdk = "true";
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve(getSupabaseGlobal());
+    };
+    script.onerror = () => resolve(null);
+    document.head.appendChild(script);
+    window.setTimeout(() => resolve(getSupabaseGlobal()), 6000);
+  });
+}
+
+function withTimeout(promise, delayMs, message = "请求超时。") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), delayMs);
+    }),
+  ]);
+}
+
+function openAccountCenter() {
+  renderAccountCenter();
+  if (typeof dom.accountDialog?.showModal === "function") {
+    if (!dom.accountDialog.open) dom.accountDialog.showModal();
+  } else {
+    dom.accountDialog?.setAttribute("open", "");
+  }
+}
+
+function closeAccountCenter() {
+  if (dom.accountDialog?.open) {
+    dom.accountDialog.close();
+  } else {
+    dom.accountDialog?.removeAttribute("open");
+  }
+}
+
+function accountCredentials() {
+  return {
+    email: String(dom.accountEmailInput?.value || "").trim(),
+    password: String(dom.accountPasswordInput?.value || ""),
+  };
+}
+
+async function signUpWithEmail() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email, password } = accountCredentials();
+  if (!validateAccountCredentials(email, password)) return;
+  setAccountBusy(true);
+  setAccountMessage("正在注册账号...", "muted");
+  try {
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) throw error;
+    currentAuthUser = data?.user || currentAuthUser;
+    updateAuthUI(currentAuthUser);
+    setAccountMessage(data?.session ? "注册成功，已登录。" : "注册成功，请按 Supabase 邮箱设置完成确认后再登录。", "success");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function signInWithEmail() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email, password } = accountCredentials();
+  if (!validateAccountCredentials(email, password)) return;
+  setAccountBusy(true);
+  setAccountMessage("正在登录...", "muted");
+  try {
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentAuthUser = data?.user || null;
+    updateAuthUI(currentAuthUser);
+    setAccountMessage("登录成功。你已进入云端账号模式，云备份功能下一步再开启。", "success");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function signOutAccount() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  setAccountBusy(true);
+  setAccountMessage("正在退出登录...", "muted");
+  try {
+    const { error } = await client.auth.signOut();
+    if (error) throw error;
+    currentAuthUser = null;
+    updateAuthUI(null);
+    setAccountMessage("已退出登录。现在继续使用本地模式。", "success");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function ensureSupabaseClientForAuth() {
+  if (!isSupabaseConfigured()) {
+    setAccountMessage("还没有配置 Supabase Project URL 和 anon public key。请先填入配置后再注册或登录。", "error");
+    return null;
+  }
+  if (!supabaseClient) await initSupabaseClient();
+  return supabaseClient;
+}
+
+function validateAccountCredentials(email, password) {
+  if (!email || !email.includes("@")) {
+    setAccountMessage("请输入有效邮箱。", "error");
+    dom.accountEmailInput?.focus();
+    return false;
+  }
+  if (!password || password.length < 6) {
+    setAccountMessage("密码至少需要 6 位。", "error");
+    dom.accountPasswordInput?.focus();
+    return false;
+  }
+  return true;
+}
+
+function renderAccountCenter() {
+  updateAuthUI(currentAuthUser);
+}
+
+function updateAuthUI(user = currentAuthUser) {
+  currentAuthUser = user || null;
+  const email = currentAuthUser?.email || "";
+  if (dom.accountEntryStatus) {
+    dom.accountEntryStatus.textContent = email ? `已登录：${email}` : "本地模式";
+  }
+  if (dom.accountCenterEntry) {
+    dom.accountCenterEntry.classList.toggle("is-signed-in", Boolean(email));
+    dom.accountCenterEntry.title = email ? `已登录：${email}` : "当前为本地模式";
+  }
+  if (dom.accountModeText) {
+    dom.accountModeText.textContent = email
+      ? "你已登录，之后可以将本地数据同步到云端。"
+      : "你正在使用本地模式。登录后可以开启云端备份。";
+  }
+  if (dom.accountCurrentEmail) dom.accountCurrentEmail.textContent = email || "未登录";
+  if (dom.accountCloudText) dom.accountCloudText.textContent = email ? "云端功能：准备中" : "云端功能：未开启";
+  if (dom.accountSignOutButton) dom.accountSignOutButton.hidden = !email;
+  if (dom.accountSignInButton) dom.accountSignInButton.hidden = Boolean(email);
+  if (dom.accountSignUpButton) dom.accountSignUpButton.hidden = Boolean(email);
+}
+
+function setAccountMessage(message, type = "muted") {
+  if (!dom.accountMessage) return;
+  dom.accountMessage.textContent = message;
+  dom.accountMessage.dataset.state = type;
+}
+
+function setAccountBusy(isBusy) {
+  [dom.accountSignUpButton, dom.accountSignInButton, dom.accountSignOutButton].forEach((button) => {
+    if (button) button.disabled = isBusy;
+  });
+}
+
+function authErrorMessage(error) {
+  const message = String(error?.message || error || "账号请求失败。");
+  if (message.includes("Invalid login credentials")) return "邮箱或密码不正确。";
+  if (message.includes("Email not confirmed")) return "邮箱还没有确认，请先查看邮箱里的确认邮件。";
+  if (message.includes("User already registered")) return "这个邮箱已经注册过了，可以直接登录。";
+  if (message.includes("Password should be")) return "密码强度不够，请至少使用 6 位密码。";
+  if (message.includes("Failed to fetch")) return "网络连接失败，请稍后再试。";
+  return message;
+}
+
 function showJournalShelf() {
   flushJournalInkSnapshot();
   stopJournalRecording();
   document.body.classList.remove("journal-notebook-open");
   if (dom.journalPanel) dom.journalPanel.hidden = false;
-  if (dom.relationshipArchiveView) dom.relationshipArchiveView.hidden = true;
-  if (dom.relationshipArchiveEntry) dom.relationshipArchiveEntry.hidden = false;
   if (dom.journalShelfView) dom.journalShelfView.hidden = false;
   if (dom.journalNotebookView) dom.journalNotebookView.hidden = true;
   activeJournalId = "";
@@ -2322,21 +2594,11 @@ function openJournalNotebook(notebookId) {
   if (!notebook) return;
   activeNotebookId = notebook.id;
   if (dom.journalPanel) dom.journalPanel.hidden = false;
-  if (dom.relationshipArchiveView) dom.relationshipArchiveView.hidden = true;
-  if (dom.relationshipArchiveEntry) dom.relationshipArchiveEntry.hidden = true;
   document.body.classList.add("journal-notebook-open");
   if (dom.journalShelfView) dom.journalShelfView.hidden = true;
   if (dom.journalNotebookView) dom.journalNotebookView.hidden = false;
   renderJournalNotebook();
   requestAnimationFrame(() => centerJournalCanvasView(true));
-}
-
-function openRelationshipArchive() {
-  stopJournalRecording();
-  document.body.classList.remove("journal-notebook-open");
-  if (dom.journalPanel) dom.journalPanel.hidden = true;
-  if (dom.relationshipArchiveEntry) dom.relationshipArchiveEntry.hidden = true;
-  if (dom.relationshipArchiveView) dom.relationshipArchiveView.hidden = false;
 }
 
 function addJournalNotebook() {
@@ -3659,15 +3921,27 @@ function handleDocumentClick(event) {
     addJournalNotebook();
     return;
   }
-  if (action === "open-relationship-archive") {
-    openRelationshipArchive();
+  if (action === "open-account-center") {
+    openAccountCenter();
     return;
   }
-  if (action === "back-journal-home") {
-    showJournalShelf();
+  if (action === "close-account-center") {
+    closeAccountCenter();
     return;
   }
-  if (action === "back-journal-shelf") {
+  if (action === "account-sign-up") {
+    void signUpWithEmail();
+    return;
+  }
+  if (action === "account-sign-in") {
+    void signInWithEmail();
+    return;
+  }
+  if (action === "account-sign-out") {
+    void signOutAccount();
+    return;
+  }
+  if (action === "back-journal-home" || action === "back-journal-shelf") {
     showJournalShelf();
     return;
   }

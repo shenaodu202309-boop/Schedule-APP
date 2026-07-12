@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#dcdcdc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="每日工作规划" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>私人排期 / Private Schedule</title>
+    <link rel="stylesheet" href="./styles.css?v=60" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <main class="workspace">
+        <section id="timelineSection" class="main-board">
+          <header class="topbar">
+            <div class="brand-block">
+              <button class="brand-toggle" type="button" data-action="toggle-settings" aria-expanded="false" aria-controls="settingsPanel">
+                <span class="eyebrow" data-i18n="appKicker">私人排期 / Private Schedule</span>
+                <span class="brand-chevron" aria-hidden="true">⌄</span>
+              </button>
+            </div>
+            <div id="settingsPanel" class="topbar-actions" hidden>
+              <label class="field language-field">
+                <span data-i18n="language">语言 / Language</span>
+                <select id="languageInput">
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+              <button class="icon-button" type="button" data-action="previous-range" title="上一段 / Previous" aria-label="上一段 / Previous">‹</button>
+              <label class="field compact">
+                <span data-i18n="rangeStart">起始 / Start</span>
+                <input id="rangeStartInput" type="date" />
+              </label>
+              <label class="field tiny">
+                <span data-i18n="rangeDays">天数 / Days</span>
+                <input id="rangeDaysInput" type="number" min="7" max="90" step="1" />
+              </label>
+              <button class="icon-button" type="button" data-action="next-range" title="下一段 / Next" aria-label="下一段 / Next">›</button>
+              <button class="secondary-button" type="button" data-action="go-today" data-i18n="today">今天 / Today</button>
+            </div>
+          </header>
+          <div id="timeline" class="timeline" aria-label="项目时间轴 / Project timeline"></div>
+        </section>
+
+        <aside id="overviewSection" class="sidebar">
+          <section class="report-panel">
+            <div class="section-heading">
+              <h2 data-i18n="dailyReport">日报 / Daily Report</h2>
+            </div>
+            <div id="dailyReport" class="daily-report"></div>
+            <label class="note-field">
+              <span data-i18n="reviewNote">复盘备注 / Review Notes</span>
+              <textarea id="dailyNoteInput" rows="5" placeholder="今天的状态、卡点、明天要顺手接上的事 / Today's state, blockers, and tomorrow's next step"></textarea>
+            </label>
+            <div class="review-meta-panel">
+              <div>
+                <span data-i18n="reviewMood">心情 / Mood</span>
+                <div id="reviewMoodRow" class="review-chip-row" aria-label="今天的心情 / Today's mood"></div>
+              </div>
+              <div>
+                <span data-i18n="reviewWeather">天气 / Weather</span>
+                <div id="reviewWeatherRow" class="review-chip-row" aria-label="今天的天气 / Today's weather"></div>
+              </div>
+              <div>
+                <span data-i18n="reviewFeel">体感 / Feels</span>
+                <div id="reviewFeelRow" class="review-chip-row" aria-label="今天的体感 / Today's feel"></div>
+              </div>
+            </div>
+            <div class="data-actions-panel">
+              <button class="ghost-button" type="button" data-action="export-data" data-i18n="export">导出 / Export</button>
+              <button class="ghost-button" type="button" data-action="import-data" data-i18n="import">导入 / Import</button>
+              <input id="importInput" type="file" accept="application/json" hidden />
+            </div>
+          </section>
+        </aside>
+
+        <section id="todaySection" class="day-board">
+          <div class="today-status-stack">
+            <section class="summary-panel">
+              <div class="score-card">
+                <div id="scoreRing" class="score-ring" aria-label="当天评分 / Daily score">
+                  <span id="scoreValue">0</span>
+                </div>
+                <div>
+                  <p id="reportState" class="muted">实时预估 / Live estimate</p>
+                  <h2 id="selectedDateLabel">今天 / Today</h2>
+                </div>
+              </div>
+              <div class="metric-grid">
+                <div>
+                  <span id="metricProjects">0</span>
+                  <small data-i18n="projectsMetric">项目 / Projects</small>
+                </div>
+                <div>
+                  <span id="metricTasks">0</span>
+                  <small data-i18n="tasksMetric">任务 / Tasks</small>
+                </div>
+                <div>
+                  <span id="metricHours">0h</span>
+                  <small data-i18n="plannedMetric">计划 / Planned</small>
+                </div>
+              </div>
+            </section>
+
+            <div id="todayVictory" class="today-victory" hidden></div>
+
+            <section class="date-panel">
+              <div class="section-heading">
+                <h2 data-i18n="dates">日期 / Dates</h2>
+              </div>
+              <div id="dateStrip" class="date-strip" aria-label="日期列表 / Date list"></div>
+            </section>
+          </div>
+          <div class="board-toolbar slim">
+            <div>
+              <p class="eyebrow" data-i18n="dayPlanKicker">Day Plan</p>
+              <h2 id="dayBoardTitle">今天安排 / Today's Plan</h2>
+            </div>
+          </div>
+          <div class="day-layout">
+            <div id="daySchedule" class="day-schedule" aria-label="当天时间块 / Day schedule"></div>
+            <div class="task-list-panel">
+              <div class="section-heading">
+                <h2 data-i18n="list">清单 / List</h2>
+              </div>
+              <div id="taskList" class="task-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="journalSection" class="journal-screen">
+          <section class="journal-panel">
+            <div id="journalShelfView" class="journal-shelf-view">
+              <div id="journalNotebookList" class="journal-notebook-list"></div>
+              <div class="journal-shelf-actions">
+                <button class="journal-add-notebook" type="button" data-action="add-journal-notebook" data-i18n="journalAddNotebook">新建本子 / New Notebook</button>
+                <button class="journal-delete-notebook" type="button" data-action="delete-journal-notebook" data-i18n="journalDeleteNotebook">删除本子 / Delete Notebook</button>
+              </div>
+              <a class="journal-game-entry" href="./graduation-game-v2/index.html" aria-label="进入新皮肤游戏">
+                <span class="journal-game-entry-icon" aria-hidden="true"></span>
+                <span>
+                  <strong>私人排期人生游戏挑战</strong>
+                  <small>进入新皮肤游戏</small>
+                </span>
+                <em aria-hidden="true">›</em>
+              </a>
+              <div id="journalCoverPalette" class="journal-cover-palette" hidden aria-label="封面颜色 / Cover color"></div>
+            </div>
+
+            <div id="journalNotebookView" class="journal-notebook-view" hidden>
+              <div class="journal-book-toolbar">
+                <button class="icon-button journal-back-button" type="button" data-action="back-journal-shelf" aria-label="返回本子区 / Back to shelf">‹</button>
+                <button class="journal-page-step" type="button" data-action="previous-journal-page" aria-label="上一页 / Previous page">‹</button>
+                <button id="journalPageButton" class="journal-page-button" type="button" data-action="open-journal-page-menu" aria-label="页面管理 / Page manager">第 1 / 1 页</button>
+                <button class="journal-page-step" type="button" data-action="next-journal-page" aria-label="下一页 / Next page">›</button>
+                <button class="journal-page-add" type="button" data-action="add-journal-page" aria-label="新增页 / Add page">＋</button>
+              </div>
+              <input id="journalCameraInput" type="file" accept="image/*" capture="environment" hidden />
+              <input id="journalImageInput" type="file" accept="image/*" multiple hidden />
+              <input id="journalCoverInput" type="file" accept="image/*" hidden />
+
+              <div class="journal-canvas-tools" aria-label="草稿工具 / Canvas tools">
+                <button class="active" type="button" data-action="set-journal-tool" data-tool="brush" data-i18n="journalToolBrush">笔刷 / Brush</button>
+                <button type="button" data-action="set-journal-tool" data-tool="eraser" data-i18n="journalToolEraser">橡皮 / Eraser</button>
+                <button type="button" data-action="add-canvas-text" data-i18n="journalToolText">文本 / Text</button>
+                <button type="button" data-action="add-canvas-shape" data-i18n="journalToolShape">形状 / Shape</button>
+                <button type="button" data-action="journal-camera" data-i18n="journalCamera">拍照 / Camera</button>
+                <button type="button" data-action="journal-import-image" data-i18n="journalImage">图片 / Image</button>
+                <button id="journalRecordButton" type="button" data-action="journal-record" data-i18n="journalRecord">录音 / Record</button>
+                <button type="button" data-action="clear-journal-ink" data-i18n="journalClearInk">清空本页 / Clear Page</button>
+              </div>
+
+              <div class="journal-canvas-shell">
+                <div id="journalCanvasBoard" class="journal-canvas-board">
+                  <div id="journalUnderlayItems" class="journal-canvas-items journal-canvas-underlay-items" aria-hidden="false"></div>
+                  <canvas id="journalInkCanvas" class="journal-ink-canvas" width="1120" height="1520" aria-label="草稿画布 / Draft canvas"></canvas>
+                  <div id="journalCanvasItems" class="journal-canvas-items journal-canvas-overlay-items" aria-live="polite"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <button id="relationshipArchiveEntry" class="relationship-archive-entry" type="button" data-action="open-relationship-archive" data-i18n="relationshipArchive">人际档案库</button>
+          <section id="relationshipArchiveView" class="relationship-archive-view" hidden>
+            <button class="icon-button relationship-back-button" type="button" data-action="back-journal-home" aria-label="返回日记 / Back to journal">‹</button>
+            <strong data-i18n="relationshipArchive">人际档案库</strong>
+            <p data-i18n="relationshipArchiveDeveloping">人际档案库正在研发中</p>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="projectDialog" class="dialog">
+      <form id="projectForm" method="dialog">
+        <input id="projectIdInput" type="hidden" />
+        <div class="dialog-header">
+          <h2 id="projectDialogTitle">大项目 / Project</h2>
+          <button class="icon-button" type="button" data-action="close-dialog" data-dialog="projectDialog" aria-label="关闭 / Close">×</button>
+        </div>
+        <label class="field full project-name-field">
+          <span data-i18n="projectName">项目名称 / Project Name</span>
+          <input id="projectTitleInput" type="text" required maxlength="40" />
+        </label>
+        <div class="form-grid project-form-grid">
+          <label class="field project-start-field">
+            <span data-i18n="startDate">开始日期 / Start Date</span>
+            <input id="projectStartInput" type="date" required />
+          </label>
+          <label class="field project-duration-field">
+            <span data-i18n="durationDays">持续天数 / Duration Days</span>
+            <input id="projectDurationInput" type="number" min="1" max="365" step="1" required />
+          </label>
+          <label class="field project-color-field">
+            <span data-i18n="color">颜色 / Color</span>
+            <input id="projectColorInput" type="color" value="#2f80ed" />
+          </label>
+          <label class="field project-goal-field">
+            <span data-i18n="goal">目标 / Goal</span>
+            <input id="projectGoalInput" type="text" maxlength="80" />
+          </label>
+          <label class="field project-complete-field">
+            <span data-i18n="projectComplete">完成长期任务 / Complete Project</span>
+            <input id="projectCompleteInput" type="checkbox" />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button id="deleteProjectButton" class="danger-button" type="button" data-action="delete-project" data-i18n="delete">删除 / Delete</button>
+          <span></span>
+          <button class="ghost-button" type="button" data-action="close-dialog" data-dialog="projectDialog" data-i18n="cancel">取消 / Cancel</button>
+          <button class="primary-button" type="submit" data-i18n="save">保存 / Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="taskDialog" class="dialog">
+      <form id="taskForm" method="dialog">
+        <input id="taskIdInput" type="hidden" />
+        <div class="dialog-header">
+          <h2 id="taskDialogTitle">小任务 / Task</h2>
+          <button class="icon-button" type="button" data-action="close-dialog" data-dialog="taskDialog" aria-label="关闭 / Close">×</button>
+        </div>
+        <label class="field full task-title-field">
+          <span data-i18n="taskText">任务文字 / Task Text</span>
+          <input id="taskTitleInput" type="text" required maxlength="60" />
+        </label>
+        <div class="form-grid task-form-grid">
+          <label class="field task-project-field">
+            <span data-i18n="project">所属项目 / Project</span>
+            <select id="taskProjectInput" required></select>
+          </label>
+          <label class="field task-date-field">
+            <span data-i18n="date">日期 / Date</span>
+            <input id="taskDateInput" type="date" required />
+          </label>
+          <label class="field task-span-field">
+            <span data-i18n="spanDays">跨天长度 / Timeline Days</span>
+            <input id="taskSpanInput" type="number" min="1" max="365" step="1" required />
+          </label>
+          <label class="field task-start-field">
+            <span data-i18n="startTime">开始时间 / Start Time</span>
+            <input id="taskStartInput" type="time" step="900" required />
+          </label>
+          <label class="field task-duration-field">
+            <span data-i18n="durationHours">时长 / Duration</span>
+            <input id="taskDurationInput" type="number" min="0.25" max="24" step="0.25" required />
+          </label>
+          <label class="field task-status-field">
+            <span data-i18n="status">状态 / Status</span>
+            <select id="taskStatusInput">
+              <option value="todo" data-i18n="statusTodo">未完成 / To Do</option>
+              <option value="done" data-i18n="statusDone">已完成 / Done</option>
+              <option value="missed" data-i18n="statusMissed">未做完 / Missed</option>
+            </select>
+          </label>
+          <label class="field task-color-field">
+            <span data-i18n="color">颜色 / Color</span>
+            <input id="taskColorInput" type="color" value="#f2994a" />
+          </label>
+          <label class="field task-reminder-field">
+            <span data-i18n="taskReminder">闹钟 / Alarm</span>
+            <select id="taskReminderInput">
+              <option value="off" data-i18n="reminderOff">关闭 / Off</option>
+              <option value="start" data-i18n="reminderAtStart">开始提醒 / At Start</option>
+            </select>
+          </label>
+          <div id="taskReminderOptions" class="task-reminder-options" hidden>
+            <label class="field task-reminder-volume-field">
+              <span data-i18n="reminderVolume">音量 / Volume</span>
+              <select id="taskReminderVolumeInput">
+                <option value="0.35" data-i18n="volumeLow">低 / Low</option>
+                <option value="0.65" data-i18n="volumeMedium">中 / Medium</option>
+                <option value="1" data-i18n="volumeHigh">高 / High</option>
+              </select>
+            </label>
+            <label class="field task-reminder-sound-field">
+              <span data-i18n="reminderSound">音乐 / Sound</span>
+              <select id="taskReminderSoundInput">
+                <option value="soft" data-i18n="soundSoft">柔和 / Soft</option>
+                <option value="bright" data-i18n="soundBright">清亮 / Bright</option>
+                <option value="pulse" data-i18n="soundPulse">节奏 / Pulse</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <label class="field full task-detail-field">
+          <span data-i18n="details">细节 / Details</span>
+          <textarea id="taskDetailInput" rows="3" maxlength="160"></textarea>
+        </label>
+        <div class="dialog-actions">
+          <button id="deleteTaskButton" class="danger-button" type="button" data-action="delete-task" data-i18n="delete">删除 / Delete</button>
+          <span></span>
+          <button class="ghost-button" type="button" data-action="close-dialog" data-dialog="taskDialog" data-i18n="cancel">取消 / Cancel</button>
+          <button class="primary-button" type="submit" data-i18n="save">保存 / Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dateMarkDialog" class="dialog compact-dialog">
+      <form id="dateMarkForm" method="dialog">
+        <input id="dateMarkDateInput" type="hidden" />
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow" data-i18n="specialDate">特殊日期 / Special Date</p>
+            <h2 id="dateMarkDialogTitle">标注日期 / Mark Date</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-dialog" data-dialog="dateMarkDialog" aria-label="关闭 / Close">×</button>
+        </div>
+        <p id="dateMarkBuiltInInfo" class="date-mark-info" hidden></p>
+        <p id="dateMarkCount" class="date-mark-count">共有 0 个标注 / 0 marks</p>
+        <div id="dateMarkList" class="date-mark-list"></div>
+        <div class="field full date-mark-label-field">
+          <span data-i18n="customDateLabel">手动标注 / Custom Label</span>
+          <div class="date-mark-entry">
+            <input id="dateMarkTextInput" type="text" maxlength="32" placeholder="生日、纪念日、考试日 / Birthday, anniversary, exam" />
+            <label class="date-mark-color-picker" for="dateMarkColorInput" title="标注颜色 / Mark color">
+              <input id="dateMarkColorInput" type="color" value="#ff4f6d" aria-label="标注颜色 / Mark color" />
+              <span aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button id="deleteDateMarkButton" class="danger-button" type="button" data-action="clear-custom-date" data-i18n="clearMark">清除 / Clear</button>
+          <span></span>
+          <button class="ghost-button" type="button" data-action="close-dialog" data-dialog="dateMarkDialog" data-i18n="cancel">取消 / Cancel</button>
+          <button class="primary-button" type="submit" data-i18n="save">保存 / Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <button class="project-fab" type="button" data-action="open-create-menu" aria-label="新建 / Create" aria-haspopup="menu" aria-controls="createMenu" aria-expanded="false">
+      <span aria-hidden="true">＋</span>
+    </button>
+
+    <div id="createMenu" class="create-menu" role="menu" hidden>
+      <button type="button" data-action="add-project" role="menuitem">
+        <span aria-hidden="true">＋</span>
+        <strong data-i18n="newProject">新建长期项目 / New Long Project</strong>
+      </button>
+      <button type="button" data-action="add-task-selected" role="menuitem">
+        <span aria-hidden="true">＋</span>
+        <strong data-i18n="newTask">新建小任务 / New Task</strong>
+      </button>
+      <button type="button" data-action="paste-block" role="menuitem">
+        <span aria-hidden="true">⧉</span>
+        <strong data-i18n="pasteBlock">粘贴 / Paste</strong>
+      </button>
+    </div>
+
+    <button id="undoButton" class="undo-button" type="button" data-action="undo-change" aria-label="撤销 / Undo" hidden>
+      <span aria-hidden="true">↶</span>
+      <small data-i18n="undo">撤销 / Undo</small>
+    </button>
+
+    <div id="blockActionMenu" class="block-action-menu" role="menu" hidden>
+      <strong id="blockActionTitle">条形操作 / Block actions</strong>
+      <button type="button" data-action="copy-block" role="menuitem" data-i18n="copyBlock">复制 / Copy</button>
+      <button type="button" data-action="split-block" role="menuitem" data-i18n="splitBlock">拆分 / Split</button>
+      <button type="button" data-action="paste-block" role="menuitem" data-i18n="pasteBlock">粘贴 / Paste</button>
+    </div>
+
+    <div id="journalActionMenu" class="journal-action-menu" role="menu" hidden></div>
+
+    <nav class="bottom-nav" aria-label="主要导航 / Main navigation">
+      <a class="bottom-nav-item active" href="#timelineSection">
+        <span aria-hidden="true">▣</span>
+        <small data-i18n="navPlan">计划</small>
+      </a>
+      <a class="bottom-nav-item" href="#todaySection">
+        <span aria-hidden="true">✓</span>
+        <small data-i18n="navToday">今天</small>
+      </a>
+      <a class="bottom-nav-item" href="#overviewSection">
+        <span aria-hidden="true">◷</span>
+        <small data-i18n="navStats">复盘</small>
+      </a>
+      <a class="bottom-nav-item" href="#journalSection">
+        <span aria-hidden="true">✎</span>
+        <small data-i18n="navJournal">日记</small>
+      </a>
+    </nav>
+
+    <script src="./native-notifications.js?v=60"></script>
+    <script src="./app.js?v=60"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

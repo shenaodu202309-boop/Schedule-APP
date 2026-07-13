@@ -9115,7 +9115,9 @@ body.skill-market-page-body .skill-market-add-stock-button {
 }
 
 .ghost-ar-camera,
+.ghost-ar-thermal-canvas,
 .ghost-ar-fallback,
+.ghost-ar-heatspots,
 .ghost-ar-noise {
   position: absolute;
   inset: 0;
@@ -9126,18 +9128,47 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .ghost-ar-camera {
   object-fit: cover;
   background: #07100d;
+  filter: grayscale(1) contrast(1.5) brightness(0.78);
+  opacity: 0.34;
+}
+
+.ghost-ar-thermal-canvas {
+  z-index: 1;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .ghost-ar-fallback {
+  z-index: 0;
   background:
     radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.16), transparent 2.8rem),
-    radial-gradient(circle at 68% 46%, rgba(64, 215, 138, 0.2), transparent 7rem),
+    radial-gradient(circle at 68% 46%, rgba(255, 126, 194, 0.18), transparent 7rem),
     repeating-linear-gradient(90deg, rgba(207, 255, 235, 0.06) 0 1px, transparent 1px 26px),
     repeating-linear-gradient(0deg, rgba(207, 255, 235, 0.04) 0 1px, transparent 1px 26px),
     #0b1114;
 }
 
+.ghost-ar-heatspots {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ghost-ar-heatspots span {
+  position: absolute;
+  width: clamp(96px, calc(var(--heat, 70) * 1.8px), 190px);
+  aspect-ratio: 0.72;
+  border-radius: 50% 50% 43% 46%;
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(255, 248, 132, 0.78) 0 10%, rgba(255, 114, 188, 0.58) 24%, transparent 48%),
+    radial-gradient(ellipse at 48% 58%, rgba(73, 223, 136, 0.46) 0 26%, rgba(73, 223, 136, 0.18) 48%, transparent 72%);
+  filter: blur(7px) drop-shadow(0 0 28px rgba(255, 114, 188, 0.58));
+  transform: translate(-50%, -50%);
+  animation: thermalPulse 1.4s ease-in-out infinite;
+}
+
 .ghost-ar-noise {
+  z-index: 3;
   opacity: 0.52;
   background:
     linear-gradient(rgba(255, 255, 255, 0.05) 50%, transparent 50%),
@@ -9262,45 +9293,15 @@ body.skill-market-page-body .skill-market-add-stock-button {
   gap: 7px;
 }
 
-.ghost-ar-entity {
-  position: absolute;
-  z-index: 3;
-  width: 88px;
-  height: 104px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  filter: drop-shadow(0 0 18px rgba(128, 255, 194, 0.8));
-  transform: translate(-50%, -50%);
-  animation: ghostFloat 2.4s ease-in-out infinite;
-}
-
-.ghost-ar-entity span {
-  position: absolute;
-  inset: 8px 10px 0;
-  border: 2px solid rgba(207, 255, 235, 0.78);
-  border-radius: 48% 48% 36% 36%;
-  background:
-    radial-gradient(circle at 35% 36%, #140b2a 0 5px, transparent 6px),
-    radial-gradient(circle at 64% 36%, #140b2a 0 5px, transparent 6px),
-    linear-gradient(180deg, rgba(244, 255, 250, 0.92), rgba(128, 255, 194, 0.52));
-}
-
-.ghost-ar-entity span::after {
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 20px;
-  height: 8px;
-  border: 2px solid #140b2a;
-  border-top: 0;
-  border-radius: 0 0 999px 999px;
-  content: "";
-}
-
-@keyframes ghostFloat {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-  50% { transform: translate(-50%, -50%) translateY(-12px); }
+@keyframes thermalPulse {
+  0%, 100% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
 }
 
 .relationship-card-grid {
@@ -9974,20 +9975,18 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .relationship-card.relationship-profile-card {
   position: relative;
   display: grid;
-  gap: 6px;
-  padding: 9px 9px 8px;
+  gap: 8px;
+  padding: 10px 10px 9px;
   overflow: hidden;
-  border: 3px solid #7b50a6;
-  border-radius: 24px;
+  border: 3px solid #120b1f;
+  border-radius: 22px;
   color: #3b2153;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 210, 230, 0.58) 0 2px, transparent 3px),
-    radial-gradient(circle at 84% 16%, rgba(255, 213, 107, 0.72) 0 2px, transparent 3px),
-    radial-gradient(circle at 90% 52%, rgba(190, 164, 230, 0.45) 0 3px, transparent 4px),
+    linear-gradient(90deg, rgba(255, 79, 194, 0.04) 0 1px, transparent 1px 16px),
     linear-gradient(180deg, rgba(255, 250, 241, 0.96), rgba(255, 244, 232, 0.98));
   box-shadow:
     inset 0 0 0 2px rgba(255, 255, 255, 0.82),
-    inset 0 0 0 5px rgba(210, 170, 224, 0.28),
+    inset 0 0 0 5px rgba(255, 212, 231, 0.28),
     0 7px 0 rgba(58, 29, 82, 0.28);
   -webkit-tap-highlight-color: transparent;
 }
@@ -10012,23 +10011,38 @@ body.skill-market-page-body .skill-market-add-stock-button {
   position: relative;
   z-index: 2;
   display: grid;
-  place-items: center;
-  min-height: 39px;
-  padding: 2px 42px;
-  border: 2px dashed rgba(214, 134, 172, 0.5);
-  border-radius: 20px 20px 15px 15px;
-  background: rgba(255, 253, 247, 0.78);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 42px;
+  margin: -10px -10px 0;
+  padding: 0 13px;
+  border: 0;
+  border-bottom: 3px solid #120b1f;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(180deg, #ffd9ec, #fff0fa);
 }
 
 .profile-card-title span {
-  color: #3d1d52;
-  font-size: clamp(24px, 7vw, 31px);
+  overflow: hidden;
+  color: #120b1f;
+  font-size: clamp(23px, 7vw, 34px);
   line-height: 1;
   font-weight: 1000;
   letter-spacing: 0;
-  text-shadow:
-    0 3px 0 #fff,
-    0 5px 0 rgba(120, 71, 164, 0.22);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.profile-card-title b {
+  max-width: 126px;
+  overflow: hidden;
+  color: #3d1d52;
+  font-size: 16px;
+  line-height: 1.1;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-sticker {
@@ -10105,6 +10119,25 @@ body.skill-market-page-body .skill-market-add-stock-button {
   margin-top: -2px;
 }
 
+.profile-id-main {
+  display: grid;
+  grid-template-columns: minmax(118px, 0.9fr) minmax(0, 1.35fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.profile-portrait-zone.profile-id-photo {
+  min-height: 0;
+  margin: 0;
+  overflow: visible;
+  border: 3px solid #120b1f;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.74), transparent 38px),
+    #dff6ff;
+  box-shadow: 0 4px 0 rgba(58, 29, 82, 0.14);
+}
+
 .profile-portrait-zone.is-avatar-entry {
   cursor: pointer;
   touch-action: manipulation;
@@ -10114,7 +10147,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
 .profile-portrait-zone.is-avatar-entry::after {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: -13px;
   z-index: 5;
   padding: 4px 10px;
   border: 2px solid rgba(58, 29, 82, 0.22);
@@ -10129,18 +10162,23 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
 .profile-portrait {
   position: relative;
-  width: min(42vw, 148px);
+  width: 100%;
   aspect-ratio: 1;
-  border: 5px solid #a279c3;
-  border-radius: 50%;
+  border: 0;
+  border-radius: 0;
   background:
-    radial-gradient(circle at 20% 42%, rgba(255, 255, 255, 0.95) 0 7px, transparent 8px),
-    radial-gradient(circle at 76% 28%, rgba(255, 255, 255, 0.95) 0 5px, transparent 6px),
-    radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.5), transparent 75px),
-    #d9bee9;
-  box-shadow:
-    inset 0 0 0 4px rgba(255, 255, 255, 0.5),
-    0 8px 0 rgba(58, 29, 82, 0.24);
+    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.54), transparent 68px),
+    transparent;
+  box-shadow: none;
+}
+
+.profile-id-photo .profile-dressup-portrait .dressup-avatar {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: scale(1.08);
 }
 
 .profile-portrait-bg {
@@ -10316,23 +10354,23 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
 .profile-basic-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  overflow: hidden;
-  border: 2px dashed rgba(217, 160, 190, 0.55);
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.72);
+  grid-template-columns: 1fr;
+  gap: 4px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .profile-info-field {
   display: grid;
-  grid-template-columns: 21px auto minmax(12px, 1fr) minmax(0, auto);
-  align-items: center;
-  gap: 4px;
-  min-height: 33px;
-  padding: 5px 6px;
-  border-right: 1px dashed rgba(191, 159, 189, 0.55);
-  border-bottom: 1px dashed rgba(191, 159, 189, 0.55);
+  grid-template-columns: 22px 34px minmax(10px, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0;
+  border-right: 0;
+  border-bottom: 2px solid rgba(18, 11, 31, 0.7);
   font-weight: 1000;
 }
 
@@ -10341,23 +10379,25 @@ body.skill-market-page-body .skill-market-add-stock-button {
 }
 
 .profile-info-field:nth-last-child(-n + 2) {
-  border-bottom: 0;
+  border-bottom: 2px solid rgba(18, 11, 31, 0.7);
 }
 
 .profile-info-field b {
+  color: #120b1f;
   font-size: 12px;
 }
 
 .profile-info-field i {
   height: 0;
-  border-top: 2px dashed rgba(191, 159, 189, 0.5);
+  border-top: 0;
 }
 
 .profile-info-field strong {
-  min-width: 34px;
+  min-width: 0;
   color: #3b2153;
-  font-size: 13px;
-  text-align: right;
+  font-size: 16px;
+  line-height: 1.15;
+  text-align: left;
 }
 
 .relationship-profile-card.is-editing .profile-info-field {
@@ -10476,41 +10516,29 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
 .profile-contact-card {
   min-height: 46px;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
-.profile-contact-card summary {
+.profile-contact-title {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 7px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.profile-contact-card summary::-webkit-details-marker {
-  display: none;
-}
-
-.profile-contact-card[open] {
-  align-items: start;
 }
 
 .profile-library-button small,
 .profile-contact-card small {
-  grid-column: 2;
+  grid-column: auto;
   overflow: hidden;
   color: #7b5c8a;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profile-contact-inputs {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 5px;
-  margin-top: 7px;
+.profile-contact-single-input {
+  min-width: 0;
 }
 
 .profile-row-icon {
@@ -10896,11 +10924,17 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
   .profile-card-title {
     min-height: 35px;
-    padding-inline: 36px;
+    margin-inline: -7px;
+    padding-inline: 10px;
   }
 
   .profile-card-title span {
     font-size: clamp(22px, 7vw, 28px);
+  }
+
+  .profile-card-title b {
+    max-width: 116px;
+    font-size: 13px;
   }
 
   .profile-star,
@@ -10913,8 +10947,30 @@ body.skill-market-page-body .skill-market-add-stock-button {
     min-height: 132px;
   }
 
+  .profile-id-main {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .profile-portrait-zone.profile-id-photo {
+    min-height: 0;
+  }
+
   .profile-portrait {
-    width: min(39vw, 132px);
+    width: 100%;
+  }
+
+  .profile-info-field {
+    grid-template-columns: 20px 30px minmax(4px, 0.35fr) minmax(0, 1fr);
+    min-height: 27px;
+  }
+
+  .profile-info-field b {
+    font-size: 10px;
+  }
+
+  .profile-info-field strong {
+    font-size: 13px;
   }
 
   .profile-bottom-grid {
@@ -10966,6 +11022,29 @@ body.skill-market-page-body .skill-market-add-stock-button {
   border-width: 1px;
   border-radius: 11px;
   box-shadow: 0 2px 0 rgba(18, 11, 31, 0.14);
+}
+
+.relationship-avatar-id-card {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.relationship-avatar-id-card .dressup-avatar {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: scale(1.08);
+}
+
+.relationship-avatar-id-card .dressup-avatar::before {
+  border-radius: 0;
 }
 
 .relationship-avatar-library .avatar-face {

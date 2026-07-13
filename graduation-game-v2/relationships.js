@@ -4,6 +4,13 @@ const RELATIONSHIP_REACTIONS_KEY = "life-game-relationship-reactions-v1";
 const RELATIONSHIP_SELF_ONBOARDING_KEY = "life-game-relationship-self-onboarding-v1";
 const LIFE_COMPANY_KEY = "life-game-company-v1";
 const RELATIONSHIP_MAP_IMAGE_SRC = "../ChatGPT Image 2026年7月10日 17_07_08.png";
+const SUPABASE_CONFIG = {
+  url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
+  anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
+};
+const AI_PLUGIN_TYPES = {
+  THERMAL_GHOST_SCAN: "thermal-ghost-scan",
+};
 const relationshipReactionCost = 1;
 const PLAYER_STARTING_COINS = 1000;
 const COMPANY_STARTING_STAKE = 600;
@@ -135,11 +142,11 @@ const relationshipLibrarySorts = [
   { key: "updated", label: "最近更新" },
 ];
 const ghostArMessages = [
-  "墙角有低频波动，继续靠近。",
-  "检测到一段微弱回应，试试引诱。",
-  "附近温度读数异常，保持镜头稳定。",
-  "灵场在移动，慢慢扫过地面和门边。",
-  "出现短暂残影，准备记录。",
+  "热感应层正在校准，缓慢扫过墙角和门边。",
+  "画面出现轻微温差漂移，保持镜头稳定。",
+  "检测到可疑热斑，继续扫描确认轮廓。",
+  "热感异常在移动，请慢慢扫过地面和家具边缘。",
+  "疑似灵体热轮廓出现，准备 AI 识别或记录。",
 ];
 
 const dressupAssetItems = Array.isArray(window.RELATIONSHIP_DRESSUP_ASSETS?.items)
@@ -445,7 +452,8 @@ let relationshipCards = [];
 let activeCardId = "";
 let selectedMapPlaceKey = "world";
 let selectedMapSceneKey = RELATIONSHIP_MAP_SCENE_HOME;
-let pendingEditCardId = "";
+let pendingDeleteCardId = "";
+let returnToDetailAfterEditId = "";
 let relationshipLongPressTimer = null;
 let relationshipLongPressPoint = null;
 let suppressRelationshipCardClick = false;
@@ -475,14 +483,19 @@ let isDressupLayerSelectionVisible = true;
 let isDressupColorPickMode = false;
 let activeShapeTool = "circle";
 let shapeDrawState = null;
+let relationshipSupabaseClient = null;
 let ghostArState = {
   stream: null,
   scanTimer: null,
+  thermalTimer: null,
+  scanTicks: 0,
   signal: 0,
   ghostVisible: false,
   xrSupported: false,
   xrSession: null,
   captured: 0,
+  anomaly: null,
+  aiResult: null,
 };
 let toastTimer = null;
 
@@ -515,7 +528,9 @@ document.addEventListener("DOMContentLoaded", () => {
   dom.importInput = document.querySelector("#relationshipImportInput");
   dom.ghostArGame = document.querySelector("#ghostArGame");
   dom.ghostArCamera = document.querySelector("#ghostArCamera");
+  dom.ghostArCanvas = document.querySelector("#ghostArThermalCanvas");
   dom.ghostArFallback = document.querySelector("#ghostArFallback");
+  dom.ghostArHeatspots = document.querySelector("#ghostArHeatspots");
   dom.ghostArEntity = document.querySelector("#ghostArEntity");
   dom.ghostArSignal = document.querySelector("#ghostArSignal");
   dom.ghostArMeter = document.querySelector("#ghostArMeter");
@@ -844,15 +859,20 @@ async function openGhostArGame() {
   document.body.classList.add("is-ghost-ar-open");
   ghostArState.signal = 12;
   ghostArState.ghostVisible = false;
-  updateGhostArHud("正在校准摄像头和灵场雷达。");
+  ghostArState.anomaly = null;
+  ghostArState.aiResult = null;
+  renderGhostThermalAnomaly(null);
+  updateGhostArHud("正在校准摄像头和热感应图层。");
   await detectGhostArSupport();
   await startGhostXrSession();
   await startGhostCamera();
+  startGhostThermalRenderer();
   startGhostScan();
 }
 
 function closeGhostArGame() {
   stopGhostScan();
+  stopGhostThermalRenderer();
   if (ghostArState.xrSession) {
     ghostArState.xrSession.end?.();
     ghostArState.xrSession = null;
@@ -875,8 +895,8 @@ async function detectGhostArSupport() {
   }
   if (dom.ghostArMode) {
     dom.ghostArMode.textContent = ghostArState.xrSupported
-      ? "ARCore / WebXR 可用：已进入 AR 调查模式"
-      : "当前环境使用相机取景与模拟 AR 雷达";
+      ? "ARCore / WebXR 可用：已进入热感应调查模式"
+      : "当前环境使用相机取景与模拟热感应扫描";
   }
 }
 
@@ -889,17 +909,17 @@ async function startGhostXrSession() {
     });
     ghostArState.xrSession.addEventListener?.("end", () => {
       ghostArState.xrSession = null;
-      if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore 会话已结束，保留相机模拟 AR";
+      if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore 会话已结束，保留相机热感应扫描";
     });
-    if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore / WebXR 会话已启动";
+    if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore / WebXR 热感应会话已启动";
   } catch {
-    if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore 未授权，已切换为相机模拟 AR";
+    if (dom.ghostArMode) dom.ghostArMode.textContent = "ARCore 未授权，已切换为相机热感应扫描";
   }
 }
 
 async function startGhostCamera() {
   if (!dom.ghostArCamera || !navigator.mediaDevices?.getUserMedia) {
-    updateGhostArHud("无法调用摄像头，已切换为模拟灵异视野。");
+    updateGhostArHud("无法调用摄像头，已切换为模拟热感应视野。");
     return;
   }
   try {
@@ -909,22 +929,30 @@ async function startGhostCamera() {
     });
     ghostArState.stream = stream;
     dom.ghostArCamera.srcObject = stream;
-    updateGhostArHud(ghostArState.xrSupported ? "ARCore 环境已就绪，开始调查。" : "相机已启动，使用模拟 AR 调查。");
+    updateGhostArHud(ghostArState.xrSupported ? "ARCore 环境已就绪，开始热感扫描。" : "相机已启动，使用热感应模式扫描。");
   } catch {
-    updateGhostArHud("摄像头未授权，已切换为模拟灵异视野。");
+    updateGhostArHud("摄像头未授权，已切换为模拟热感应视野。");
   }
 }
 
 function startGhostScan() {
   stopGhostScan();
-  ghostArState.signal = Math.max(ghostArState.signal, 18);
-  updateGhostArHud("正在扫描灵异活动，缓慢移动手机。");
+  ghostArState.signal = Math.max(ghostArState.signal, 12);
+  ghostArState.scanTicks = 0;
+  ghostArState.ghostVisible = false;
+  ghostArState.anomaly = null;
+  ghostArState.aiResult = null;
+  if (dom.ghostArEntity) dom.ghostArEntity.hidden = true;
+  renderGhostThermalAnomaly(null);
+  updateGhostArHud("正在进行热感应扫描，缓慢移动手机。未发现异常时画面会保持空白。");
   ghostArState.scanTimer = window.setInterval(() => {
-    const drift = Math.round(4 + Math.random() * 13);
+    ghostArState.scanTicks += 1;
+    const drift = Math.round(Math.random() * 9) - 2;
     ghostArState.signal = clamp(ghostArState.signal + drift, 0, 100);
-    if (!ghostArState.ghostVisible && ghostArState.signal >= 72) revealGhost();
+    const anomalyChance = ghostArState.scanTicks > 4 && ghostArState.signal >= 52 && Math.random() > 0.62;
+    if (!ghostArState.ghostVisible && (ghostArState.signal >= 82 || anomalyChance)) revealThermalGhost();
     const message = ghostArMessages[Math.floor(Math.random() * ghostArMessages.length)];
-    updateGhostArHud(ghostArState.ghostVisible ? "发现幽灵朋友，点击画面中的影子捕捉。" : message);
+    updateGhostArHud(ghostArState.ghostVisible ? "发现热感异常，可使用 AI 识别或记录。" : message);
   }, 900);
 }
 
@@ -933,40 +961,54 @@ function stopGhostScan() {
   ghostArState.scanTimer = null;
 }
 
-function lureGhost() {
-  ghostArState.signal = clamp(ghostArState.signal + 24, 0, 100);
-  updateGhostArHud("已释放引诱信号，附近幽灵正在靠近。");
-  if (ghostArState.signal >= 58) revealGhost();
+async function lureGhost() {
+  if (!ghostArState.ghostVisible || !ghostArState.anomaly) {
+    updateGhostArHud("当前没有可识别的热感异常，请先继续扫描。");
+    return;
+  }
+  updateGhostArHud("正在请求 AI 识别热感异常。");
+  const result = await analyzeThermalGhostWithAI();
+  ghostArState.aiResult = result;
+  updateGhostArHud(result.message);
 }
 
-function revealGhost() {
+function revealThermalGhost() {
   ghostArState.ghostVisible = true;
   stopGhostScan();
-  if (!dom.ghostArEntity) return;
-  dom.ghostArEntity.hidden = false;
-  dom.ghostArEntity.style.left = `${18 + Math.random() * 58}%`;
-  dom.ghostArEntity.style.top = `${28 + Math.random() * 32}%`;
-  updateGhostArHud("幽灵出现了，点击它完成捕捉。");
+  const anomaly = createThermalAnomaly();
+  ghostArState.anomaly = anomaly;
+  renderGhostThermalAnomaly(anomaly);
+  if (dom.ghostArEntity) {
+    dom.ghostArEntity.hidden = true;
+    dom.ghostArEntity.style.left = `${anomaly.x}%`;
+    dom.ghostArEntity.style.top = `${anomaly.y}%`;
+  }
+  updateGhostArHud("发现热感异常，只显示热斑/朦胧轮廓。可选择 AI 识别或记录。");
 }
 
 function recordGhostEvidence() {
-  ghostArState.signal = clamp(ghostArState.signal + 9, 0, 100);
-  updateGhostArHud("已记录一条灵异证据：残影、低频噪声、冷点。");
+  if (!ghostArState.ghostVisible || !ghostArState.anomaly) {
+    updateGhostArHud("还没有扫描到热感异常，暂时不能记录。请继续扫描。");
+    return;
+  }
+  captureGhostFriend();
 }
 
 function captureGhostFriend() {
-  if (!ghostArState.ghostVisible) {
-    lureGhost();
+  if (!ghostArState.ghostVisible || !ghostArState.anomaly) {
+    updateGhostArHud("还没有扫描到热感异常，暂时不能记录。");
     return;
   }
   ghostArState.captured += 1;
-  const name = `幽灵朋友 ${ghostArState.captured}`;
+  const result = ghostArState.aiResult?.ok ? ghostArState.aiResult : null;
+  const anomaly = ghostArState.anomaly || createThermalAnomaly();
+  const name = result?.name || `热感灵体 ${ghostArState.captured}`;
   const card = createRelationshipCard({
     basic: {
       name,
       relationshipType: "幽灵",
       meaning: "我想更了解",
-      note: "通过 AR 灵异调查捕捉到的幽灵朋友。",
+      note: result?.summary || "通过热感应场景扫描记录到的异常灵体。",
     },
     relationship: {
       closeness: 35,
@@ -980,8 +1022,8 @@ function captureGhostFriend() {
       age: "未知",
       gender: "不填写",
       tags: ["神秘", "需要观察"],
-      recentInteraction: "在现实地点调查灵异活动时被记录下来。",
-      keywords: ["AR", "幽灵", "灵异活动"],
+      recentInteraction: result?.evidence || `热感异常强度 ${Math.round(anomaly.intensity)}%，位置约 ${Math.round(anomaly.x)}% / ${Math.round(anomaly.y)}%。`,
+      keywords: result?.keywords || ["热感应", "幽灵", "异常记录"],
     },
     avatar: {
       species: "cloud",
@@ -997,9 +1039,12 @@ function captureGhostFriend() {
   });
   if (dom.ghostArEntity) dom.ghostArEntity.hidden = true;
   ghostArState.ghostVisible = false;
+  ghostArState.anomaly = null;
+  ghostArState.aiResult = null;
+  renderGhostThermalAnomaly(null);
   ghostArState.signal = 8;
   updateGhostArHud(`${displayName(card)} 已加入角色关系卡库。`);
-  showToast("幽灵朋友已记录。");
+  showToast("热感异常灵体已记录。");
 }
 
 function updateGhostArHud(message) {
@@ -1007,6 +1052,175 @@ function updateGhostArHud(message) {
   if (dom.ghostArSignal) dom.ghostArSignal.textContent = `${String(signal).padStart(2, "0")}%`;
   if (dom.ghostArMeter) dom.ghostArMeter.style.width = `${signal}%`;
   if (dom.ghostArStatus) dom.ghostArStatus.textContent = message || "正在调查。";
+}
+
+function startGhostThermalRenderer() {
+  stopGhostThermalRenderer();
+  renderGhostThermalFrame();
+  ghostArState.thermalTimer = window.setInterval(renderGhostThermalFrame, 180);
+}
+
+function stopGhostThermalRenderer() {
+  window.clearInterval(ghostArState.thermalTimer);
+  ghostArState.thermalTimer = null;
+}
+
+function renderGhostThermalFrame() {
+  const canvas = dom.ghostArCanvas;
+  const video = dom.ghostArCamera;
+  if (!canvas) return;
+  const width = Math.max(1, canvas.clientWidth || window.innerWidth || 360);
+  const height = Math.max(1, canvas.clientHeight || window.innerHeight || 640);
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  context.clearRect(0, 0, width, height);
+  if (video?.readyState >= 2 && video.videoWidth && video.videoHeight) {
+    context.save();
+    context.filter = "grayscale(1) contrast(1.9) saturate(2.2)";
+    context.drawImage(video, 0, 0, width, height);
+    context.globalCompositeOperation = "color";
+    const gradient = context.createLinearGradient(0, height, width, 0);
+    gradient.addColorStop(0, "rgba(0, 60, 90, 0.82)");
+    gradient.addColorStop(0.32, "rgba(30, 210, 120, 0.72)");
+    gradient.addColorStop(0.62, "rgba(255, 218, 77, 0.7)");
+    gradient.addColorStop(1, "rgba(255, 84, 172, 0.82)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+    context.restore();
+  } else {
+    const fallback = context.createLinearGradient(0, 0, width, height);
+    fallback.addColorStop(0, "#07100d");
+    fallback.addColorStop(0.5, "#123023");
+    fallback.addColorStop(1, "#1d1028");
+    context.fillStyle = fallback;
+    context.fillRect(0, 0, width, height);
+  }
+  drawThermalSweep(context, width, height);
+  drawThermalAnomalyOnCanvas(context, width, height);
+}
+
+function drawThermalSweep(context, width, height) {
+  const sweepX = ((Date.now() / 24) % (width + 160)) - 80;
+  const sweep = context.createLinearGradient(sweepX - 80, 0, sweepX + 80, 0);
+  sweep.addColorStop(0, "rgba(128, 255, 194, 0)");
+  sweep.addColorStop(0.5, "rgba(128, 255, 194, 0.22)");
+  sweep.addColorStop(1, "rgba(128, 255, 194, 0)");
+  context.fillStyle = sweep;
+  context.fillRect(sweepX - 80, 0, 160, height);
+}
+
+function drawThermalAnomalyOnCanvas(context, width, height) {
+  const anomaly = ghostArState.anomaly;
+  if (!anomaly) return;
+  const x = width * anomaly.x / 100;
+  const y = height * anomaly.y / 100;
+  const radius = Math.max(width, height) * (0.09 + anomaly.intensity / 650);
+  const heat = context.createRadialGradient(x, y, 0, x, y, radius);
+  heat.addColorStop(0, "rgba(255, 244, 120, 0.92)");
+  heat.addColorStop(0.38, "rgba(255, 115, 180, 0.72)");
+  heat.addColorStop(0.7, "rgba(109, 255, 174, 0.32)");
+  heat.addColorStop(1, "rgba(109, 255, 174, 0)");
+  context.fillStyle = heat;
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.fill();
+}
+
+function createThermalAnomaly() {
+  return {
+    x: 22 + Math.random() * 56,
+    y: 26 + Math.random() * 38,
+    intensity: clamp(ghostArState.signal + Math.round(Math.random() * 12), 45, 100),
+    temperatureShift: Number((1.8 + Math.random() * 4.6).toFixed(1)),
+    shape: ["人形轮廓", "漂浮团块", "细长残影", "低矮热斑"][Math.floor(Math.random() * 4)],
+    motion: ["缓慢漂移", "短暂停留", "左右摆动", "忽隐忽现"][Math.floor(Math.random() * 4)],
+  };
+}
+
+function renderGhostThermalAnomaly(anomaly) {
+  if (dom.ghostArHeatspots) {
+    dom.ghostArHeatspots.innerHTML = anomaly
+      ? `<span style="left:${anomaly.x}%;top:${anomaly.y}%;--heat:${anomaly.intensity}"></span>`
+      : "";
+  }
+}
+
+async function analyzeThermalGhostWithAI() {
+  const anomaly = ghostArState.anomaly || createThermalAnomaly();
+  ghostArState.anomaly = anomaly;
+  renderGhostThermalAnomaly(anomaly);
+  const fallback = localThermalGhostAnalysis(anomaly);
+  try {
+    const data = await callRelationshipAIPlugin(AI_PLUGIN_TYPES.THERMAL_GHOST_SCAN, {
+      anomaly,
+      signal: Math.round(ghostArState.signal),
+      hasCamera: Boolean(ghostArState.stream),
+      scanMode: "thermal-camera-simulation",
+    });
+    const result = normalizeThermalGhostAIResult(data?.result, anomaly);
+    return {
+      ok: true,
+      ...result,
+      message: `AI 识别：${result.summary}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      ...fallback,
+      message: `${fallback.summary}（AI 暂不可用，已使用本地热感判断。）`,
+      error: String(error?.message || error || ""),
+    };
+  }
+}
+
+async function callRelationshipAIPlugin(taskType, payload = {}) {
+  const supabase = await initRelationshipSupabaseClient();
+  if (!supabase) throw new Error("AI 插槽后端尚未初始化。");
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData?.session) throw new Error("请先登录账号后再使用 AI 插槽。");
+  const { data, error } = await supabase.functions.invoke("ai-plugin-proxy", {
+    body: { taskType, payload },
+  });
+  if (error) throw error;
+  if (data?.ok === false) throw new Error(data.error || "AI 识别失败。");
+  return data;
+}
+
+async function initRelationshipSupabaseClient() {
+  if (relationshipSupabaseClient) return relationshipSupabaseClient;
+  if (!window.supabase?.createClient) return null;
+  relationshipSupabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+  return relationshipSupabaseClient;
+}
+
+function localThermalGhostAnalysis(anomaly) {
+  const name = anomaly.intensity >= 82 ? "高热残影" : "热感灵体";
+  const summary = `${anomaly.shape}出现 ${anomaly.temperatureShift}°C 温差，强度 ${Math.round(anomaly.intensity)}%。`;
+  return {
+    name,
+    summary,
+    evidence: `热感模式记录到${anomaly.shape}，运动状态：${anomaly.motion}，温差约 ${anomaly.temperatureShift}°C。`,
+    keywords: ["热感应", "异常热斑", anomaly.shape],
+  };
+}
+
+function normalizeThermalGhostAIResult(result, anomaly) {
+  const source = result && typeof result === "object" ? result : {};
+  const fallback = localThermalGhostAnalysis(anomaly);
+  const keywords = Array.isArray(source.keywords)
+    ? source.keywords.map((item) => clean(item, "")).filter(Boolean).slice(0, 4)
+    : fallback.keywords;
+  return {
+    name: clean(source.name, fallback.name).slice(0, 24),
+    summary: clean(source.summary, fallback.summary).slice(0, 120),
+    evidence: clean(source.evidence, fallback.evidence).slice(0, 160),
+    keywords: keywords.length ? keywords : fallback.keywords,
+  };
 }
 
 function loadRelationshipFileLibrary() {
@@ -1160,13 +1374,7 @@ function renderRelationshipCardDetail(id) {
   const card = relationshipCards.find((item) => item.id === id);
   if (!card || !dom.detailBody) return;
   activeCardId = id;
-  dom.detailBody.innerHTML = `
-    ${renderRelationshipProfileCard(card, { mode: "detail" })}
-    <div class="relationship-dialog-actions">
-      <button class="danger-button" type="button" data-action="delete-card" data-id="${escapeHtml(card.id)}">删除角色</button>
-      <button class="ghost-button" type="button" data-action="close-detail">返回列表</button>
-    </div>
-  `;
+  dom.detailBody.innerHTML = renderRelationshipProfileCard(card, { mode: "detail" });
   openDialog(dom.detailDialog);
 }
 
@@ -1286,7 +1494,9 @@ function handleRelationshipClick(event) {
   }
   if (action === "edit-card") {
     dom.detailDialog?.close();
-    openCharacterCreator(button.dataset.id || activeCardId);
+    const id = button.dataset.id || activeCardId;
+    returnToDetailAfterEditId = id;
+    openCharacterCreator(id);
   }
   if (action === "delete-card") {
     const id = button.dataset.id || activeCardId;
@@ -1316,7 +1526,6 @@ function handleRelationshipClick(event) {
   if (action === "start-ghost-scan") startGhostScan();
   if (action === "lure-ghost") lureGhost();
   if (action === "record-ghost") recordGhostEvidence();
-  if (action === "capture-ghost") captureGhostFriend();
   if (action === "open-file-library") openRelationshipFileLibrary();
   if (action === "close-file-library") dom.fileLibraryDialog?.close();
   if (action === "trigger-file-library-import") dom.fileLibraryInput?.click();
@@ -1354,8 +1563,8 @@ function handleRelationshipClick(event) {
     renderRelationshipCardDetail(button.dataset.id);
   }
   if (action === "map-clear-card") clearCardLocation(button.dataset.id);
-  if (action === "confirm-edit-card") confirmEditRelationshipCard();
-  if (action === "cancel-edit-card") closeEditConfirmDialog();
+  if (action === "confirm-delete-card") confirmDeleteRelationshipCard();
+  if (action === "cancel-delete-card") closeDeleteConfirmDialog();
   if (action === "export-cards") exportRelationshipCards();
   if (action === "trigger-import") dom.importInput?.click();
   if (action === "dressup-tab") {
@@ -1404,6 +1613,7 @@ function handleRelationshipFormSubmit(event) {
     showToast("请先填写角色名称。");
     return;
   }
+  const editingId = activeCardId;
   if (activeCardId) {
     updateRelationshipCard(activeCardId, values);
     showToast("关系卡已更新。");
@@ -1412,6 +1622,10 @@ function handleRelationshipFormSubmit(event) {
     showToast("关系卡已创建。");
   }
   closeCharacterCreator();
+  if (editingId && returnToDetailAfterEditId === editingId) {
+    returnToDetailAfterEditId = "";
+    renderRelationshipCardDetail(editingId);
+  }
 }
 
 function handleEditorPreviewInput(event) {
@@ -1464,7 +1678,7 @@ function startRelationshipCardLongPress(event) {
   relationshipLongPressPoint = { x: event.clientX, y: event.clientY };
   relationshipLongPressTimer = window.setTimeout(() => {
     suppressRelationshipCardClick = true;
-    openEditConfirmDialog(card.dataset.cardId);
+    openDeleteConfirmDialog(card.dataset.cardId);
     window.setTimeout(() => {
       suppressRelationshipCardClick = false;
     }, 700);
@@ -1785,23 +1999,30 @@ function updateShapeDrawPreview() {
   preview.setAttribute("d", leafBrushPathFromPoints(shapeDrawState.points));
 }
 
-function openEditConfirmDialog(id) {
+function openDeleteConfirmDialog(id) {
   const card = relationshipCards.find((item) => item.id === id);
   if (!card || !dom.editConfirmDialog) return;
-  pendingEditCardId = id;
-  if (dom.editConfirmText) dom.editConfirmText.textContent = `要修改「${displayName(card)}」吗？`;
+  pendingDeleteCardId = id;
+  if (dom.editConfirmText) dom.editConfirmText.textContent = `确定要删除「${displayName(card)}」吗？删除后无法从当前列表恢复。`;
   openDialog(dom.editConfirmDialog);
 }
 
-function closeEditConfirmDialog() {
-  pendingEditCardId = "";
+function closeDeleteConfirmDialog() {
+  pendingDeleteCardId = "";
   dom.editConfirmDialog?.close();
 }
 
-function confirmEditRelationshipCard() {
-  const id = pendingEditCardId;
-  closeEditConfirmDialog();
-  if (id) openCharacterCreator(id);
+function confirmDeleteRelationshipCard() {
+  const id = pendingDeleteCardId;
+  closeDeleteConfirmDialog();
+  if (!id) return;
+  deleteRelationshipCard(id);
+  if (activeCardId === id) {
+    activeCardId = "";
+    dom.detailDialog?.close();
+  }
+  if (returnToDetailAfterEditId === id) returnToDetailAfterEditId = "";
+  showToast("角色已删除。");
 }
 
 function giveFlowerToCharacter(characterId) {
@@ -2119,10 +2340,11 @@ function valuesFromForm(formData) {
       boundaryFeel: clean(formData.get("profile.boundaryFeel"), "良好"),
       recentInteraction,
       keywords,
-      contactPhone: clean(formData.get("profile.contactPhone"), "").slice(0, 40),
-      contactWechat: clean(formData.get("profile.contactWechat"), "").slice(0, 40),
-      contactEmail: clean(formData.get("profile.contactEmail"), "").slice(0, 80),
-      contactQQ: clean(formData.get("profile.contactQQ"), "").slice(0, 40),
+      contactInfo: clean(formData.get("profile.contactInfo"), "").slice(0, 120),
+      contactPhone: "",
+      contactWechat: "",
+      contactEmail: "",
+      contactQQ: "",
     },
     relationship: {
       closeness: clamp(Number(formData.get("relationship.closeness")) || 0, 0, 100),
@@ -2271,6 +2493,7 @@ function createDefaultRelationshipCard(preset = {}) {
       boundaryFeel: "良好",
       recentInteraction: "一起喝咖啡，聊了很多近况。",
       keywords: ["暖心", "细心", "支持型"],
+      contactInfo: "",
       contactPhone: "",
       contactWechat: "",
       contactEmail: "",
@@ -2396,6 +2619,11 @@ function normalizeRelationshipCard(card) {
   merged.profile.keywords = Array.isArray(merged.profile.keywords) && merged.profile.keywords.length
     ? merged.profile.keywords.map((tag) => clean(tag, "")).filter(Boolean).slice(0, 4)
     : ["暖心", "细心", "支持型"];
+  merged.profile.contactInfo = clean(
+    merged.profile.contactInfo ||
+      [merged.profile.contactPhone, merged.profile.contactWechat, merged.profile.contactEmail, merged.profile.contactQQ].filter(Boolean).join(" · "),
+    "",
+  ).slice(0, 120);
   merged.profile.contactPhone = clean(merged.profile.contactPhone, "").slice(0, 40);
   merged.profile.contactWechat = clean(merged.profile.contactWechat, "").slice(0, 40);
   merged.profile.contactEmail = clean(merged.profile.contactEmail, "").slice(0, 80);
@@ -2432,29 +2660,28 @@ function renderRelationshipProfileCard(card, options = {}) {
   const keywords = card.profile.keywords.length ? card.profile.keywords : ["暖心", "细心", "支持型"];
   const displayKeywords = editable ? keywords : relationshipKeywordsWithReactions(card, keywords);
   const recent = card.profile.recentInteraction || card.basic.note || "一起喝咖啡，聊了很多近况。";
+  const contactInfo = relationshipContactInfo(card);
   const portraitEntry = editable ? `role="button" tabindex="0" data-action="open-avatar-builder"` : "";
 
   return `
     <${element} class="relationship-card relationship-profile-card ${editable ? "is-editing" : ""}" ${action} ${cardId} ${reactionTarget}>
       ${editable ? renderAvatarHiddenInputs(card.avatar) : ""}
-      <div class="profile-sticker profile-star" aria-hidden="true">★</div>
-      <div class="profile-sticker profile-bunny" aria-hidden="true">♡</div>
-      <div class="profile-sparkles" aria-hidden="true">✦ ✧ ✦</div>
       <header class="profile-card-title">
-        <span>${escapeHtml(title)}</span>
+        <span>ID CARD</span>
+        <b>${escapeHtml(title)}</b>
       </header>
 
-      <section class="profile-portrait-zone ${editable ? "is-avatar-entry" : ""}" aria-label="角色头像" ${portraitEntry}>
-        ${renderProfilePortrait(card)}
-        <span class="profile-chat-heart" aria-hidden="true">♥</span>
-        <span class="profile-note-sticker" aria-hidden="true">Nice to meet you!</span>
-      </section>
+      <section class="profile-id-main">
+        <section class="profile-portrait-zone profile-id-photo ${editable ? "is-avatar-entry" : ""}" aria-label="角色头像" ${portraitEntry}>
+          ${renderProfilePortrait(card)}
+        </section>
 
-      <section class="profile-basic-grid">
-        ${profileField("姓名", "person", editable ? profileTextInput("basic.name", card.basic.name, "林小雨", true) : escapeHtml(displayName(card)))}
-        ${profileField("年龄", "calendar", editable ? profileTextInput("profile.age", card.profile.age, "24") : escapeHtml(card.profile.age))}
-        ${profileField("关系", "heart", editable ? profileSelectInput("basic.relationshipType", relationshipOptions.relationshipTypes, card.basic.relationshipType) : escapeHtml(card.basic.relationshipType), "pill")}
-        ${profileField("性别", "venus", editable ? profileTextInput("profile.gender", card.profile.gender, "女") : escapeHtml(card.profile.gender))}
+        <section class="profile-basic-grid profile-id-info">
+          ${profileField("姓名", "person", editable ? profileTextInput("basic.name", card.basic.name, "林小雨", true) : escapeHtml(displayName(card)))}
+          ${profileField("关系", "heart", editable ? profileSelectInput("basic.relationshipType", relationshipOptions.relationshipTypes, card.basic.relationshipType) : escapeHtml(card.basic.relationshipType), "pill")}
+          ${profileField("年龄", "calendar", editable ? profileTextInput("profile.age", card.profile.age, "24") : escapeHtml(card.profile.age))}
+          ${profileField("性别", "venus", editable ? profileTextInput("profile.gender", card.profile.gender, "女") : escapeHtml(card.profile.gender))}
+        </section>
       </section>
 
       <section class="profile-library-contact-row">
@@ -2462,20 +2689,15 @@ function renderRelationshipProfileCard(card, options = {}) {
           <span class="profile-row-icon">▦</span>
           <b>图书馆</b>
         </button>
-        <details class="profile-contact-card">
-          <summary>
+        <label class="profile-contact-card">
+          <span class="profile-contact-title">
             <span class="profile-row-icon">☎</span>
             <b>联系方式</b>
-          </summary>
+          </span>
           ${editable
-            ? `<div class="profile-contact-inputs">
-                <input class="profile-inline-input" name="profile.contactPhone" value="${escapeHtml(card.profile.contactPhone || "")}" placeholder="手机号" />
-                <input class="profile-inline-input" name="profile.contactWechat" value="${escapeHtml(card.profile.contactWechat || "")}" placeholder="微信号" />
-                <input class="profile-inline-input" name="profile.contactEmail" value="${escapeHtml(card.profile.contactEmail || "")}" placeholder="邮箱" />
-                <input class="profile-inline-input" name="profile.contactQQ" value="${escapeHtml(card.profile.contactQQ || "")}" placeholder="QQ" />
-              </div>`
-            : `<small>${escapeHtml([card.profile.contactPhone, card.profile.contactWechat, card.profile.contactEmail, card.profile.contactQQ].filter(Boolean).join(" · ") || "未填写")}</small>`}
-        </details>
+            ? `<input class="profile-inline-input profile-contact-single-input" name="profile.contactInfo" value="${escapeHtml(contactInfo)}" placeholder="电话 / 微信 / 邮箱 / 任何联系方式" />`
+            : `<small>${escapeHtml(contactInfo || "未填写")}</small>`}
+        </label>
       </section>
 
       <section class="profile-metric-grid">
@@ -2503,10 +2725,20 @@ function renderRelationshipProfileCard(card, options = {}) {
       <footer class="profile-card-footer">
         ${editable
           ? `<button class="profile-save-button" type="submit">保存</button><button class="profile-cancel-button" type="button" data-action="close-editor">取消</button>`
-          : `<span class="profile-view-button">${mode === "detail" ? "已保存" : "查看详情 ›"}</span>`}
+          : mode === "detail"
+            ? `<button class="profile-view-button" type="button" data-action="edit-card" data-id="${escapeHtml(card.id)}">编辑</button>`
+            : `<span class="profile-view-button">查看详情 ›</span>`}
       </footer>
     </${element}>
   `;
+}
+
+function relationshipContactInfo(card) {
+  return clean(
+    card?.profile?.contactInfo ||
+      [card?.profile?.contactPhone, card?.profile?.contactWechat, card?.profile?.contactEmail, card?.profile?.contactQQ].filter(Boolean).join(" · "),
+    "",
+  );
 }
 
 function relationshipKeywordsWithReactions(card, keywords = []) {

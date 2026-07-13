@@ -15,6 +15,8 @@ const BATTLE_TASK_SOURCE = "graduation-game-v2-planned-task";
 const SIDE_QUEST_LIMIT = 5;
 const SKILL_MARKET_SIDE_PREFIX = "skill-market-task-";
 const LIFE_COMPANY_MAIN_PREFIX = "life-company-task-";
+const PLAYER_STARTING_COINS = 1000;
+const COMPANY_STARTING_STAKE = 600;
 const MAINLINE_PRICING_STANDARD_HOURS = 8;
 const MAINLINE_PRICING_STANDARD_COINS = 80;
 const TASK_COINS_PER_30_MINUTES = MAINLINE_PRICING_STANDARD_COINS / (MAINLINE_PRICING_STANDARD_HOURS * 2);
@@ -1407,11 +1409,13 @@ function createOnboardingCompany({ name, typeId, goal, deadline }) {
     economy: {
       currencyName: "金币",
       currencySymbol: "◈",
-      balance: 0,
-      lifetimeIncome: 0,
-      lifetimeExpense: 0,
-      revenueToday: 0,
-      expenseToday: 0,
+      companyCoins: COMPANY_STARTING_STAKE,
+      lifetimeEarned: COMPANY_STARTING_STAKE,
+      lifetimeSpent: 0,
+      companyLevel: 1,
+      companyExp: 0,
+      assetValue: COMPANY_STARTING_STAKE,
+      lastCompanyUpgradeAt: "",
       lastSettledDate: "",
       transactions: [],
     },
@@ -1436,8 +1440,8 @@ function ensureLifeCompanyEconomy(company) {
   company.economy = {
     currencyName: normalizeCoinName(economy.currencyName),
     currencySymbol: String(economy.currencySymbol || "◈"),
-    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : 1000),
-    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : 1000),
+    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
+    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
     lifetimeSpent: roundCompanyCoins(economy.lifetimeSpent || 0),
     companyLevel: clamp(Math.floor(Number(economy.companyLevel || 1)), 1, COMPANY_ECONOMY_LEVELS.length),
     companyExp: Math.max(0, Math.floor(Number(economy.companyExp || 0))),
@@ -7086,7 +7090,7 @@ function updateOnboardingDefaults() {
 
 function maybeOpenOnboarding() {
   state.onboarding = normalizeOnboardingState(state.onboarding, state);
-  if (state.onboarding.completed || state.onboarding.dismissed || readLifeCompanyState()?.company) return;
+  if (state.onboarding.completed || state.onboarding.dismissed || hasUserCreatedLifeCompany()) return;
   if (!dom.onboardingDialog || !dom.onboardingForm) return;
   renderOnboardingTypeOptions();
   if (dom.onboardingDeadlineInput && !dom.onboardingDeadlineInput.value) {
@@ -7098,6 +7102,18 @@ function maybeOpenOnboarding() {
   } else {
     dom.onboardingDialog.setAttribute("open", "");
   }
+}
+
+function hasUserCreatedLifeCompany() {
+  const company = readLifeCompanyState()?.company;
+  return Boolean(company && !isRelationshipFallbackCompany(company));
+}
+
+function isRelationshipFallbackCompany(company) {
+  if (!company || typeof company !== "object") return false;
+  if (company.relationshipFallbackOnly) return true;
+  const hasCompanyShape = Array.isArray(company.departments) || Array.isArray(company.projects) || company.mainGoal;
+  return company.name === "我的人生公司" && company.typeId === "personal" && !hasCompanyShape;
 }
 
 function closeOnboardingDialog() {
@@ -7125,6 +7141,7 @@ function completeOnboarding(event) {
   const deadline = isDateKey(dom.onboardingDeadlineInput?.value)
     ? dom.onboardingDeadlineInput.value
     : addDays(selectedDate, TOTAL_DAYS - 1);
+  if (!confirmCompanyStartingStake(companyName)) return;
 
   createOnboardingCompany({
     name: companyName,
@@ -7158,6 +7175,10 @@ function completeOnboarding(event) {
   render();
   closeOnboardingDialog();
   showToast("目标部署完成，公司已经启动。");
+}
+
+function confirmCompanyStartingStake(companyName = "人生公司") {
+  return window.confirm(`默认个人金币：${PLAYER_STARTING_COINS}\n建立「${companyName}」需要投入 ${COMPANY_STARTING_STAKE} 金币作为启动资金。\n\n确认创建公司吗？`);
 }
 
 function openBlessingDialog() {

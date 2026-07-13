@@ -1,6 +1,7 @@
 const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
 const LIFE_COMPANY_STORAGE_KEY = "life-game-company-v1";
 const SKILL_MARKET_ENABLED_KEY = "skillMarketEnabled";
+const COMPANY_STARTING_STAKE = 600;
 const SKILL_MARKET_INITIAL_CASH = 12000;
 const SKILL_MARKET_HISTORY_LIMIT = 34;
 const SKILL_MARKET_DAILY_BUY_LIMIT = 3;
@@ -676,8 +677,8 @@ function ensureSkillMarketCompanyEconomy(company) {
   company.economy = {
     currencyName: normalizeCoinName(economy.currencyName),
     currencySymbol: String(economy.currencySymbol || "◈"),
-    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : 1000),
-    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : 1000),
+    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
+    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
     lifetimeSpent: roundCompanyCoins(economy.lifetimeSpent || 0),
     companyLevel: clampNumber(economy.companyLevel, 1, 6, 1),
     companyExp: Math.max(0, Math.floor(Number(economy.companyExp || 0))),

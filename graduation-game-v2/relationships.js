@@ -5,6 +5,8 @@ const RELATIONSHIP_SELF_ONBOARDING_KEY = "life-game-relationship-self-onboarding
 const LIFE_COMPANY_KEY = "life-game-company-v1";
 const RELATIONSHIP_MAP_IMAGE_SRC = "../ChatGPT Image 2026年7月10日 17_07_08.png";
 const relationshipReactionCost = 1;
+const PLAYER_STARTING_COINS = 1000;
+const COMPANY_STARTING_STAKE = 600;
 const maxRelationshipLibraryFiles = 24;
 const maxRelationshipLibraryFileSize = 900 * 1024;
 
@@ -716,7 +718,7 @@ function renderRelationshipLibraryCard(card) {
   const tags = card.profile.tags.slice(0, 2);
   const stats = normalizeRelationshipReactionStats(card.reactionStats);
   return `
-    <article class="relationship-library-card" role="button" tabindex="0" data-action="open-card" data-id="${escapeHtml(card.id)}" data-card-id="${escapeHtml(card.id)}">
+    <article class="relationship-library-card" role="button" tabindex="0" data-action="open-card" data-id="${escapeHtml(card.id)}" data-card-id="${escapeHtml(card.id)}" data-reaction-target-id="${escapeHtml(card.id)}">
       ${renderAvatarPreview(card, "library")}
       <h4>${escapeHtml(displayName(card))}</h4>
       <p>${escapeHtml(card.basic.relationshipType)}</p>
@@ -1839,9 +1841,9 @@ function applyRelationshipReaction(characterId, type, sourceElement = null, effe
   });
   saveRelationshipReactions(reactions);
   saveRelationshipCards();
+  playRelationshipReactionPop(characterId, type, sourceElement, effectPoint);
   renderRelationshipCards();
   if (dom.detailDialog?.open) renderRelationshipCardDetail(card.id);
-  requestAnimationFrame(() => playRelationshipReactionPop(characterId, type, sourceElement, effectPoint));
   showToast(type === "flower" ? "你送给 TA 一朵鲜花 🌸" : "你向 TA 扔了一个鸡蛋 🥚");
   return true;
 }
@@ -1951,8 +1953,8 @@ function normalizeRelationshipReactionStats(stats) {
 }
 
 function spendRelationshipReactionCoin(characterId, type) {
-  const companyState = readRelationshipCompanyState();
-  const company = companyState?.company;
+  const companyState = ensureRelationshipCompanyState();
+  const company = companyState.company;
   const economy = ensureRelationshipCompanyEconomy(company);
   if (!companyState || !company || !economy) return false;
   if (economy.companyCoins < relationshipReactionCost) return false;
@@ -1988,6 +1990,71 @@ function readRelationshipCompanyState() {
   }
 }
 
+function ensureRelationshipCompanyState() {
+  const existing = readRelationshipCompanyState();
+  if (existing?.company && typeof existing.company === "object" && !Array.isArray(existing.company)) {
+    if (!existing.company.economy || typeof existing.company.economy !== "object" || Array.isArray(existing.company.economy)) {
+      existing.company.economy = createDefaultRelationshipEconomy(isRelationshipFallbackCompany(existing.company) ? PLAYER_STARTING_COINS : COMPANY_STARTING_STAKE);
+      existing.company.updatedAt = new Date().toISOString();
+      writeRelationshipCompanyState(existing);
+    } else if (isRelationshipFallbackCompany(existing.company)) {
+      existing.company.relationshipFallbackOnly = true;
+      const economy = ensureRelationshipCompanyEconomy(existing.company);
+      const shouldInitializeFallbackCoins = economy
+        && economy.companyCoins < relationshipReactionCost
+        && !economy.lifetimeSpent
+        && (!Array.isArray(economy.transactions) || !economy.transactions.length);
+      if (shouldInitializeFallbackCoins) {
+        economy.companyCoins = PLAYER_STARTING_COINS;
+        economy.lifetimeEarned = Math.max(economy.lifetimeEarned, PLAYER_STARTING_COINS);
+        economy.assetValue = Math.max(economy.assetValue, PLAYER_STARTING_COINS);
+        existing.company.updatedAt = new Date().toISOString();
+        writeRelationshipCompanyState(existing);
+      }
+    }
+    return existing;
+  }
+  const now = new Date().toISOString();
+  const companyState = {
+    company: {
+      id: createId(),
+      name: "我的人生公司",
+      typeId: "personal",
+      relationshipFallbackOnly: true,
+      createdAt: now,
+      updatedAt: now,
+      economy: createDefaultRelationshipEconomy(),
+    },
+    projects: [],
+    departments: [],
+    updatedAt: now,
+  };
+  writeRelationshipCompanyState(companyState);
+  return companyState;
+}
+
+function isRelationshipFallbackCompany(company) {
+  if (!company || typeof company !== "object") return false;
+  if (company.relationshipFallbackOnly) return true;
+  const hasCompanyShape = Array.isArray(company.departments) || Array.isArray(company.projects) || company.mainGoal;
+  return company.name === "我的人生公司" && company.typeId === "personal" && !hasCompanyShape;
+}
+
+function createDefaultRelationshipEconomy(initialCoins = PLAYER_STARTING_COINS) {
+  return {
+    currencyName: "金币",
+    currencySymbol: "◈",
+    companyCoins: initialCoins,
+    lifetimeEarned: initialCoins,
+    lifetimeSpent: 0,
+    companyLevel: 1,
+    companyExp: 0,
+    assetValue: initialCoins,
+    lastCompanyUpgradeAt: "",
+    transactions: [],
+  };
+}
+
 function writeRelationshipCompanyState(companyState) {
   localStorage.setItem(LIFE_COMPANY_KEY, JSON.stringify(companyState));
 }
@@ -1998,10 +2065,11 @@ function ensureRelationshipCompanyEconomy(company) {
     ? company.economy
     : null;
   if (!economy) return null;
+  const initialCoins = isRelationshipFallbackCompany(company) ? PLAYER_STARTING_COINS : COMPANY_STARTING_STAKE;
   economy.currencyName = clean(economy.currencyName, "金币");
   economy.currencySymbol = clean(economy.currencySymbol, "◈");
-  economy.companyCoins = roundRelationshipCoins(economy.companyCoins);
-  economy.lifetimeEarned = roundRelationshipCoins(economy.lifetimeEarned);
+  economy.companyCoins = roundRelationshipCoins(economy.companyCoins !== undefined ? economy.companyCoins : initialCoins);
+  economy.lifetimeEarned = roundRelationshipCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : initialCoins);
   economy.lifetimeSpent = roundRelationshipCoins(economy.lifetimeSpent);
   economy.assetValue = roundRelationshipCoins(economy.assetValue);
   economy.transactions = Array.isArray(economy.transactions) ? economy.transactions : [];

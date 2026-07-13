@@ -4,6 +4,7 @@ const COMPANY_TASK_LIMIT = 6;
 const COMPANY_DEPARTMENT_LIMIT = 6;
 const COMPANY_LONG_PRESS_MS = 520;
 const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
+const COMPANY_STARTING_STAKE = 600;
 
 const COMPANY_LEVELS = [
   { level: 1, name: "起步公司", requiredExp: 0, requiredCoins: 0 },
@@ -159,6 +160,7 @@ function cacheCompanyDom() {
     "companyForm",
     "companyFormPill",
     "companyFormTitle",
+    "companyStartingMoneyNote",
     "companyNameInput",
     "companyTypeInput",
     "companyVisionInput",
@@ -366,8 +368,8 @@ function normalizeCompanyEconomy(economy) {
   return {
     currencyName: normalizeCoinName(hasEconomy ? economy.currencyName : "金币"),
     currencySymbol: hasEconomy ? String(economy.currencySymbol || "◈") : "◈",
-    companyCoins: roundCompanyCoins(hasEconomy && economy.companyCoins !== undefined ? economy.companyCoins : 1000),
-    lifetimeEarned: roundCompanyCoins(hasEconomy && economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : 1000),
+    companyCoins: roundCompanyCoins(hasEconomy && economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
+    lifetimeEarned: roundCompanyCoins(hasEconomy && economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
     lifetimeSpent: roundCompanyCoins(hasEconomy && economy.lifetimeSpent !== undefined ? economy.lifetimeSpent : 0),
     companyLevel: clampNumber(hasEconomy ? economy.companyLevel : 1, 1, COMPANY_LEVELS.length, 1),
     companyExp: Math.max(0, Math.floor(Number(hasEconomy ? economy.companyExp : 0) || 0)),
@@ -644,6 +646,8 @@ function openCompanyForm(mode = "create") {
   const type = companyTypeById(company?.type) || COMPANY_TYPES[0];
   setText(companyDom.companyFormPill, mode === "edit" ? "编辑人生公司" : "创建人生公司");
   setText(companyDom.companyFormTitle, mode === "edit" ? "调整这家公司的人生方向" : "你正在经营哪种人生公司？");
+  const moneyNote = companyDom.companyStartingMoneyNote;
+  if (moneyNote) moneyNote.hidden = mode === "edit";
   companyDom.companyNameInput.value = mode === "edit" && company ? company.name : defaultCompanyName(type);
   companyDom.companyTypeInput.value = mode === "edit" && company ? company.type : type.id;
   companyDom.companyVisionInput.value = mode === "edit" && company ? company.vision : "";
@@ -779,9 +783,11 @@ function saveCompanyFromForm() {
   const type = companyTypeById(companyDom.companyTypeInput.value) || COMPANY_TYPES[0];
   const now = new Date().toISOString();
   const existing = editingCompanyMode === "edit" ? lifeCompanyState.company : null;
+  const companyName = companyDom.companyNameInput.value.trim() || defaultCompanyName(type);
+  if (!existing && !confirmCompanyStartingStake(companyName)) return;
   lifeCompanyState.company = {
     id: existing?.id || createId("company"),
-    name: companyDom.companyNameInput.value.trim() || defaultCompanyName(type),
+    name: companyName,
     type: type.id,
     vision: companyDom.companyVisionInput.value.trim(),
     mainGoal: {
@@ -802,6 +808,10 @@ function saveCompanyFromForm() {
   syncCompanyNameToGameTitle();
   renderLifeCompanyPage();
   showCompanyToast(editingCompanyMode === "edit" ? "公司资料已更新。" : "人生公司创建好了。");
+}
+
+function confirmCompanyStartingStake(companyName = "人生公司") {
+  return window.confirm(`默认个人金币：1000\n建立「${companyName}」需要投入 ${COMPANY_STARTING_STAKE} 金币作为启动资金。\n\n确认创建公司吗？`);
 }
 
 function openCompanyProjectForm(projectId = "") {

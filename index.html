@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=63" />
+    <link rel="stylesheet" href="./styles.css?v=64" />
   </head>
   <body>
     <div class="app-shell">
@@ -416,14 +416,17 @@
             <b id="cloudBackupEmail">未登录</b>
             <span>最后备份</span>
             <b id="cloudBackupUpdatedAt">暂无</b>
+            <span>本地最后更新</span>
+            <b id="cloudLocalUpdatedAt">暂无</b>
             <span>备份版本</span>
             <b id="cloudBackupVersion">暂无</b>
           </div>
           <p class="cloud-backup-note" id="cloudBackupNote">第一版只备份文字类 localStorage 数据，不同步图片、音频和录音文件。</p>
           <div class="cloud-backup-actions">
-            <button class="primary-button" id="cloudUploadButton" type="button" data-action="cloud-upload-local" disabled>上传本地数据到云端</button>
-            <button class="ghost-button" id="cloudDownloadButton" type="button" data-action="cloud-download-local" disabled>从云端恢复数据</button>
-            <button class="ghost-button" id="cloudStatusButton" type="button" data-action="cloud-check-status" disabled>查看云端状态</button>
+            <button class="ghost-button" type="button" data-action="cloud-export-local">导出本地备份 JSON</button>
+            <button class="primary-button" id="cloudUploadButton" type="button" data-action="cloud-upload-local" disabled>上传本地覆盖云端</button>
+            <button class="ghost-button" id="cloudDownloadButton" type="button" data-action="cloud-download-local" disabled>下载云端覆盖本地</button>
+            <button class="ghost-button" id="cloudStatusButton" type="button" data-action="cloud-check-status" disabled>查看同步状态</button>
           </div>
         </section>
 
@@ -467,8 +470,8 @@
       </a>
     </nav>
 
-    <script src="./native-notifications.js?v=63"></script>
-    <script src="./app.js?v=63"></script>
+    <script src="./native-notifications.js?v=64"></script>
+    <script src="./app.js?v=64"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

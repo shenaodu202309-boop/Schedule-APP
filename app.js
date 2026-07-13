@@ -5,6 +5,7 @@ const SUPABASE_CONFIG = {
 };
 const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
 const CLOUD_BACKUP_SCHEMA_VERSION = "cloud-backup-v1";
+const CLOUD_LOCAL_META_KEY = "private-schedule-cloud-sync-meta-v1";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const HOUR_HEIGHT = 64;
@@ -458,6 +459,7 @@ function cacheDom() {
   dom.cloudBackupStatusText = document.querySelector("#cloudBackupStatusText");
   dom.cloudBackupEmail = document.querySelector("#cloudBackupEmail");
   dom.cloudBackupUpdatedAt = document.querySelector("#cloudBackupUpdatedAt");
+  dom.cloudLocalUpdatedAt = document.querySelector("#cloudLocalUpdatedAt");
   dom.cloudBackupVersion = document.querySelector("#cloudBackupVersion");
   dom.cloudBackupNote = document.querySelector("#cloudBackupNote");
   dom.cloudUploadButton = document.querySelector("#cloudUploadButton");
@@ -791,6 +793,7 @@ function normalizeTaskReminder(value = {}) {
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    markLocalAppDataUpdated();
   } catch (error) {
     console.warn("Failed to save schedule state.", error);
   }
@@ -2601,6 +2604,57 @@ function setCloudBackupBusy(isBusy) {
   updateCloudBackupStatusUI();
 }
 
+function readCloudLocalMeta() {
+  try {
+    const raw = localStorage.getItem(CLOUD_LOCAL_META_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCloudLocalMeta(meta) {
+  try {
+    localStorage.setItem(CLOUD_LOCAL_META_KEY, JSON.stringify({
+      ...readCloudLocalMeta(),
+      ...meta,
+      updatedAt: meta.updatedAt || new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.warn("Failed to save cloud sync meta.", error);
+  }
+}
+
+function markLocalAppDataUpdated() {
+  writeCloudLocalMeta({ updatedAt: new Date().toISOString() });
+}
+
+function getLocalAppUpdatedAt() {
+  const meta = readCloudLocalMeta();
+  const candidates = [
+    meta.updatedAt,
+    state?.updatedAt,
+    state?.lastSavedAt,
+  ].filter(Boolean);
+  const valid = candidates
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+  return valid[0]?.toISOString() || "";
+}
+
+function compareCloudTimes(localTime, cloudTime) {
+  const localDate = localTime ? new Date(localTime) : null;
+  const cloudDate = cloudTime ? new Date(cloudTime) : null;
+  const localMs = localDate && !Number.isNaN(localDate.getTime()) ? localDate.getTime() : 0;
+  const cloudMs = cloudDate && !Number.isNaN(cloudDate.getTime()) ? cloudDate.getTime() : 0;
+  if (!localMs || !cloudMs) return "unknown";
+  if (cloudMs + 60 * 1000 < localMs) return "cloud-older";
+  if (localMs + 60 * 1000 < cloudMs) return "local-older";
+  return "same";
+}
+
 function collectAllLocalAppData() {
   const data = {};
   for (let index = 0; index < localStorage.length; index += 1) {
@@ -2610,25 +2664,72 @@ function collectAllLocalAppData() {
   }
   return {
     exportedAt: new Date().toISOString(),
+    localUpdatedAt: getLocalAppUpdatedAt() || new Date().toISOString(),
     schemaVersion: CLOUD_BACKUP_SCHEMA_VERSION,
     origin: window.location.origin,
     localStorage: data,
   };
 }
 
-function restoreAllLocalAppData(data) {
+function exportLocalBackupJson() {
+  const dataPackage = collectAllLocalAppData();
+  const blob = new Blob([JSON.stringify(dataPackage, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `life-app-local-backup-${todayISO()}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  setAccountMessage("已导出本地备份 JSON。", "success");
+}
+
+function restoreAllLocalAppData(data, options = {}) {
   if (!data || typeof data !== "object" || !data.localStorage || typeof data.localStorage !== "object") {
     alert("云端数据格式不正确。");
     return false;
   }
-  const ok = confirm("云端数据会覆盖当前本地数据。建议先导出一份本地备份 JSON。确定继续吗？");
+  const { skipConfirm = false } = options;
+  const ok = skipConfirm || confirm("这会用云端数据覆盖当前本地数据，建议先导出本地备份。是否继续？");
   if (!ok) return false;
   Object.entries(data.localStorage).forEach(([key, value]) => {
     if (typeof key !== "string") return;
     localStorage.setItem(key, value == null ? "" : String(value));
   });
+  writeCloudLocalMeta({
+    updatedAt: data.localUpdatedAt || data.exportedAt || new Date().toISOString(),
+    restoredAt: new Date().toISOString(),
+  });
   alert("云端数据已恢复，请刷新页面。");
   return true;
+}
+
+function confirmCloudUploadOverwrite(localTime, cloudTime) {
+  const relation = compareCloudTimes(localTime, cloudTime);
+  const lines = [
+    "这会用当前本地数据覆盖云端备份，是否继续？",
+    "",
+    `本地最后更新：${formatCloudBackupTime(localTime)}`,
+    `云端最后备份：${formatCloudBackupTime(cloudTime)}`,
+  ];
+  if (relation === "local-older") {
+    lines.push("", "本地数据看起来比云端旧，确认要覆盖云端吗？");
+  }
+  return confirm(lines.join("\n"));
+}
+
+function confirmCloudDownloadOverwrite(localTime, cloudTime) {
+  const relation = compareCloudTimes(localTime, cloudTime);
+  const lines = [
+    "这会用云端数据覆盖当前本地数据，建议先导出本地备份。",
+    "",
+    `本地最后更新：${formatCloudBackupTime(localTime)}`,
+    `云端最后备份：${formatCloudBackupTime(cloudTime)}`,
+  ];
+  if (relation === "cloud-older") {
+    lines.push("", "云端备份看起来比本地数据旧。");
+  }
+  lines.push("", "是否继续？");
+  return confirm(lines.join("\n"));
 }
 
 async function uploadLocalDataToCloud() {
@@ -2639,9 +2740,18 @@ async function uploadLocalDataToCloud() {
     return;
   }
   setCloudBackupBusy(true);
-  setAccountMessage("正在上传本地数据到云端...", "muted");
+  setAccountMessage("正在检查云端状态...", "muted");
   try {
+    const latestStatus = await getCloudBackupStatus({ silent: true });
     const dataPackage = collectAllLocalAppData();
+    const cloudTime = latestStatus?.updated_at || "";
+    const localTime = dataPackage.localUpdatedAt || dataPackage.exportedAt;
+    if (!confirmCloudUploadOverwrite(localTime, cloudTime)) {
+      setAccountMessage("已取消上传。", "muted");
+      return;
+    }
+    setAccountMessage("正在上传本地数据到云端...", "muted");
+    const uploadedAt = new Date().toISOString();
     const { error } = await client
       .from("user_app_data")
       .upsert(
@@ -2649,11 +2759,12 @@ async function uploadLocalDataToCloud() {
           user_id: user.id,
           data_json: dataPackage,
           version: CLOUD_BACKUP_SCHEMA_VERSION,
-          updated_at: new Date().toISOString(),
+          updated_at: uploadedAt,
         },
         { onConflict: "user_id" }
       );
     if (error) throw error;
+    writeCloudLocalMeta({ updatedAt: localTime, lastUploadedAt: uploadedAt });
     setAccountMessage("已上传到云端。", "success");
     await getCloudBackupStatus({ silent: true });
   } catch (error) {
@@ -2688,7 +2799,13 @@ async function downloadCloudDataToLocal() {
     }
     cloudBackupStatus = data;
     updateCloudBackupStatusUI();
-    if (restoreAllLocalAppData(data.data_json)) {
+    const localTime = getLocalAppUpdatedAt();
+    const cloudTime = data.updated_at || data.data_json?.localUpdatedAt || data.data_json?.exportedAt || "";
+    if (!confirmCloudDownloadOverwrite(localTime, cloudTime)) {
+      setAccountMessage("已取消恢复。", "muted");
+      return;
+    }
+    if (restoreAllLocalAppData(data.data_json, { skipConfirm: true })) {
       setAccountMessage("云端数据已恢复，请刷新页面。", "success");
     } else {
       setAccountMessage("已取消恢复。", "muted");
@@ -2716,7 +2833,7 @@ async function getCloudBackupStatus(options = {}) {
   try {
     const { data, error } = await client
       .from("user_app_data")
-      .select("updated_at, version")
+      .select("updated_at, version, data_json")
       .eq("user_id", user.id)
       .maybeSingle();
     if (error) throw error;
@@ -2742,18 +2859,26 @@ function updateCloudBackupStatusUI() {
   const isSignedIn = Boolean(user);
   const email = user?.email || "未登录";
   const updatedAt = cloudBackupStatus?.updated_at ? formatCloudBackupTime(cloudBackupStatus.updated_at) : "暂无";
+  const localUpdatedAt = getLocalAppUpdatedAt();
   const version = cloudBackupStatus?.version || "暂无";
   if (dom.cloudBackupEmail) dom.cloudBackupEmail.textContent = email;
   if (dom.cloudBackupUpdatedAt) dom.cloudBackupUpdatedAt.textContent = updatedAt;
+  if (dom.cloudLocalUpdatedAt) dom.cloudLocalUpdatedAt.textContent = formatCloudBackupTime(localUpdatedAt);
   if (dom.cloudBackupVersion) dom.cloudBackupVersion.textContent = version;
   if (dom.cloudBackupStatusText) {
+    const relation = compareCloudTimes(localUpdatedAt, cloudBackupStatus?.updated_at || "");
+    const relationText = relation === "cloud-older"
+      ? "云端备份看起来比本地旧。"
+      : relation === "local-older"
+        ? "本地数据看起来比云端旧。"
+        : "";
     dom.cloudBackupStatusText.textContent = isSignedIn
-      ? (cloudBackupStatus?.updated_at ? `云端最后备份：${updatedAt}` : "云端还没有备份。")
+      ? (cloudBackupStatus?.updated_at ? `云端最后备份：${updatedAt}${relationText ? ` ${relationText}` : ""}` : "云端还没有备份。")
       : "登录后可以将本地数据备份到云端。";
   }
   if (dom.cloudBackupNote) {
     dom.cloudBackupNote.textContent = isSignedIn
-      ? "会把当前设备上的 App 数据保存到你的账号云端；恢复会覆盖当前本地数据。"
+      ? "上传和恢复前都会二次确认；恢复前建议先导出本地备份 JSON。"
       : "未登录时继续使用本地模式，登录后再开启云端备份。";
   }
   [dom.cloudUploadButton, dom.cloudDownloadButton, dom.cloudStatusButton].forEach((button) => {
@@ -4143,6 +4268,10 @@ function handleDocumentClick(event) {
   }
   if (action === "cloud-upload-local") {
     void uploadLocalDataToCloud();
+    return;
+  }
+  if (action === "cloud-export-local") {
+    exportLocalBackupJson();
     return;
   }
   if (action === "cloud-download-local") {

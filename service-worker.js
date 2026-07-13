@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-schedule-native-v300';
+const CACHE_NAME = 'daily-schedule-native-v301';
 const APP_SHELL = [
   './index.html',
   './styles.css',

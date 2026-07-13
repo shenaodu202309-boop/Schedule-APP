@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=62" />
+    <link rel="stylesheet" href="./styles.css?v=63" />
   </head>
   <body>
     <div class="app-shell">
@@ -403,6 +403,30 @@
           <small id="accountCloudText">云端功能：准备中</small>
         </div>
 
+        <section class="cloud-backup-card" id="cloudBackupPanel" aria-label="云端备份">
+          <div class="cloud-backup-head">
+            <span class="cloud-backup-icon" aria-hidden="true">☁</span>
+            <div>
+              <strong>云端备份</strong>
+              <small id="cloudBackupStatusText">登录后可以将本地数据备份到云端。</small>
+            </div>
+          </div>
+          <div class="cloud-backup-meta">
+            <span>当前账号</span>
+            <b id="cloudBackupEmail">未登录</b>
+            <span>最后备份</span>
+            <b id="cloudBackupUpdatedAt">暂无</b>
+            <span>备份版本</span>
+            <b id="cloudBackupVersion">暂无</b>
+          </div>
+          <p class="cloud-backup-note" id="cloudBackupNote">第一版只备份文字类 localStorage 数据，不同步图片、音频和录音文件。</p>
+          <div class="cloud-backup-actions">
+            <button class="primary-button" id="cloudUploadButton" type="button" data-action="cloud-upload-local" disabled>上传本地数据到云端</button>
+            <button class="ghost-button" id="cloudDownloadButton" type="button" data-action="cloud-download-local" disabled>从云端恢复数据</button>
+            <button class="ghost-button" id="cloudStatusButton" type="button" data-action="cloud-check-status" disabled>查看云端状态</button>
+          </div>
+        </section>
+
         <div class="account-form-grid">
           <label>
             <span>邮箱</span>
@@ -443,8 +467,8 @@
       </a>
     </nav>
 
-    <script src="./native-notifications.js?v=62"></script>
-    <script src="./app.js?v=62"></script>
+    <script src="./native-notifications.js?v=63"></script>
+    <script src="./app.js?v=63"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

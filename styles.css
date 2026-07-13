@@ -3107,6 +3107,90 @@ body[data-view="journalSection"] .undo-button {
   font-weight: 950;
 }
 
+.cloud-backup-card {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(215, 255, 47, 0.24), transparent 90px),
+    linear-gradient(145deg, #ffffff, #f3fff6);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.cloud-backup-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cloud-backup-icon {
+  display: inline-grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  color: #0d6840;
+  background: var(--fruit-lime);
+  font-size: 1.2rem;
+  font-weight: 950;
+  box-shadow: 0 4px 0 #111;
+}
+
+.cloud-backup-head strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.cloud-backup-head small,
+.cloud-backup-note {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.cloud-backup-meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 5px 10px;
+  padding: 10px;
+  border: 1px dashed rgba(17, 17, 17, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.cloud-backup-meta span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.cloud-backup-meta b {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.cloud-backup-note {
+  margin: 0;
+}
+
+.cloud-backup-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.cloud-backup-actions button {
+  min-height: 42px;
+}
+
 .account-form-grid {
   display: grid;
   gap: 10px;

@@ -4,6 +4,7 @@ const SUPABASE_CONFIG = {
   anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
 };
 const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
+const CLOUD_BACKUP_SCHEMA_VERSION = "cloud-backup-v1";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const HOUR_HEIGHT = 64;
@@ -347,6 +348,8 @@ let reminderTimer = null;
 let nativeReminderSyncTimer = null;
 let supabaseClient = null;
 let currentAuthUser = null;
+let cloudBackupStatus = null;
+let cloudBackupBusy = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheDom();
@@ -451,6 +454,15 @@ function cacheDom() {
   dom.accountSignUpButton = document.querySelector("#accountSignUpButton");
   dom.accountSignInButton = document.querySelector("#accountSignInButton");
   dom.accountSignOutButton = document.querySelector("#accountSignOutButton");
+  dom.cloudBackupPanel = document.querySelector("#cloudBackupPanel");
+  dom.cloudBackupStatusText = document.querySelector("#cloudBackupStatusText");
+  dom.cloudBackupEmail = document.querySelector("#cloudBackupEmail");
+  dom.cloudBackupUpdatedAt = document.querySelector("#cloudBackupUpdatedAt");
+  dom.cloudBackupVersion = document.querySelector("#cloudBackupVersion");
+  dom.cloudBackupNote = document.querySelector("#cloudBackupNote");
+  dom.cloudUploadButton = document.querySelector("#cloudUploadButton");
+  dom.cloudDownloadButton = document.querySelector("#cloudDownloadButton");
+  dom.cloudStatusButton = document.querySelector("#cloudStatusButton");
   dom.journalNotebookList = document.querySelector("#journalNotebookList");
   dom.journalNotebookTitle = document.querySelector("#journalNotebookTitle");
   dom.journalPageButton = document.querySelector("#journalPageButton");
@@ -2356,7 +2368,14 @@ async function initSupabaseClient() {
     supabaseClient.auth.onAuthStateChange((_event, session) => {
       currentAuthUser = session?.user || null;
       updateAuthUI(currentAuthUser);
+      if (currentAuthUser) {
+        void getCloudBackupStatus({ silent: true });
+      } else {
+        cloudBackupStatus = null;
+        updateCloudBackupStatusUI();
+      }
     });
+    if (currentAuthUser) void getCloudBackupStatus({ silent: true });
     return supabaseClient;
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
@@ -2488,7 +2507,7 @@ async function signInWithEmail() {
     if (error) throw error;
     currentAuthUser = data?.user || null;
     updateAuthUI(currentAuthUser);
-    setAccountMessage("登录成功。你已进入云端账号模式，云备份功能下一步再开启。", "success");
+    setAccountMessage("登录成功。你已进入云端账号模式，可以上传或恢复云端备份。", "success");
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
   } finally {
@@ -2539,6 +2558,7 @@ function validateAccountCredentials(email, password) {
 
 function renderAccountCenter() {
   updateAuthUI(currentAuthUser);
+  renderCloudBackupPanel();
 }
 
 function updateAuthUI(user = currentAuthUser) {
@@ -2557,10 +2577,11 @@ function updateAuthUI(user = currentAuthUser) {
       : "你正在使用本地模式。登录后可以开启云端备份。";
   }
   if (dom.accountCurrentEmail) dom.accountCurrentEmail.textContent = email || "未登录";
-  if (dom.accountCloudText) dom.accountCloudText.textContent = email ? "云端功能：准备中" : "云端功能：未开启";
+  if (dom.accountCloudText) dom.accountCloudText.textContent = email ? "云端备份：可用" : "云端功能：未开启";
   if (dom.accountSignOutButton) dom.accountSignOutButton.hidden = !email;
   if (dom.accountSignInButton) dom.accountSignInButton.hidden = Boolean(email);
   if (dom.accountSignUpButton) dom.accountSignUpButton.hidden = Boolean(email);
+  updateCloudBackupStatusUI();
 }
 
 function setAccountMessage(message, type = "muted") {
@@ -2573,6 +2594,178 @@ function setAccountBusy(isBusy) {
   [dom.accountSignUpButton, dom.accountSignInButton, dom.accountSignOutButton].forEach((button) => {
     if (button) button.disabled = isBusy;
   });
+}
+
+function setCloudBackupBusy(isBusy) {
+  cloudBackupBusy = isBusy;
+  updateCloudBackupStatusUI();
+}
+
+function collectAllLocalAppData() {
+  const data = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    data[key] = localStorage.getItem(key);
+  }
+  return {
+    exportedAt: new Date().toISOString(),
+    schemaVersion: CLOUD_BACKUP_SCHEMA_VERSION,
+    origin: window.location.origin,
+    localStorage: data,
+  };
+}
+
+function restoreAllLocalAppData(data) {
+  if (!data || typeof data !== "object" || !data.localStorage || typeof data.localStorage !== "object") {
+    alert("云端数据格式不正确。");
+    return false;
+  }
+  const ok = confirm("云端数据会覆盖当前本地数据。建议先导出一份本地备份 JSON。确定继续吗？");
+  if (!ok) return false;
+  Object.entries(data.localStorage).forEach(([key, value]) => {
+    if (typeof key !== "string") return;
+    localStorage.setItem(key, value == null ? "" : String(value));
+  });
+  alert("云端数据已恢复，请刷新页面。");
+  return true;
+}
+
+async function uploadLocalDataToCloud() {
+  const client = await ensureSupabaseClientForAuth();
+  const user = getCurrentUser();
+  if (!client || !user) {
+    alert("请先登录账号。");
+    return;
+  }
+  setCloudBackupBusy(true);
+  setAccountMessage("正在上传本地数据到云端...", "muted");
+  try {
+    const dataPackage = collectAllLocalAppData();
+    const { error } = await client
+      .from("user_app_data")
+      .upsert(
+        {
+          user_id: user.id,
+          data_json: dataPackage,
+          version: CLOUD_BACKUP_SCHEMA_VERSION,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+    if (error) throw error;
+    setAccountMessage("已上传到云端。", "success");
+    await getCloudBackupStatus({ silent: true });
+  } catch (error) {
+    console.error(error);
+    setAccountMessage(`上传失败：${authErrorMessage(error)}`, "error");
+    alert(`上传失败：${authErrorMessage(error)}`);
+  } finally {
+    setCloudBackupBusy(false);
+  }
+}
+
+async function downloadCloudDataToLocal() {
+  const client = await ensureSupabaseClientForAuth();
+  const user = getCurrentUser();
+  if (!client || !user) {
+    alert("请先登录账号。");
+    return;
+  }
+  setCloudBackupBusy(true);
+  setAccountMessage("正在读取云端数据...", "muted");
+  try {
+    const { data, error } = await client
+      .from("user_app_data")
+      .select("data_json, updated_at, version")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data?.data_json) {
+      setAccountMessage("云端还没有备份数据。", "muted");
+      alert("云端还没有备份数据。");
+      return;
+    }
+    cloudBackupStatus = data;
+    updateCloudBackupStatusUI();
+    if (restoreAllLocalAppData(data.data_json)) {
+      setAccountMessage("云端数据已恢复，请刷新页面。", "success");
+    } else {
+      setAccountMessage("已取消恢复。", "muted");
+    }
+  } catch (error) {
+    console.error(error);
+    setAccountMessage(`读取云端数据失败：${authErrorMessage(error)}`, "error");
+    alert(`读取云端数据失败：${authErrorMessage(error)}`);
+  } finally {
+    setCloudBackupBusy(false);
+  }
+}
+
+async function getCloudBackupStatus(options = {}) {
+  const { silent = false } = options;
+  const client = await ensureSupabaseClientForAuth();
+  const user = getCurrentUser();
+  if (!client || !user) {
+    cloudBackupStatus = null;
+    updateCloudBackupStatusUI();
+    if (!silent) alert("请先登录账号。");
+    return null;
+  }
+  if (!silent) setAccountMessage("正在查看云端状态...", "muted");
+  try {
+    const { data, error } = await client
+      .from("user_app_data")
+      .select("updated_at, version")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) throw error;
+    cloudBackupStatus = data || null;
+    updateCloudBackupStatusUI();
+    if (!silent) {
+      setAccountMessage(data ? "已读取云端备份状态。" : "云端还没有备份。", data ? "success" : "muted");
+    }
+    return data || null;
+  } catch (error) {
+    console.error(error);
+    if (!silent) setAccountMessage(`查看云端状态失败：${authErrorMessage(error)}`, "error");
+    return null;
+  }
+}
+
+function renderCloudBackupPanel() {
+  updateCloudBackupStatusUI();
+}
+
+function updateCloudBackupStatusUI() {
+  const user = getCurrentUser();
+  const isSignedIn = Boolean(user);
+  const email = user?.email || "未登录";
+  const updatedAt = cloudBackupStatus?.updated_at ? formatCloudBackupTime(cloudBackupStatus.updated_at) : "暂无";
+  const version = cloudBackupStatus?.version || "暂无";
+  if (dom.cloudBackupEmail) dom.cloudBackupEmail.textContent = email;
+  if (dom.cloudBackupUpdatedAt) dom.cloudBackupUpdatedAt.textContent = updatedAt;
+  if (dom.cloudBackupVersion) dom.cloudBackupVersion.textContent = version;
+  if (dom.cloudBackupStatusText) {
+    dom.cloudBackupStatusText.textContent = isSignedIn
+      ? (cloudBackupStatus?.updated_at ? `云端最后备份：${updatedAt}` : "云端还没有备份。")
+      : "登录后可以将本地数据备份到云端。";
+  }
+  if (dom.cloudBackupNote) {
+    dom.cloudBackupNote.textContent = isSignedIn
+      ? "会把当前设备上的 App 数据保存到你的账号云端；恢复会覆盖当前本地数据。"
+      : "未登录时继续使用本地模式，登录后再开启云端备份。";
+  }
+  [dom.cloudUploadButton, dom.cloudDownloadButton, dom.cloudStatusButton].forEach((button) => {
+    if (button) button.disabled = !isSignedIn || cloudBackupBusy;
+  });
+}
+
+function formatCloudBackupTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "暂无";
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function authErrorMessage(error) {
@@ -3946,6 +4139,18 @@ function handleDocumentClick(event) {
   }
   if (action === "account-sign-out") {
     void signOutAccount();
+    return;
+  }
+  if (action === "cloud-upload-local") {
+    void uploadLocalDataToCloud();
+    return;
+  }
+  if (action === "cloud-download-local") {
+    void downloadCloudDataToLocal();
+    return;
+  }
+  if (action === "cloud-check-status") {
+    void getCloudBackupStatus();
     return;
   }
   if (action === "back-journal-home" || action === "back-journal-shelf") {

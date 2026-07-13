@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-schedule-native-v301';
+const CACHE_NAME = 'daily-schedule-native-v304';
 const APP_SHELL = [
   './index.html',
   './styles.css',
@@ -157,5 +157,19 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(
     caches.match(request, { ignoreSearch: true }).then(cached => cached || fetch(request))
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || './';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+      return undefined;
+    })
   );
 });

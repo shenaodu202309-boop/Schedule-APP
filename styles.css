@@ -1559,21 +1559,6 @@ textarea:focus {
   grid-column: 3;
 }
 
-#taskForm .task-reminder-field {
-  grid-column: 4;
-}
-
-#taskForm .task-reminder-options {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: 5px;
-}
-
-#taskForm .task-reminder-options[hidden] {
-  display: none;
-}
-
 #taskColorInput {
   width: 42px;
   padding: 3px;
@@ -1626,6 +1611,116 @@ textarea:focus {
 
 #taskForm .dialog-actions:has(#deleteTaskButton[hidden]) {
   grid-template-columns: 1fr 1fr;
+}
+
+.task-reminder-dialog {
+  width: min(390px, calc(100% - 24px));
+  border-radius: 26px;
+}
+
+.task-reminder-dialog form {
+  gap: 12px;
+  border: 3px solid var(--line-strong);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 216, 117, 0.65), transparent 78px),
+    linear-gradient(145deg, #fff8ec, #ffeaf4);
+  box-shadow: 0 12px 0 rgba(17, 17, 17, 0.18);
+}
+
+.task-reminder-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-reminder-bell {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  background: #ffd875;
+  box-shadow: 0 5px 0 #111;
+  font-size: 1.35rem;
+}
+
+.task-reminder-card-head p,
+.task-reminder-card-head h2,
+.task-reminder-lead {
+  margin: 0;
+}
+
+.task-reminder-card-head p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.task-reminder-card-head h2 {
+  color: var(--ink);
+  font-size: 1.28rem;
+  line-height: 1.05;
+}
+
+.task-reminder-lead {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.task-reminder-detail {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--line-strong);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.task-reminder-detail strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 1000;
+}
+
+.task-reminder-detail span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.task-reminder-actions {
+  grid-template-columns: 1fr;
+}
+
+.daily-reminder-dialog form {
+  display: grid;
+  gap: 12px;
+}
+
+.daily-reminder-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+  line-height: 1.5;
+}
+
+.daily-reminder-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daily-reminder-settings.is-disabled {
+  opacity: 0.48;
+}
+
+.daily-reminder-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .date-mark-info {
@@ -2898,6 +2993,7 @@ body[data-view="journalSection"] .undo-button {
 }
 
 .journal-game-entry,
+.journal-reminder-entry,
 .journal-account-entry {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) 26px;
@@ -2917,6 +3013,21 @@ body[data-view="journalSection"] .undo-button {
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
+.journal-reminder-entry {
+  border-color: rgba(255, 216, 77, 0.42);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 216, 77, 0.25), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.13), rgba(31, 22, 6, 0.94));
+  text-align: left;
+}
+
+.journal-reminder-entry.is-enabled {
+  border-color: rgba(215, 255, 47, 0.5);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(215, 255, 47, 0.26), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.13), rgba(5, 5, 5, 0.92));
+}
+
 .journal-account-entry {
   border-color: rgba(255, 255, 255, 0.2);
   background:
@@ -2933,11 +3044,13 @@ body[data-view="journalSection"] .undo-button {
 }
 
 .journal-game-entry:active,
+.journal-reminder-entry:active,
 .journal-account-entry:active {
   transform: translateY(1px);
 }
 
 .journal-game-entry-icon,
+.journal-reminder-entry-icon,
 .journal-account-entry-icon {
   display: block;
   width: 48px;
@@ -2952,6 +3065,16 @@ body[data-view="journalSection"] .undo-button {
   box-shadow: 0 8px 20px rgba(215, 255, 47, 0.22);
 }
 
+.journal-reminder-entry-icon {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #ffd84d, #ff9f1c);
+  box-shadow: 0 8px 20px rgba(255, 216, 77, 0.22);
+  color: #17110a;
+  font-size: 1.28rem;
+  font-weight: 950;
+}
+
 .journal-account-entry-icon {
   display: grid;
   place-items: center;
@@ -2964,6 +3087,8 @@ body[data-view="journalSection"] .undo-button {
 
 .journal-game-entry strong,
 .journal-game-entry small,
+.journal-reminder-entry strong,
+.journal-reminder-entry small,
 .journal-account-entry strong,
 .journal-account-entry small {
   display: block;
@@ -2974,6 +3099,7 @@ body[data-view="journalSection"] .undo-button {
 }
 
 .journal-game-entry strong,
+.journal-reminder-entry strong,
 .journal-account-entry strong {
   color: #fff;
   font-size: 0.98rem;
@@ -2981,6 +3107,7 @@ body[data-view="journalSection"] .undo-button {
 }
 
 .journal-game-entry small,
+.journal-reminder-entry small,
 .journal-account-entry small {
   margin-top: 4px;
   color: rgba(255, 255, 255, 0.66);
@@ -2989,6 +3116,7 @@ body[data-view="journalSection"] .undo-button {
 }
 
 .journal-game-entry em,
+.journal-reminder-entry em,
 .journal-account-entry em {
   color: var(--fruit-lime);
   font-size: 1.75rem;

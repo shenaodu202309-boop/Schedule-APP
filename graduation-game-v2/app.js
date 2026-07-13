@@ -4,6 +4,7 @@ const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
 const LIFE_COMPANY_STORAGE_KEY = "life-game-company-v1";
 const RELATIONSHIP_CARDS_KEY = "life-game-relationship-cards-v1";
 const COMIC_DIARY_KEY = "life-game-comic-diary-v1";
+const DAILY_REMINDER_STORAGE_KEY = "private-schedule-daily-reminder-v1";
 const SUPABASE_CONFIG = {
   url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
   anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
@@ -160,6 +161,159 @@ const invoiceBillTypes = [
   { id: "diy", label: "DIY 图片账单", shortLabel: "DIY" },
 ];
 
+const GAME_I18N = {
+  appTitle: { zh: "30天计划 · 动画主线作战台", en: "30-Day Quest · Main Battle Board" },
+  taskReminders: { zh: "任务提醒", en: "Task Reminders" },
+  timeDistribution: { zh: "时间分布", en: "Time Split" },
+  back: { zh: "返回", en: "Back" },
+  company: { zh: "公司", en: "Company" },
+  relationships: { zh: "人际关系", en: "Relationships" },
+  skillMarket: { zh: "人生技能股市", en: "Skill Market" },
+  tarot: { zh: "塔罗", en: "Tarot" },
+  blessing: { zh: "祈福", en: "Blessing" },
+  todayCharacter: { zh: "今日角色", en: "Today's Character" },
+  chooseCharacter: { zh: "选择陪你通关的角色", en: "Choose your quest partner" },
+  companyLevel: { zh: "公司等级", en: "Company Level" },
+  todayProgress: { zh: "今日进度", en: "Today's Progress" },
+  protectionStatus: { zh: "保护状态", en: "Protection" },
+  redButton: { zh: "红色按钮", en: "Red Button" },
+  invoicePrinter: { zh: "发票机", en: "Printer" },
+  printDay: { zh: "打印日子", en: "Print day" },
+  printWeek: { zh: "打印周", en: "Print week" },
+  printMonth: { zh: "打印月份", en: "Print month" },
+  invoiceBook: { zh: "发票本", en: "Invoice Book" },
+  characterStatus: { zh: "角色状态", en: "Character Status" },
+  checkBodyMind: { zh: "先检查今天的身体和心", en: "Check today's body and mind first" },
+  energy: { zh: "能量", en: "Energy" },
+  mood: { zh: "情绪", en: "Mood" },
+  riskThoughts: { zh: "危险念头", en: "Risk thoughts" },
+  protectionMode: { zh: "保护模式", en: "Protection Mode" },
+  safetyGoal: { zh: "今天的通关目标改成：保证安全", en: "Today's goal is now: stay safe" },
+  contactRealPerson: { zh: "联系一个现实中的人", en: "Contact someone real" },
+  leaveDanger: { zh: "离开危险环境", en: "Leave the unsafe place" },
+  brightSafePlace: { zh: "坐到明亮安全的地方", en: "Sit somewhere bright and safe" },
+  safetyNote: { zh: "如果你现在有立即伤害自己的风险，请马上联系当地急救电话或危机热线。美国可拨 988。", en: "If you may hurt yourself right now, contact local emergency services or a crisis hotline immediately. In the US, call 988." },
+  safeModeToday: { zh: "今天不要求完成主线", en: "No main quest required today" },
+  collapse: { zh: "暂时收起", en: "Collapse" },
+  lowEnergyVersion: { zh: "低能量版本", en: "Low Energy Mode" },
+  mainQuests: { zh: "主线任务", en: "Main Quests" },
+  sideQuests: { zh: "副线任务", en: "Side Quests" },
+  lifeMaintenance: { zh: "生命值维护", en: "Life Maintenance" },
+  todayTimeline: { zh: "今日时间轴", en: "Today's Timeline" },
+  todayPlan: { zh: "今日安排", en: "Today's Plan" },
+  add: { zh: "新增", en: "Add" },
+  bankHelp: { zh: "银行说明", en: "Bank Help" },
+  financeNotice: { zh: "你的财务小管家，帮你守护每一份努力", en: "Your finance helper protects every bit of effort" },
+  myCompany: { zh: "我的公司", en: "My Company" },
+  coinBalance: { zh: "金币余额", en: "Coin Balance" },
+  assetValue: { zh: "资产估值", en: "Asset Value" },
+  stockValue: { zh: "股票估值", en: "Stock Value" },
+  todayIncome: { zh: "今日收入", en: "Today's Income" },
+  todayExpense: { zh: "今日支出", en: "Today's Spend" },
+  viewCompanyLedger: { zh: "查看公司账本 ›", en: "Company Ledger ›" },
+  realCard: { zh: "现实卡", en: "Real Card" },
+  accountBalance: { zh: "账户余额", en: "Account Balance" },
+  monthIncome: { zh: "本月收入", en: "Month Income" },
+  monthExpense: { zh: "本月支出", en: "Month Spend" },
+  adjustBalance: { zh: "调整金额", en: "Adjust Balance" },
+  viewLifeLedger: { zh: "查看生活账本 ›", en: "Life Ledger ›" },
+  financeSafetyNote: { zh: "金币是游戏内成长资源；现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。", en: "Coins are in-game growth resources. The real-life ledger is manual only and never connects to real bank cards or payments." },
+  virtualFinanceNotice: { zh: "公司金币、任务收入、项目收入和技能股交易都在这里", en: "Company coins, task income, project income, and skill trades live here" },
+  ledgerNotice: { zh: "真实生活账本只做手动记录，不连接真实银行卡", en: "Real-life ledger is manual only and does not connect to real bank cards" },
+  income: { zh: "收入", en: "Income" },
+  expense: { zh: "支出", en: "Expense" },
+  category: { zh: "分类", en: "Category" },
+  amount: { zh: "金额", en: "Amount" },
+  note: { zh: "备注", en: "Note" },
+  addLedgerRecord: { zh: "记录一笔", en: "Add Record" },
+  weekBalance: { zh: "本周结余", en: "Week Balance" },
+  diary: { zh: "日记", en: "Diary" },
+  archive: { zh: "存档", en: "Archive" },
+  exportImportProgress: { zh: "导出 / 导入进度", en: "Export / Import Progress" },
+  exportSave: { zh: "导出存档", en: "Export Save" },
+  importSave: { zh: "导入 / 读取存档", en: "Import Save" },
+  homeStatus: { zh: "首页状态", en: "Home" },
+  tasks: { zh: "任务", en: "Tasks" },
+  finance: { zh: "财务", en: "Finance" },
+  onboardingDeploy: { zh: "新手部署", en: "Setup" },
+  createLifeCompany: { zh: "先创建你的人生公司", en: "Create your life company first" },
+  onboardingSummary: { zh: "选一个人生方向，写下第一个目标，系统会自动帮你完成公司和作战台部署。", en: "Choose a life direction and first goal. The app will set up your company and battle board." },
+  companyStartingMoneyNote: { zh: "默认个人金币 1000。建立公司会投入 600 金币作为启动资金。", en: "You start with 1000 coins. Creating a company invests 600 coins as startup funds." },
+  stepCreateCompany: { zh: "1 创建公司", en: "1 Create Company" },
+  stepSetGoal: { zh: "2 设置目标", en: "2 Set Goal" },
+  stepFinishDeploy: { zh: "3 完成部署", en: "3 Finish Setup" },
+  companyName: { zh: "公司名称", en: "Company Name" },
+  companyDirection: { zh: "公司方向", en: "Company Direction" },
+  firstBigGoal: { zh: "第一个大目标", en: "First Big Goal" },
+  goalDate: { zh: "目标日期", en: "Goal Date" },
+  later: { zh: "稍后", en: "Later" },
+  finishGoalDeploy: { zh: "完成目标部署", en: "Finish Setup" },
+  blessingSystem: { zh: "祈福系统", en: "Blessing System" },
+  woodenFishToday: { zh: "今日敲木鱼", en: "Today's Wooden Fish" },
+  woodenFishSummary: { zh: "轻轻敲一下，给今天加一点安定的功德。", en: "Tap gently to add a little calm merit to today." },
+  merit: { zh: "功德", en: "Merit" },
+  calendarChecklist: { zh: "日历清单", en: "Calendar Checklist" },
+  dailyChecklist: { zh: "当天清单", en: "Daily Checklist" },
+  comicDiary: { zh: "漫画日记", en: "Comic Diary" },
+  comicDiarySub: { zh: "把今天变成一页小漫画", en: "Turn today into a one-page comic" },
+  selectCharacter: { zh: "选择角色", en: "Choose Character" },
+  comicPanelCount: { zh: "漫画格数", en: "Panels" },
+  fourPanels: { zh: "4 格", en: "4 panels" },
+  sixPanels: { zh: "6 格", en: "6 panels" },
+  moodStyle: { zh: "情绪风格", en: "Mood Style" },
+  moodCute: { zh: "可爱", en: "Cute" },
+  moodFunny: { zh: "搞笑", en: "Funny" },
+  moodSad: { zh: "低落", en: "Sad" },
+  moodHealing: { zh: "治愈", en: "Healing" },
+  moodAngry: { zh: "生气", en: "Angry" },
+  moodStrange: { zh: "奇怪", en: "Strange" },
+  todayStory: { zh: "今天发生的事情", en: "What happened today" },
+  generateComic: { zh: "生成漫画", en: "Generate Comic" },
+  editText: { zh: "编辑文字", en: "Edit Text" },
+  clear: { zh: "清空", en: "Clear" },
+  saveToDiary: { zh: "保存到日记本", en: "Save to Diary" },
+  regenerate: { zh: "重新生成", en: "Regenerate" },
+  exportPng: { zh: "导出 PNG", en: "Export PNG" },
+  saveAndClose: { zh: "保存并关闭", en: "Save and Close" },
+  allTodayTasksRemind: { zh: "当天规划任务都提醒", en: "Remind me for today's planned tasks" },
+  reminderSharedSummary: { zh: "这里和日程 App 使用同一套设置。开启后，今天的日程任务和游戏同步任务都会提醒。", en: "This uses the same settings as the schedule app. When on, today's schedule tasks and synced game tasks will remind you." },
+  todayReminder: { zh: "今日提醒", en: "Today's Reminder" },
+  off: { zh: "关闭", en: "Off" },
+  on: { zh: "开启", en: "On" },
+  reminderTime: { zh: "提醒时间", en: "Reminder Time" },
+  atStart: { zh: "开始时", en: "At start" },
+  fiveMinEarly: { zh: "提前 5 分钟", en: "5 min early" },
+  tenMinEarly: { zh: "提前 10 分钟", en: "10 min early" },
+  thirtyMinEarly: { zh: "提前 30 分钟", en: "30 min early" },
+  reminderMode: { zh: "提醒方式", en: "Reminder Mode" },
+  popupNotification: { zh: "弹窗 + 系统通知", en: "Popup + system notification" },
+  popupOnly: { zh: "App 弹窗", en: "App popup" },
+  notificationOnly: { zh: "系统通知", en: "System notification" },
+  sound: { zh: "提示音", en: "Sound" },
+  softSound: { zh: "柔和", en: "Soft" },
+  bellSound: { zh: "铃铛", en: "Bell" },
+  gameSound: { zh: "游戏音", en: "Game" },
+  silentSound: { zh: "静音", en: "Silent" },
+  preview: { zh: "试听", en: "Preview" },
+  saveSettings: { zh: "保存设置", en: "Save Settings" },
+  closed: { zh: "关闭", en: "Off" },
+  startedAt: { zh: "开始时", en: "At start" },
+  earlyMinutes: { zh: "提前 {minutes} 分钟", en: "{minutes} min early" },
+  dayCounter: { zh: "第 {day} 天", en: "Day {day}" },
+  weekCounter: { zh: "第 {week} 周", en: "Week {week}" },
+  maxLevel: { zh: "已满级", en: "Max level" },
+  passedToday: { zh: "今日通关", en: "Passed today" },
+  notPassed: { zh: "未通关", en: "Not passed" },
+  savedAutomatically: { zh: "已自动保存", en: "Auto saved" },
+  settledToday: { zh: "今日已结算", en: "Settled today" },
+  myBank: { zh: "我的银行", en: "My Bank" },
+  asset: { zh: "资产", en: "Assets" },
+  noCoinFlow: { zh: "还没有金币流水。完成主线、公司任务或技能股交易后，这里会出现记录。", en: "No coin flow yet. Finish main quests, company tasks, or skill trades to see records here." },
+  noLedger: { zh: "本月还没有现实记账。这里只做手动记录，不连接真实银行卡。", en: "No real-life ledger records this month. This is manual only and does not connect to real bank cards." },
+  invoiceCount: { zh: "{count} 张", en: "{count} saved" },
+  noInvoices: { zh: "还没有保存过发票。回到首页按发票机，就可以把选中日期打印成发票。", en: "No saved invoices yet. Use the printer on the home page to print the selected date." },
+};
+
 const COMIC_EXPRESSION_MAP = {
   cute: "excited",
   funny: "celebrate",
@@ -305,15 +459,18 @@ let invoiceBookLongPressTimer = null;
 let invoiceBookLongPressFired = false;
 let supabaseClient = null;
 let currentAuthUser = null;
+let currentGameLanguage = "zh";
 
 const dom = {};
 
 function bootApp() {
   cacheDom();
   state = loadState();
+  currentGameLanguage = getSharedLanguage();
   ensureDay(selectedDate);
   ensureWeek(selectedDate);
   bindEvents();
+  applyGameTranslations();
   render();
   void initSupabaseClient();
   window.addEventListener("load", () => {
@@ -339,6 +496,13 @@ function cacheDom() {
     "modeLabel",
     "heroTitle",
     "todayObjective",
+    "gameDailyReminderButton",
+    "gameDailyReminderStatus",
+    "gameDailyReminderDialog",
+    "gameDailyReminderEnabledInput",
+    "gameDailyReminderOffsetInput",
+    "gameDailyReminderModeInput",
+    "gameDailyReminderSoundInput",
     "activeCharacterSprite",
     "activeCharacterName",
     "characterPanel",
@@ -404,6 +568,13 @@ function cacheDom() {
     "mainTaskArtPicker",
     "mainTaskDurationInput",
     "mainTaskLifeMaintenanceInput",
+    "sideTaskDialog",
+    "sideTaskTitleInput",
+    "sideTaskIconInput",
+    "sideTaskArtInput",
+    "sideTaskArtPicker",
+    "sideTaskTextInput",
+    "sideTaskDurationInput",
     "sideTitle",
     "sideQuestList",
     "weekLabel",
@@ -554,6 +725,10 @@ function bindEvents() {
     if (action === "cycle-character") cycleCharacter();
     if (action === "toggle-character-panel") toggleCharacterPanel();
     if (action === "select-character") selectCharacter(button.dataset.id);
+    if (action === "open-game-daily-reminder") openGameDailyReminderDialog();
+    if (action === "close-game-daily-reminder") closeGameDailyReminderDialog();
+    if (action === "save-game-daily-reminder") saveGameDailyReminderDialog();
+    if (action === "preview-game-daily-reminder-sound") previewGameDailyReminderSound();
     if (action === "open-account-center") openAccountCenter();
     if (action === "close-account-center") closeAccountCenter();
     if (action === "account-sign-up") signUpWithEmail();
@@ -591,6 +766,9 @@ function bindEvents() {
     if (action === "close-main-task-create") closeMainTaskDialog();
     if (action === "save-main-task") saveNewMainTask();
     if (action === "delete-main-task") deleteMainTask(button.dataset.id);
+    if (action === "open-side-task-create") openSideTaskDialog();
+    if (action === "close-side-task-create") closeSideTaskDialog();
+    if (action === "save-side-task") saveNewSideTask();
     if (action === "create-side-quest") createSideQuest();
     if (action === "toggle-main-plan") toggleTaskTimer("main", button.dataset.id);
     if (action === "toggle-side-plan") toggleTaskTimer("side", button.dataset.id);
@@ -695,7 +873,7 @@ function bindEvents() {
     const day = ensureDay(diarySelectedDate || selectedDate);
     day.report = dom.reportInput.value;
     saveState();
-    dom.saveStatus.textContent = "已自动保存";
+    dom.saveStatus.textContent = gameText("savedAutomatically");
   });
   dom.diaryChecklist?.addEventListener("input", (event) => {
     const input = event.target.closest("[data-diary-check-text]");
@@ -728,6 +906,7 @@ function bindEvents() {
   dom.invoicePrintWeekInput?.addEventListener("change", updateInvoicePrintTarget);
   dom.invoicePrintMonthInput?.addEventListener("change", updateInvoicePrintTarget);
   dom.invoiceDiyImageInput?.addEventListener("change", importInvoiceDiyImage);
+  dom.gameDailyReminderSoundInput?.addEventListener("change", previewGameDailyReminderSound);
   dom.onboardingForm?.addEventListener("submit", completeOnboarding);
   dom.onboardingCompanyTypeInput?.addEventListener("change", updateOnboardingDefaults);
   dom.balanceAdjustInput?.addEventListener("keydown", (event) => {
@@ -829,7 +1008,7 @@ function saveInlineEditable(element, shouldNormalize) {
   window.clearTimeout(editSaveTimer);
   editSaveTimer = window.setTimeout(() => {
     saveState();
-    if (dom.saveStatus) dom.saveStatus.textContent = "已自动保存";
+    if (dom.saveStatus) dom.saveStatus.textContent = gameText("savedAutomatically");
   }, 220);
 }
 
@@ -1698,6 +1877,12 @@ function normalizedMainTaskDuration(value) {
   return Number(value) === 60 ? 60 : 120;
 }
 
+function normalizedSideTaskDuration(value) {
+  const duration = Number(value);
+  if (duration === 30 || duration === 120) return duration;
+  return 60;
+}
+
 function normalizeCoinName(value) {
   const name = String(value || "金币").trim();
   if (!name || ["公司币", "游戏币", "技能币"].includes(name)) return "金币";
@@ -1705,6 +1890,15 @@ function normalizeCoinName(value) {
 }
 
 function handleSharedStorageChange(event) {
+  if (event.key === BASE_SCHEDULE_STORAGE_KEY) {
+    const nextLanguage = getSharedLanguage();
+    if (nextLanguage !== currentGameLanguage) {
+      currentGameLanguage = nextLanguage;
+      applyGameTranslations();
+    }
+    render();
+    return;
+  }
   if (![LIFE_COMPANY_STORAGE_KEY, SKILL_MARKET_STORAGE_KEY].includes(event.key)) return;
   render();
 }
@@ -1935,6 +2129,10 @@ function selectTaskArt(button) {
     dom.mainTaskArtInput.value = art;
     renderTaskIconPicker(dom.mainTaskArtPicker, art, "create");
   }
+  if (target === "side-create" && dom.sideTaskArtInput) {
+    dom.sideTaskArtInput.value = art;
+    renderTaskIconPicker(dom.sideTaskArtPicker, art, "side-create");
+  }
 }
 
 function playTaskCardFeedback(source) {
@@ -2001,9 +2199,18 @@ function openCardEdit(card) {
     renderTaskIconPicker(dom.editCardArtPicker, dom.editCardArtInput.value, "edit");
   }
   dom.editCardTextField.hidden = group !== "side";
-  if (dom.editCardDurationField) dom.editCardDurationField.hidden = group !== "main";
+  if (dom.editCardDurationField) dom.editCardDurationField.hidden = !(group === "main" || group === "side");
   if (group === "main" && dom.editCardDurationInput) {
+    Array.from(dom.editCardDurationInput.options).forEach((option) => {
+      option.hidden = option.value === "30";
+    });
     dom.editCardDurationInput.value = String(normalizedMainTaskDuration(item.durationMinutes));
+  }
+  if (group === "side" && dom.editCardDurationInput) {
+    Array.from(dom.editCardDurationInput.options).forEach((option) => {
+      option.hidden = false;
+    });
+    dom.editCardDurationInput.value = String(normalizedSideTaskDuration(item.durationMinutes));
   }
   if (dom.editCardLifeMaintenanceField) dom.editCardLifeMaintenanceField.hidden = group !== "main";
   if (dom.editCardLifeMaintenanceHint) dom.editCardLifeMaintenanceHint.hidden = group !== "main";
@@ -2049,6 +2256,13 @@ function saveCardEdit() {
       ));
       mainTasks = state.mainTasks;
     }
+  }
+  if (group === "side" && !isSkillMarketSideQuestId(id)) {
+    const durationMinutes = normalizedSideTaskDuration(dom.editCardDurationInput?.value || fallback.durationMinutes);
+    state.sideQuests = normalizeSideQuests((state.sideQuests || sideQuests).map((quest) =>
+      quest.id === id ? { ...quest, durationMinutes } : quest
+    ));
+    sideQuests = state.sideQuests;
   }
 
   if (group === "main" || group === "side") {
@@ -2182,27 +2396,61 @@ function deleteMainTask(id, options = {}) {
   showToast(`${task.title} 已删除。`);
 }
 
-function createSideQuest() {
+function openSideTaskDialog() {
   if (sideQuests.length >= SIDE_QUEST_LIMIT) {
     showToast(`副线任务最多 ${SIDE_QUEST_LIMIT} 张。`);
     return;
   }
-  const index = sideQuests.length;
+  const defaultArt = defaultTaskIconFor("side", sideQuests.length);
+  dom.sideTaskTitleInput.value = "";
+  dom.sideTaskIconInput.value = "副";
+  dom.sideTaskTextInput.value = "";
+  dom.sideTaskDurationInput.value = "60";
+  if (dom.sideTaskArtInput) dom.sideTaskArtInput.value = defaultArt;
+  renderTaskIconPicker(dom.sideTaskArtPicker, defaultArt, "side-create");
+  if (typeof dom.sideTaskDialog?.showModal === "function") {
+    dom.sideTaskDialog.showModal();
+  } else {
+    dom.sideTaskDialog?.setAttribute("open", "");
+  }
+}
+
+function closeSideTaskDialog() {
+  if (typeof dom.sideTaskDialog?.close === "function") {
+    dom.sideTaskDialog.close();
+  } else {
+    dom.sideTaskDialog?.removeAttribute("open");
+  }
+}
+
+function saveNewSideTask() {
+  if (sideQuests.length >= SIDE_QUEST_LIMIT) {
+    showToast(`副线任务最多 ${SIDE_QUEST_LIMIT} 张。`);
+    closeSideTaskDialog();
+    return;
+  }
+  const durationMinutes = normalizedSideTaskDuration(dom.sideTaskDurationInput?.value);
+  const art = validTaskIconId(dom.sideTaskArtInput?.value, defaultTaskIconFor("side", sideQuests.length));
   const quest = {
     id: makeId("side"),
-    title: `副线任务 ${index + 1}`,
-    text: "写下这张卡要推进的一小步",
-    icon: "副",
-    art: defaultTaskIconFor("side", index),
+    title: cleanEditableText(dom.sideTaskTitleInput.value, `副线任务 ${sideQuests.length + 1}`, 36),
+    text: cleanEditableText(dom.sideTaskTextInput.value, "写下这张卡要推进的一小步", 80),
+    icon: cleanEditableText(dom.sideTaskIconInput.value, "副", 4),
+    art,
     xp: 20,
-    durationMinutes: 60,
+    durationMinutes,
   };
   state.sideQuests = normalizeSideQuests([...(state.sideQuests || sideQuests), quest]);
   sideQuests = state.sideQuests;
   state.editable = normalizeEditableState(state.editable);
   saveState();
+  closeSideTaskDialog();
   render();
-  showToast("已新增一张副线卡，长按可以编辑内容。");
+  showToast(`${quest.title} 已创建为 ${formatDuration(durationMinutes)} 副线卡片。`);
+}
+
+function createSideQuest() {
+  openSideTaskDialog();
 }
 
 function deleteSideQuest(id, options = {}) {
@@ -2388,7 +2636,7 @@ function syncGameTaskToBaseSchedule(type, id, shouldExist = true) {
         0,
         24 * 60 - 1
       );
-      project.tasks.push({
+      const baseTask = {
         id: makeBaseTaskId(type, id, selectedDate),
         title: edited.title,
         detail: type === "main" ? "游戏主页主线任务" : "游戏主页副线任务",
@@ -2402,7 +2650,11 @@ function syncGameTaskToBaseSchedule(type, id, shouldExist = true) {
         sourceType: type,
         sourceTaskId: id,
         sourceDate: selectedDate,
-      });
+      };
+      if (isGameTaskReminderEnabled()) {
+        baseTask.reminder = defaultSyncedGameTaskReminder();
+      }
+      project.tasks.push(baseTask);
     }
 
     localStorage.setItem(BASE_SCHEDULE_STORAGE_KEY, JSON.stringify(baseState));
@@ -2411,6 +2663,224 @@ function syncGameTaskToBaseSchedule(type, id, shouldExist = true) {
     console.warn("Failed to sync game task.", error);
     return false;
   }
+}
+
+function defaultSyncedGameTaskReminder() {
+  const dailyReminder = loadDailyReminderSettings();
+  if (dailyReminder.enabled) return dailyReminder;
+  return {
+    enabled: false,
+    reminderEnabled: false,
+    reminderMode: "popup-notification",
+    reminderOffsetMinutes: 0,
+    reminderSound: "soft",
+    sound: "soft",
+    lastReminderAt: null,
+    snoozeUntil: null,
+    volume: 0.65,
+  };
+}
+
+function normalizeSyncedReminderSettings(settings) {
+  const source = settings && typeof settings === "object" && !Array.isArray(settings) ? settings : {};
+  const soundValue = source.reminderSound || source.sound;
+  const sound = ["soft", "bell", "game", "none"].includes(soundValue) ? soundValue : "soft";
+  const mode = ["popup-only", "notification-only", "popup-notification"].includes(source.reminderMode)
+    ? source.reminderMode
+    : "popup-notification";
+  const enabled = Boolean(source.enabled ?? source.reminderEnabled);
+  return {
+    enabled,
+    reminderEnabled: enabled,
+    reminderMode: mode,
+    reminderOffsetMinutes: clamp(Number(source.reminderOffsetMinutes) || 0, 0, 180),
+    reminderSound: sound,
+    sound,
+    lastReminderAt: source.lastReminderAt || null,
+    snoozeUntil: source.snoozeUntil || null,
+    volume: clamp(Number(source.volume) || 0.65, 0.1, 1),
+  };
+}
+
+function loadDailyReminderSettings() {
+  try {
+    const raw = localStorage.getItem(DAILY_REMINDER_STORAGE_KEY);
+    return normalizeSyncedReminderSettings(raw ? JSON.parse(raw) : {});
+  } catch {
+    return normalizeSyncedReminderSettings({});
+  }
+}
+
+function saveDailyReminderSettings(settings) {
+  const normalized = normalizeSyncedReminderSettings(settings);
+  localStorage.setItem(DAILY_REMINDER_STORAGE_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+function getSharedLanguage() {
+  try {
+    const raw = localStorage.getItem(BASE_SCHEDULE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed?.settings?.language === "en" ? "en" : "zh";
+  } catch {
+    return "zh";
+  }
+}
+
+function gameText(key, replacements = {}) {
+  const entry = GAME_I18N[key];
+  const base = entry ? (entry[currentGameLanguage] || entry.zh) : key;
+  return Object.entries(replacements).reduce(
+    (text, [token, value]) => text.replaceAll(`{${token}}`, String(value)),
+    base
+  );
+}
+
+function syncGameLanguageFromSchedule() {
+  const nextLanguage = getSharedLanguage();
+  if (nextLanguage === currentGameLanguage) return false;
+  currentGameLanguage = nextLanguage;
+  applyGameTranslations();
+  return true;
+}
+
+function applyGameTranslations() {
+  document.documentElement.lang = currentGameLanguage === "en" ? "en" : "zh-CN";
+  document.title = gameText("appTitle");
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = gameText(element.dataset.i18n);
+  });
+  if (dom.comicSourceInput) {
+    dom.comicSourceInput.placeholder = currentGameLanguage === "en"
+      ? "Write what happened today. The app will split it into comic panels."
+      : "写一段今天发生的事，系统会把它拆成漫画分镜。";
+  }
+  if (dom.ledgerNoteInput) {
+    dom.ledgerNoteInput.placeholder = currentGameLanguage === "en"
+      ? "e.g. lunch / scholarship / art supplies"
+      : "例如：午饭 / 奖学金 / 画材";
+  }
+  if (dom.onboardingCompanyNameInput) {
+    dom.onboardingCompanyNameInput.placeholder = currentGameLanguage === "en"
+      ? "e.g. Starwish Animation Co."
+      : "例如：星愿动画公司";
+  }
+  if (dom.onboardingGoalInput) {
+    dom.onboardingGoalInput.placeholder = currentGameLanguage === "en"
+      ? "e.g. Finish the first portfolio version"
+      : "例如：完成第一版作品集";
+  }
+}
+
+function readGameDailyReminderForm() {
+  const enabled = dom.gameDailyReminderEnabledInput?.value === "on";
+  return normalizeSyncedReminderSettings({
+    enabled,
+    reminderEnabled: enabled,
+    reminderOffsetMinutes: Number(dom.gameDailyReminderOffsetInput?.value) || 0,
+    reminderMode: dom.gameDailyReminderModeInput?.value || "popup-notification",
+    reminderSound: dom.gameDailyReminderSoundInput?.value || "soft",
+    sound: dom.gameDailyReminderSoundInput?.value || "soft",
+  });
+}
+
+function fillGameDailyReminderForm() {
+  const settings = loadDailyReminderSettings();
+  if (dom.gameDailyReminderEnabledInput) dom.gameDailyReminderEnabledInput.value = settings.enabled ? "on" : "off";
+  if (dom.gameDailyReminderOffsetInput) dom.gameDailyReminderOffsetInput.value = String(settings.reminderOffsetMinutes || 0);
+  if (dom.gameDailyReminderModeInput) dom.gameDailyReminderModeInput.value = settings.reminderMode || "popup-notification";
+  if (dom.gameDailyReminderSoundInput) dom.gameDailyReminderSoundInput.value = settings.reminderSound || "soft";
+}
+
+function renderGameDailyReminderButton() {
+  const settings = loadDailyReminderSettings();
+  dom.gameDailyReminderButton?.classList.toggle("is-enabled", settings.enabled);
+  if (!dom.gameDailyReminderStatus) return;
+  if (!settings.enabled) {
+    dom.gameDailyReminderStatus.textContent = gameText("closed");
+    return;
+  }
+  const offsetText = settings.reminderOffsetMinutes
+    ? gameText("earlyMinutes", { minutes: settings.reminderOffsetMinutes })
+    : gameText("startedAt");
+  dom.gameDailyReminderStatus.textContent = offsetText;
+}
+
+function openGameDailyReminderDialog() {
+  fillGameDailyReminderForm();
+  if (typeof dom.gameDailyReminderDialog?.showModal === "function") {
+    if (!dom.gameDailyReminderDialog.open) dom.gameDailyReminderDialog.showModal();
+  } else {
+    dom.gameDailyReminderDialog?.setAttribute("open", "");
+  }
+}
+
+function closeGameDailyReminderDialog() {
+  if (dom.gameDailyReminderDialog?.open && typeof dom.gameDailyReminderDialog.close === "function") {
+    dom.gameDailyReminderDialog.close();
+  } else {
+    dom.gameDailyReminderDialog?.removeAttribute("open");
+  }
+}
+
+function saveGameDailyReminderDialog() {
+  const settings = saveDailyReminderSettings(readGameDailyReminderForm());
+  syncPlannedGameTasksForDate();
+  renderGameDailyReminderButton();
+  closeGameDailyReminderDialog();
+  showToast(settings.enabled ? "任务提醒已开启。" : "任务提醒已关闭。");
+}
+
+function previewGameDailyReminderSound() {
+  const settings = readGameDailyReminderForm();
+  if (settings.reminderSound === "none") return;
+  playGameDailyReminderSound(settings);
+  if ("vibrate" in navigator) navigator.vibrate(60);
+}
+
+function playGameDailyReminderSound(settings = loadDailyReminderSettings()) {
+  const safeSettings = normalizeSyncedReminderSettings({ ...settings, enabled: true });
+  if (safeSettings.reminderSound === "none") return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  const audioContext = new AudioContextClass();
+  const now = audioContext.currentTime;
+  const gain = audioContext.createGain();
+  const patterns = {
+    soft: [392, 523],
+    bell: [660, 880, 660],
+    game: [440, 660, 880],
+  };
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+  gain.connect(audioContext.destination);
+
+  (patterns[safeSettings.reminderSound] || patterns.soft).forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    oscillator.type = safeSettings.reminderSound === "game" ? "square" : "sine";
+    const start = now + index * 0.16;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    oscillator.connect(gain);
+    oscillator.start(start);
+    oscillator.stop(start + 0.14);
+  });
+
+  window.setTimeout(() => audioContext.close?.(), 850);
+}
+
+function isGameTaskReminderEnabled() {
+  return Boolean(loadDailyReminderSettings().enabled);
+}
+
+function syncPlannedGameTasksForDate() {
+  const day = ensureDay(selectedDate);
+  ["main", "side"].forEach((type) => {
+    Object.keys(day.planned?.[type] || {}).forEach((id) => {
+      if (day.planned[type][id]) syncGameTaskToBaseSchedule(type, id, true);
+    });
+  });
 }
 
 function syncGameRunToBaseSchedule(run) {
@@ -3406,6 +3876,7 @@ function ensureWeek(dayKey) {
 }
 
 function render() {
+  syncGameLanguageFromSchedule();
   const day = ensureDay(selectedDate);
   if (processActiveTaskTimers(day)) saveState();
   const energyBonusApplied = applyEnergyDepletionIncomeBonus(selectedDate);
@@ -3416,7 +3887,7 @@ function render() {
   const mainDone = completedMainCount(day);
   const mainTarget = plannedMainTaskTarget(day);
 
-  dom.chapterLabel.textContent = `第 ${gameUsageDay()} 天`;
+  dom.chapterLabel.textContent = gameText("dayCounter", { day: gameUsageDay() });
   dom.modeLabel.textContent = mode.label;
   dom.stateHint.textContent = mode.hint;
   renderEditableContent(day);
@@ -3424,14 +3895,15 @@ function render() {
   dom.levelValue.textContent = `Lv.${companyLevelStatus.level}`;
   dom.xpMeter.style.width = `${companyLevelStatus.percent}%`;
   dom.xpLabel.textContent = companyLevelStatus.isMax
-    ? `${formatCoins(companyLevelStatus.coins)} · 已满级`
+    ? `${formatCoins(companyLevelStatus.coins)} · ${gameText("maxLevel")}`
     : `${formatCoins(companyLevelStatus.coins)} / ${formatCoins(companyLevelStatus.requiredCoins)}`;
 
   dom.animationHours.textContent = `${formatDuration(mainDone * 60)} / ${formatDuration(mainTarget * 60)}`;
   dom.animationMeter.style.width = `${mainTarget ? (mainDone / mainTarget) * 100 : 0}%`;
-  dom.passLabel.textContent = mainTarget && mainDone >= mainTarget ? "今日通关" : "未通关";
+  dom.passLabel.textContent = mainTarget && mainDone >= mainTarget ? gameText("passedToday") : gameText("notPassed");
   dom.protectValue.textContent = mode.label;
   dom.mainProgressBadge.textContent = `${formatDuration(mainDone * 60)} / ${formatDuration(mainTarget * 60)}`;
+  renderGameDailyReminderButton();
 
   renderRanges(day);
   renderCharacter();
@@ -3478,7 +3950,14 @@ function renderEditableContent(day = ensureDay(selectedDate)) {
     const id = element.dataset.editId;
     const field = element.dataset.editField;
     const value = state.editable.statusCards?.[id]?.[field];
-    if (value) setEditableText(element, value);
+    const defaultKey = element.dataset.i18nDefault;
+    const defaultValue = defaultKey ? gameText(defaultKey) : "";
+    if (value) {
+      const seedValue = defaultEditableState().statusCards?.[id]?.[field];
+      setEditableText(element, value === seedValue && defaultValue ? defaultValue : value);
+    } else if (defaultValue) {
+      setEditableText(element, defaultValue);
+    }
   });
 }
 
@@ -3685,7 +4164,7 @@ function taskRunnerState(day, type, task) {
 }
 
 function renderLifeQuests(week, day) {
-  dom.weekLabel.textContent = `第 ${weekIndex(selectedDate) + 1} 周`;
+  dom.weekLabel.textContent = gameText("weekCounter", { week: weekIndex(selectedDate) + 1 });
   dom.lifeQuestGrid.innerHTML = lifeGroups
     .map((group) => {
       const ids = lifeIds(group);
@@ -5643,10 +6122,10 @@ function renderInvoiceForExport(invoice) {
 function renderInvoiceBook() {
   state.invoices = normalizeSavedInvoices(state.invoices);
   state.invoiceBookLayouts = normalizeInvoiceBookLayouts(state.invoiceBookLayouts, state.invoices);
-  if (dom.invoiceBookCount) dom.invoiceBookCount.textContent = `${state.invoices.length} 张`;
+  if (dom.invoiceBookCount) dom.invoiceBookCount.textContent = gameText("invoiceCount", { count: state.invoices.length });
   if (!dom.invoiceBookList) return;
   if (!state.invoices.length) {
-    dom.invoiceBookList.innerHTML = `<p class="ledger-empty">还没有保存过发票。回到首页按发票机，就可以把选中日期打印成发票。</p>`;
+    dom.invoiceBookList.innerHTML = `<p class="ledger-empty">${escapeHtml(gameText("noInvoices"))}</p>`;
     return;
   }
   dom.invoiceBookList.innerHTML = state.invoices.map((invoice, index) => {
@@ -5817,7 +6296,7 @@ function renderReport(day) {
   if (dom.reportInput && dom.reportInput.value !== day.report) {
     dom.reportInput.value = day.report;
   }
-  dom.saveStatus.textContent = day.settled ? "今日已结算" : "已自动保存";
+  dom.saveStatus.textContent = day.settled ? gameText("settledToday") : gameText("savedAutomatically");
 }
 
 function selectFinanceCard(card) {
@@ -5856,7 +6335,13 @@ function renderFinanceCenter() {
   state.financeSettings = normalizeFinanceSettings(state.financeSettings);
   const realBalanceVisible = state.financeSettings.realBalanceVisible;
 
-  if (dom.financeActiveBadge) dom.financeActiveBadge.textContent = activeFinanceScreen === "real" ? "现实账本" : activeFinanceScreen === "virtual" ? "金币" : "我的银行";
+  if (dom.financeActiveBadge) {
+    dom.financeActiveBadge.textContent = activeFinanceScreen === "real"
+      ? gameText("realCard")
+      : activeFinanceScreen === "virtual"
+        ? gameText("coinBalance")
+        : gameText("myBank");
+  }
   if (dom.virtualCardBalance) dom.virtualCardBalance.textContent = formatCoins(virtual.balance);
   if (dom.virtualCardAsset) dom.virtualCardAsset.textContent = formatCoins(virtual.assetValue);
   if (dom.virtualCardIncome) dom.virtualCardIncome.textContent = `+${formatCoins(virtual.todayIncome)}`;
@@ -5865,14 +6350,16 @@ function renderFinanceCenter() {
   if (dom.realCardBalance) dom.realCardBalance.textContent = realBalanceVisible ? formatRealCurrency(real.balance) : "£••••••";
   if (dom.realBalanceToggle) {
     dom.realBalanceToggle.classList.toggle("is-hidden", !realBalanceVisible);
-    dom.realBalanceToggle.setAttribute("aria-label", realBalanceVisible ? "隐藏余额" : "显示余额");
+    dom.realBalanceToggle.setAttribute("aria-label", realBalanceVisible
+      ? (currentGameLanguage === "en" ? "Hide balance" : "隐藏余额")
+      : (currentGameLanguage === "en" ? "Show balance" : "显示余额"));
     dom.realBalanceToggle.setAttribute("aria-pressed", String(realBalanceVisible));
   }
   if (dom.realCardIncome) dom.realCardIncome.textContent = formatRealCurrency(real.monthIncome);
   if (dom.realCardExpense) dom.realCardExpense.textContent = formatRealCurrency(real.monthExpense);
   if (dom.realCardBudget) dom.realCardBudget.textContent = formatRealCurrency(real.weekBalance);
-  if (dom.realCardFlow) dom.realCardFlow.textContent = `本月支出 ${formatRealCurrency(real.monthExpense)}`;
-  if (dom.virtualAssetBadge) dom.virtualAssetBadge.textContent = `资产 ${formatCoins(virtual.assetValue)}`;
+  if (dom.realCardFlow) dom.realCardFlow.textContent = `${gameText("monthExpense")} ${formatRealCurrency(real.monthExpense)}`;
+  if (dom.virtualAssetBadge) dom.virtualAssetBadge.textContent = `${gameText("asset")} ${formatCoins(virtual.assetValue)}`;
   if (dom.virtualBalanceValue) dom.virtualBalanceValue.textContent = formatCoins(virtual.balance);
   if (dom.virtualStockValue) dom.virtualStockValue.textContent = formatCoins(virtual.stockValue);
   if (dom.virtualTodayIncome) dom.virtualTodayIncome.textContent = `+${formatCoins(virtual.todayIncome)}`;
@@ -5953,7 +6440,7 @@ function renderVirtualFinanceList(summary) {
     .slice(0, 18);
 
   if (!rows.length) {
-    dom.virtualFinanceList.innerHTML = `<p class="ledger-empty">还没有金币流水。完成主线、公司任务或技能股交易后，这里会出现记录。</p>`;
+    dom.virtualFinanceList.innerHTML = `<p class="ledger-empty">${escapeHtml(gameText("noCoinFlow"))}</p>`;
     return;
   }
 
@@ -5992,7 +6479,7 @@ function renderLedger() {
   dom.ledgerBalanceBadge.classList.toggle("is-negative", allIncome - allExpense < 0);
 
   if (monthRecords.length === 0) {
-    dom.ledgerList.innerHTML = `<p class="ledger-empty">本月还没有现实记账。这里只做手动记录，不连接真实银行卡。</p>`;
+    dom.ledgerList.innerHTML = `<p class="ledger-empty">${escapeHtml(gameText("noLedger"))}</p>`;
     return;
   }
 

@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="../icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png" />
     <title>30天计划 · 动画主线作战台</title>
-    <link rel="stylesheet" href="./styles.css?v=202" />
+    <link rel="stylesheet" href="./styles.css?v=209" />
   </head>
   <body>
     <main class="phone-shell" id="top">
@@ -25,6 +25,11 @@
         <div class="hero-copy">
           <h1 id="heroTitle" class="editable-text" contenteditable="true" spellcheck="false" data-edit-group="page" data-edit-field="heroTitle" data-edit-max="28">动画主线作战台</h1>
           <p id="todayObjective" class="objective editable-text" contenteditable="true" spellcheck="false" data-edit-group="page" data-edit-field="todayObjective" data-edit-max="42">今日目标：动画 9 小时</p>
+          <button id="gameDailyReminderButton" class="game-daily-reminder-button" type="button" data-action="open-game-daily-reminder">
+            <span aria-hidden="true">⏰</span>
+            <b data-i18n="taskReminders">任务提醒</b>
+            <small id="gameDailyReminderStatus">关闭</small>
+          </button>
         </div>
 
         <div class="hero-character" aria-label="当前角色">
@@ -34,19 +39,19 @@
       </header>
 
       <section class="character-panel is-collapsed" id="characterPanel" aria-labelledby="characterTitle">
-        <a class="character-return-chip" href="../index.html#timelineSection">返回</a>
-        <a class="character-company-chip" href="./company.html" aria-label="打开人生公司">公司</a>
-        <a class="character-relationship-chip" href="./relationships.html" aria-label="打开人际关系卡">人际关系</a>
-        <a class="character-skill-market-chip" href="./skill-market.html" aria-label="打开人生技能股市">人生技能股市</a>
-        <a class="character-tarot-chip" href="./tarot.html" aria-label="打开塔罗牌占卜">塔罗</a>
-        <a class="character-blessing-chip" href="#blessing-zone" data-action="open-blessing" aria-label="打开祈福入口">祈福</a>
+        <a class="character-return-chip" href="../index.html#timelineSection" data-i18n="back">返回</a>
+        <a class="character-company-chip" href="./company.html" aria-label="打开人生公司" data-i18n="company">公司</a>
+        <a class="character-relationship-chip" href="./relationships.html" aria-label="打开人际关系卡" data-i18n="relationships">人际关系</a>
+        <a class="character-skill-market-chip" href="./skill-market.html" aria-label="打开人生技能股市" data-i18n="skillMarket">人生技能股市</a>
+        <a class="character-tarot-chip" href="./tarot.html" aria-label="打开塔罗牌占卜" data-i18n="tarot">塔罗</a>
+        <a class="character-blessing-chip" href="#blessing-zone" data-action="open-blessing" aria-label="打开祈福入口" data-i18n="blessing">祈福</a>
         <button class="character-toggle" id="characterPanelToggle" type="button" data-action="toggle-character-panel" aria-expanded="false" aria-controls="characterPanelBody" aria-label="展开角色选择">
           <span></span><span></span><span></span>
         </button>
         <div class="character-panel-body" id="characterPanelBody" hidden>
           <div>
-            <p class="eyebrow">今日角色</p>
-            <h2 id="characterTitle">选择陪你通关的角色</h2>
+            <p class="eyebrow" data-i18n="todayCharacter">今日角色</p>
+            <h2 id="characterTitle" data-i18n="chooseCharacter">选择陪你通关的角色</h2>
             <p id="characterRoleLine">温柔启动员 · 把大任务拆小</p>
           </div>
           <div class="character-picker" id="characterPicker"></div>
@@ -59,7 +64,7 @@
         <section class="status-grid" aria-label="角色状态卡">
           <button class="status-card level-card" type="button" data-action="open-growth">
             <span class="mini-icon editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="icon" data-edit-max="2">★</span>
-            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="label" data-edit-max="8">公司等级</span>
+            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="label" data-edit-max="8" data-i18n-default="companyLevel">公司等级</span>
             <strong id="levelValue">Lv.1</strong>
             <span class="meter"><i id="xpMeter"></i></span>
             <small id="xpLabel">◈ 0 / ◈ 300</small>
@@ -67,7 +72,7 @@
 
           <button class="status-card animation-card" type="button" data-jump="#mainline">
             <span class="mini-icon editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="animation" data-edit-field="icon" data-edit-max="2">⌚</span>
-            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="animation" data-edit-field="label" data-edit-max="10">今日进度</span>
+            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="animation" data-edit-field="label" data-edit-max="10" data-i18n-default="todayProgress">今日进度</span>
             <strong id="animationHours">0h / 9h</strong>
             <span class="meter"><i id="animationMeter"></i></span>
             <small id="passLabel">未通关</small>
@@ -75,15 +80,15 @@
 
           <article class="status-card protect-card">
             <span class="mini-icon editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="protect" data-edit-field="icon" data-edit-max="2">盾</span>
-            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="protect" data-edit-field="label" data-edit-max="10">保护状态</span>
+            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="protect" data-edit-field="label" data-edit-max="10" data-i18n-default="protectionStatus">保护状态</span>
             <strong id="protectValue">稳定</strong>
-            <button class="red-button" type="button" data-action="open-protection">红色按钮</button>
+            <button class="red-button" type="button" data-action="open-protection" data-i18n="redButton">红色按钮</button>
           </article>
         </section>
 
         <section class="home-time-tools" aria-label="时间分布和打印入口">
           <section class="panel time-distribution-panel home-time-distribution" id="time-distribution-zone" aria-labelledby="timeDistributionTitle">
-            <h2 id="timeDistributionTitle">时间分布</h2>
+            <h2 id="timeDistributionTitle" data-i18n="timeDistribution">时间分布</h2>
             <div class="time-distribution-layout">
               <div class="time-distribution-visual">
                 <div class="time-donut" id="timeDistributionDonut" aria-hidden="true"></div>
@@ -100,7 +105,7 @@
               <span class="printer-receipt-peek" id="invoiceReceiptPeek" aria-hidden="true">
                 <i></i>
               </span>
-              <span class="printer-label">发票机</span>
+              <span class="printer-label" data-i18n="invoicePrinter">发票机</span>
             </button>
             <div class="invoice-range-control">
               <button class="invoice-range-toggle" id="invoiceRangeToggle" type="button" data-action="toggle-invoice-range" aria-expanded="false" aria-controls="invoiceRangePanel">日</button>
@@ -112,15 +117,15 @@
                   <button type="button" data-action="select-invoice-range-mode" data-invoice-range-mode="month">月</button>
                 </div>
                 <label data-invoice-range-field="day">
-                  <span>打印日子</span>
+                  <span data-i18n="printDay">打印日子</span>
                   <input id="invoicePrintDateInput" type="date" />
                 </label>
                 <label data-invoice-range-field="week">
-                  <span>打印周</span>
+                  <span data-i18n="printWeek">打印周</span>
                   <select id="invoicePrintWeekInput"></select>
                 </label>
                 <label data-invoice-range-field="month">
-                  <span>打印月份</span>
+                  <span data-i18n="printMonth">打印月份</span>
                   <input id="invoicePrintMonthInput" type="month" />
                 </label>
               </div>
@@ -137,7 +142,7 @@
               <button class="invoice-material-chip" id="invoiceMaterialButton" type="button" data-action="cycle-invoice-material">纸质</button>
             </div>
             <input id="invoiceDiyImageInput" type="file" accept="image/*" hidden />
-            <button class="invoice-book-shortcut" type="button" data-action="open-invoice-book">发票本</button>
+            <button class="invoice-book-shortcut" type="button" data-action="open-invoice-book" data-i18n="invoiceBook">发票本</button>
           </section>
         </section>
       </section>
@@ -145,25 +150,25 @@
       <section class="panel state-panel" id="state-zone" aria-labelledby="stateTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">角色状态</p>
-            <h2 id="stateTitle">先检查今天的身体和心</h2>
+            <p class="eyebrow" data-i18n="characterStatus">角色状态</p>
+            <h2 id="stateTitle" data-i18n="checkBodyMind">先检查今天的身体和心</h2>
           </div>
           <span class="soft-badge" id="stateHint">正常推进</span>
         </div>
 
         <div class="range-list">
           <label class="range-row energy-row" for="energyInput">
-            <span>能量</span>
+            <span data-i18n="energy">能量</span>
             <input id="energyInput" type="range" min="0" max="100" step="1" disabled />
             <strong id="energyValue">100 / 100</strong>
           </label>
           <label class="range-row mood-row" for="moodInput">
-            <span>情绪</span>
+            <span data-i18n="mood">情绪</span>
             <input id="moodInput" type="range" min="0" max="100" step="1" disabled />
             <strong id="moodValue">50 / 100</strong>
           </label>
           <label class="range-row risk-row" for="riskInput">
-            <span>危险念头</span>
+            <span data-i18n="riskThoughts">危险念头</span>
             <input id="riskInput" type="range" min="0" max="10" step="1" />
             <strong id="riskValue">0 / 100</strong>
           </label>
@@ -174,24 +179,24 @@
         <div class="protection-title">
           <span class="sprite danger-cloud" aria-hidden="true"></span>
           <div>
-            <p class="eyebrow">保护模式</p>
-            <h2>今天的通关目标改成：保证安全</h2>
+            <p class="eyebrow" data-i18n="protectionMode">保护模式</p>
+            <h2 data-i18n="safetyGoal">今天的通关目标改成：保证安全</h2>
           </div>
         </div>
         <div class="safety-steps">
-          <button type="button" data-action="copy-help">联系一个现实中的人</button>
-          <button type="button" data-action="mark-safe-place">离开危险环境</button>
-          <button type="button" data-action="mark-safe-place">坐到明亮安全的地方</button>
+          <button type="button" data-action="copy-help" data-i18n="contactRealPerson">联系一个现实中的人</button>
+          <button type="button" data-action="mark-safe-place" data-i18n="leaveDanger">离开危险环境</button>
+          <button type="button" data-action="mark-safe-place" data-i18n="brightSafePlace">坐到明亮安全的地方</button>
         </div>
-        <p class="safety-note">如果你现在有立即伤害自己的风险，请马上联系当地急救电话或危机热线。美国可拨 988。</p>
+        <p class="safety-note" data-i18n="safetyNote">如果你现在有立即伤害自己的风险，请马上联系当地急救电话或危机热线。美国可拨 988。</p>
         <div class="button-line">
-          <button class="primary-button" type="button" data-action="safe-mode">今天不要求完成主线</button>
-          <button class="ghost-button" type="button" data-action="close-protection">暂时收起</button>
+          <button class="primary-button" type="button" data-action="safe-mode" data-i18n="safeModeToday">今天不要求完成主线</button>
+          <button class="ghost-button" type="button" data-action="close-protection" data-i18n="collapse">暂时收起</button>
         </div>
       </section>
 
       <section class="low-energy-bar" id="lowEnergyBar">
-        <strong>低能量版本</strong>
+        <strong data-i18n="lowEnergyVersion">低能量版本</strong>
         <button type="button" data-action="toggle-low" data-id="anim25">动画 25 分钟</button>
         <button type="button" data-action="toggle-low" data-id="meal">吃一顿东西</button>
         <button type="button" data-action="toggle-low" data-id="message">给一个人发消息</button>
@@ -204,11 +209,11 @@
       <section class="panel quest-panel" id="mainline" aria-labelledby="mainlineTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">主线任务</p>
+            <p class="eyebrow" data-i18n="mainQuests">主线任务</p>
             <h2 id="mainlineTitle" class="linked-title">今日目标：动画 9 小时</h2>
           </div>
           <div class="main-heading-actions">
-            <button class="add-main-task-button" type="button" data-action="open-main-task-create">新增</button>
+            <button class="add-main-task-button" type="button" data-action="open-main-task-create" data-i18n="add">新增</button>
             <span class="soft-badge" id="mainProgressBadge">0h / 9h</span>
           </div>
         </div>
@@ -218,11 +223,11 @@
       <section class="panel quest-panel" id="sidequests" aria-labelledby="sideTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">副线任务</p>
+            <p class="eyebrow" data-i18n="sideQuests">副线任务</p>
             <h2 id="sideTitle" class="side-title-hidden" hidden>作品集与 AI 软件推进</h2>
           </div>
           <div class="main-heading-actions">
-            <button class="add-main-task-button" type="button" data-action="create-side-quest">新增</button>
+            <button class="add-main-task-button" type="button" data-action="open-side-task-create" data-i18n="add">新增</button>
           </div>
         </div>
         <div class="quest-list" id="sideQuestList"></div>
@@ -231,7 +236,7 @@
       <section class="panel life-panel" id="daily-goals" aria-labelledby="lifeTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">生命值维护</p>
+            <p class="eyebrow" data-i18n="lifeMaintenance">生命值维护</p>
             <h2 id="lifeTitle" class="editable-text" contenteditable="true" spellcheck="false" data-edit-group="page" data-edit-field="lifeTitle" data-edit-max="24">本周固定任务</h2>
           </div>
           <span class="soft-badge" id="weekLabel">第 1 周</span>
@@ -242,8 +247,8 @@
       <section class="panel timeline-panel" id="timeline-zone" aria-labelledby="timelineTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">今日时间轴</p>
-            <h2 id="timelineTitle">今日安排</h2>
+            <p class="eyebrow" data-i18n="todayTimeline">今日时间轴</p>
+            <h2 id="timelineTitle" data-i18n="todayPlan">今日安排</h2>
           </div>
           <span class="soft-badge" id="timelineSummary">0h / 9h</span>
         </div>
@@ -258,9 +263,9 @@
         <div class="bank-page-head">
           <span class="bank-head-spacer" aria-hidden="true"></span>
           <img class="finance-title-banner" src="./assets/bank-ui/my-bank-title-banner.png" alt="我的银行" />
-          <span class="bank-help-pill">银行说明</span>
+          <span class="bank-help-pill" data-i18n="bankHelp">银行说明</span>
         </div>
-        <p class="bank-notice" id="financeTitle">你的财务小管家，帮你守护每一份努力</p>
+        <p class="bank-notice" id="financeTitle" data-i18n="financeNotice">你的财务小管家，帮你守护每一份努力</p>
         <div class="finance-card-grid" aria-label="银行卡">
           <article class="finance-bank-card virtual" data-finance-card="virtual">
             <span class="finance-card-spark">✦</span>
@@ -268,28 +273,28 @@
             <img class="finance-card-contactless" src="./assets/bank-ui/bank_ui_assets_pack_v2/purple_bank_ui_assets/21_card_contactless.png" alt="" aria-hidden="true" />
             <img class="finance-card-mascot" src="./assets/bank-ui/bank_ui_assets_pack_v2/purple_bank_ui_assets/19_card_mascot_scene.png" alt="" aria-hidden="true" />
             <span class="finance-card-badge-cover" aria-hidden="true"></span>
-            <span class="finance-card-seal">我的公司</span>
+            <span class="finance-card-seal" data-i18n="myCompany">我的公司</span>
             <span class="finance-card-title">
               <strong>星愿银行</strong>
               <small>COMPANY COIN CARD</small>
             </span>
             <span class="finance-card-main-balance">
-              <small>金币余额</small>
+              <small data-i18n="coinBalance">金币余额</small>
               <strong id="virtualCardBalance">◈ 0</strong>
             </span>
             <span class="finance-card-side-balance">
-              <small>资产估值</small>
+              <small data-i18n="assetValue">资产估值</small>
               <strong id="virtualCardAsset">◈ 0</strong>
             </span>
             <span class="finance-card-stat income">
-              <small>今日收入</small>
+              <small data-i18n="todayIncome">今日收入</small>
               <strong id="virtualCardIncome">+◈ 0</strong>
             </span>
             <span class="finance-card-stat expense">
-              <small>今日支出</small>
+              <small data-i18n="todayExpense">今日支出</small>
               <strong id="virtualCardSpend">-◈ 0</strong>
             </span>
-            <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="virtual">查看公司账本 ›</button>
+            <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="virtual" data-i18n="viewCompanyLedger">查看公司账本 ›</button>
           </article>
           <article class="finance-bank-card real" data-finance-card="real">
             <span class="finance-card-spark">✧</span>
@@ -297,29 +302,29 @@
             <img class="finance-card-contactless" src="./assets/bank-ui/bank_ui_assets_pack_v2/cyan_bank_ui_assets/21_card_contactless.png" alt="" aria-hidden="true" />
             <img class="finance-card-mascot" src="./assets/bank-ui/bank_ui_assets_pack_v2/cyan_bank_ui_assets/19_card_mascot_scene.png" alt="" aria-hidden="true" />
             <span class="finance-card-badge-cover" aria-hidden="true"></span>
-            <span class="finance-card-seal">现实卡</span>
+            <span class="finance-card-seal" data-i18n="realCard">现实卡</span>
             <span class="finance-card-title">
               <strong>星愿银行</strong>
               <small>REAL LIFE BUDGET CARD</small>
             </span>
             <span class="finance-card-main-balance">
               <span class="finance-card-balance-label">
-                <small>账户余额</small>
+                <small data-i18n="accountBalance">账户余额</small>
                 <span class="finance-eye-toggle" id="realBalanceToggle" data-action="toggle-real-balance" role="button" tabindex="0" aria-label="隐藏余额" aria-pressed="true"></span>
               </span>
               <strong id="realCardBalance">£0.00</strong>
             </span>
             <span class="finance-card-side-balance real-card-monthly">
-              <small>本月收入</small>
+              <small data-i18n="monthIncome">本月收入</small>
               <strong id="realCardIncome">£0.00</strong>
-              <small>本月支出</small>
+              <small data-i18n="monthExpense">本月支出</small>
               <strong id="realCardExpense">£0.00</strong>
             </span>
-            <span class="finance-card-adjust" data-action="open-balance-adjust" role="button" tabindex="0">✎ 调整金额</span>
-            <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="real">查看生活账本 ›</button>
+            <span class="finance-card-adjust" data-action="open-balance-adjust" role="button" tabindex="0">✎ <span data-i18n="adjustBalance">调整金额</span></span>
+            <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="real" data-i18n="viewLifeLedger">查看生活账本 ›</button>
           </article>
         </div>
-        <p class="finance-safety-note">金币是游戏内成长资源；现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。</p>
+        <p class="finance-safety-note" data-i18n="financeSafetyNote">金币是游戏内成长资源；现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。</p>
       </section>
 
       <section class="panel finance-detail-panel bank-screen bank-screen-purple" id="virtual-finance-zone" data-finance-screen="virtual" aria-labelledby="virtualFinanceTitle" hidden>
@@ -328,22 +333,22 @@
           <img class="finance-title-banner" src="./assets/bank-ui/my-bank-title-banner.png" alt="我的银行" />
           <span class="bank-help-pill" id="virtualAssetBadge">资产 ◈ 0</span>
         </div>
-        <p class="bank-notice" id="virtualFinanceTitle">公司金币、任务收入、项目收入和技能股交易都在这里</p>
+        <p class="bank-notice" id="virtualFinanceTitle" data-i18n="virtualFinanceNotice">公司金币、任务收入、项目收入和技能股交易都在这里</p>
         <div class="finance-summary-grid" aria-label="金币汇总">
           <span>
-            <small>金币余额</small>
+            <small data-i18n="coinBalance">金币余额</small>
             <strong id="virtualBalanceValue">◈ 0</strong>
           </span>
           <span>
-            <small>股票估值</small>
+            <small data-i18n="stockValue">股票估值</small>
             <strong id="virtualStockValue">◈ 0</strong>
           </span>
           <span>
-            <small>今日收入</small>
+            <small data-i18n="todayIncome">今日收入</small>
             <strong id="virtualTodayIncome">+◈ 0</strong>
           </span>
           <span>
-            <small>今日支出</small>
+            <small data-i18n="todayExpense">今日支出</small>
             <strong id="virtualTodaySpend">-◈ 0</strong>
           </span>
         </div>
@@ -356,21 +361,21 @@
           <img class="finance-title-banner" src="./assets/bank-ui/my-bank-title-banner.png" alt="我的银行" />
           <span class="bank-help-pill" id="ledgerBalanceBadge">£0.00</span>
         </div>
-        <p class="bank-notice" id="ledgerTitle">真实生活账本只做手动记录，不连接真实银行卡</p>
+        <p class="bank-notice" id="ledgerTitle" data-i18n="ledgerNotice">真实生活账本只做手动记录，不连接真实银行卡</p>
 
         <form class="ledger-form" id="ledgerForm">
           <div class="ledger-type-toggle" role="group" aria-label="收入或支出">
             <label>
               <input type="radio" name="ledgerType" value="income" checked />
-              <span>收入</span>
+              <span data-i18n="income">收入</span>
             </label>
             <label>
               <input type="radio" name="ledgerType" value="expense" />
-              <span>支出</span>
+              <span data-i18n="expense">支出</span>
             </label>
           </div>
           <label>
-            <span>分类</span>
+            <span data-i18n="category">分类</span>
             <select id="ledgerCategoryInput">
               <option value="food">餐饮</option>
               <option value="transport">交通</option>
@@ -388,27 +393,27 @@
             </select>
           </label>
           <label>
-            <span>金额</span>
+            <span data-i18n="amount">金额</span>
             <input id="ledgerAmountInput" type="number" min="0" step="0.01" placeholder="0.00" inputmode="decimal" />
           </label>
           <label class="ledger-note-field">
-            <span>备注</span>
+            <span data-i18n="note">备注</span>
             <input id="ledgerNoteInput" type="text" placeholder="例如：午饭 / 奖学金 / 画材" />
           </label>
-          <button class="ledger-submit" type="submit">记录一笔</button>
+          <button class="ledger-submit" type="submit" data-i18n="addLedgerRecord">记录一笔</button>
         </form>
 
         <div class="ledger-summary" aria-label="账本汇总">
           <span>
-            <small>本月收入</small>
+            <small data-i18n="monthIncome">本月收入</small>
             <strong id="ledgerTodayIncome">£0.00</strong>
           </span>
           <span>
-            <small>本月支出</small>
+            <small data-i18n="monthExpense">本月支出</small>
             <strong id="ledgerTodayExpense">£0.00</strong>
           </span>
           <span>
-            <small>本周结余</small>
+            <small data-i18n="weekBalance">本周结余</small>
             <strong id="ledgerWeekBalance">£0.00</strong>
           </span>
         </div>
@@ -418,20 +423,20 @@
 
       <section class="panel diary-entry-panel finance-settlement-panel" id="report-zone" data-finance-home-only aria-label="日记">
         <img id="reportCharacterSprite" class="report-character" src="./assets/characters/bunny-white.png" alt="" aria-hidden="true" />
-        <button class="settle-button diary-entry-button" type="button" data-action="open-diary">日记</button>
+        <button class="settle-button diary-entry-button" type="button" data-action="open-diary" data-i18n="diary">日记</button>
       </section>
 
       <section class="panel archive-panel" id="archive-zone" data-finance-home-only aria-labelledby="archiveTitle">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">存档</p>
-            <h2 id="archiveTitle">导出 / 导入进度</h2>
+            <p class="eyebrow" data-i18n="archive">存档</p>
+            <h2 id="archiveTitle" data-i18n="exportImportProgress">导出 / 导入进度</h2>
           </div>
           <span class="soft-badge" id="saveStatus">已自动保存</span>
         </div>
         <div class="archive-actions">
-          <button class="export-button" type="button" data-action="export-data">导出存档</button>
-          <button class="import-button" type="button" data-action="import-data">导入 / 读取存档</button>
+          <button class="export-button" type="button" data-action="export-data" data-i18n="exportSave">导出存档</button>
+          <button class="import-button" type="button" data-action="import-data" data-i18n="importSave">导入 / 读取存档</button>
           <input id="importFile" type="file" accept="application/json" hidden />
         </div>
       </section>
@@ -439,48 +444,48 @@
     </main>
 
     <nav class="bottom-dock" aria-label="底部导航">
-      <button class="is-active" type="button" data-nav-page="home" data-jump="#today-stage">首页状态</button>
-      <button type="button" data-nav-page="tasks" data-jump="#mainline">任务</button>
-      <button type="button" data-nav-page="finance" data-jump="#finance-zone">财务</button>
+      <button class="is-active" type="button" data-nav-page="home" data-jump="#today-stage" data-i18n="homeStatus">首页状态</button>
+      <button type="button" data-nav-page="tasks" data-jump="#mainline" data-i18n="tasks">任务</button>
+      <button type="button" data-nav-page="finance" data-jump="#finance-zone" data-i18n="finance">财务</button>
     </nav>
 
     <dialog class="onboarding-dialog" id="onboardingDialog">
       <form class="dialog-card edit-card-form onboarding-card" id="onboardingForm" method="dialog">
         <button class="dialog-close" type="button" data-action="skip-onboarding" aria-label="稍后">×</button>
-        <p class="onboarding-pill">新手部署</p>
-        <h2>先创建你的人生公司</h2>
-        <p class="dialog-summary">选一个人生方向，写下第一个目标，系统会自动帮你完成公司和作战台部署。</p>
-        <p class="company-starting-money-note">默认个人金币 1000。建立公司会投入 600 金币作为启动资金。</p>
+        <p class="onboarding-pill" data-i18n="onboardingDeploy">新手部署</p>
+        <h2 data-i18n="createLifeCompany">先创建你的人生公司</h2>
+        <p class="dialog-summary" data-i18n="onboardingSummary">选一个人生方向，写下第一个目标，系统会自动帮你完成公司和作战台部署。</p>
+        <p class="company-starting-money-note" data-i18n="companyStartingMoneyNote">默认个人金币 1000。建立公司会投入 600 金币作为启动资金。</p>
 
         <div class="onboarding-steps" aria-label="新手部署步骤">
-          <span>1 创建公司</span>
-          <span>2 设置目标</span>
-          <span>3 完成部署</span>
+          <span data-i18n="stepCreateCompany">1 创建公司</span>
+          <span data-i18n="stepSetGoal">2 设置目标</span>
+          <span data-i18n="stepFinishDeploy">3 完成部署</span>
         </div>
 
         <label>
-          公司名称
+          <span data-i18n="companyName">公司名称</span>
           <input id="onboardingCompanyNameInput" type="text" maxlength="24" placeholder="例如：星愿动画公司" required />
         </label>
 
         <label>
-          公司方向
+          <span data-i18n="companyDirection">公司方向</span>
           <select id="onboardingCompanyTypeInput"></select>
         </label>
 
         <label>
-          第一个大目标
+          <span data-i18n="firstBigGoal">第一个大目标</span>
           <input id="onboardingGoalInput" type="text" maxlength="42" placeholder="例如：完成第一版作品集" required />
         </label>
 
         <label>
-          目标日期
+          <span data-i18n="goalDate">目标日期</span>
           <input id="onboardingDeadlineInput" type="date" />
         </label>
 
         <div class="dialog-actions onboarding-actions">
-          <button class="ghost-button" type="button" data-action="skip-onboarding">稍后</button>
-          <button class="primary-button" type="submit">完成目标部署</button>
+          <button class="ghost-button" type="button" data-action="skip-onboarding" data-i18n="later">稍后</button>
+          <button class="primary-button" type="submit" data-i18n="finishGoalDeploy">完成目标部署</button>
         </div>
       </form>
     </dialog>
@@ -488,9 +493,9 @@
     <dialog class="blessing-dialog" id="blessingDialog">
       <div class="dialog-card blessing-card">
         <button class="dialog-close" type="button" data-action="close-blessing" aria-label="关闭">×</button>
-        <p class="blessing-pill">祈福系统</p>
-        <h2>今日敲木鱼</h2>
-        <p class="dialog-summary">轻轻敲一下，给今天加一点安定的功德。</p>
+        <p class="blessing-pill" data-i18n="blessingSystem">祈福系统</p>
+        <h2 data-i18n="woodenFishToday">今日敲木鱼</h2>
+        <p class="dialog-summary" data-i18n="woodenFishSummary">轻轻敲一下，给今天加一点安定的功德。</p>
 
         <button class="wooden-fish-button" id="blessingWoodenFish" type="button" data-action="tap-wooden-fish" aria-label="敲木鱼">
           <span class="wooden-fish-body" aria-hidden="true">
@@ -500,7 +505,7 @@
         </button>
 
         <div class="merit-counter" aria-live="polite">
-          <span>功德</span>
+          <span data-i18n="merit">功德</span>
           <strong id="blessingMeritValue">0</strong>
         </div>
       </div>
@@ -519,10 +524,10 @@
     <dialog class="edit-card-dialog" id="diaryDialog">
       <form class="dialog-card edit-card-form diary-dialog-form calendar-list-diary" method="dialog">
         <button class="dialog-close" type="button" data-action="close-diary" aria-label="关闭">×</button>
-        <p class="black-pill">日记</p>
+        <p class="black-pill" data-i18n="diary">日记</p>
         <div class="diary-system-head">
           <div>
-            <h2>日历清单</h2>
+            <h2 data-i18n="calendarChecklist">日历清单</h2>
             <p id="diarySelectedDateLabel">今天</p>
           </div>
           <span class="diary-app-icon" aria-hidden="true">
@@ -537,65 +542,65 @@
         <div class="diary-calendar-grid" id="diaryCalendarGrid" aria-label="日记日历"></div>
         <section class="diary-checklist-panel" aria-label="当天清单">
           <div class="diary-checklist-head">
-            <strong>当天清单</strong>
-            <button type="button" data-action="add-diary-check-item">新增</button>
+            <strong data-i18n="dailyChecklist">当天清单</strong>
+            <button type="button" data-action="add-diary-check-item" data-i18n="add">新增</button>
           </div>
           <div class="diary-checklist" id="diaryChecklist"></div>
         </section>
         <section class="comic-diary-entry" aria-label="漫画日记">
           <div class="comic-diary-entry-head">
             <div>
-              <strong>漫画日记</strong>
-              <span>把今天变成一页小漫画</span>
+              <strong data-i18n="comicDiary">漫画日记</strong>
+              <span data-i18n="comicDiarySub">把今天变成一页小漫画</span>
             </div>
-            <button type="button" data-action="open-comic-diary">漫画日记</button>
+            <button type="button" data-action="open-comic-diary" data-i18n="comicDiary">漫画日记</button>
           </div>
           <div class="comic-diary-panel" id="comicDiaryPanel" hidden>
             <div class="comic-diary-form-grid">
               <label>
-                <span>选择角色</span>
+                <span data-i18n="selectCharacter">选择角色</span>
                 <select id="comicCharacterSelect"></select>
               </label>
               <label>
-                <span>漫画格数</span>
+                <span data-i18n="comicPanelCount">漫画格数</span>
                 <select id="comicPanelCountInput">
-                  <option value="4">4 格</option>
-                  <option value="6">6 格</option>
+                  <option value="4" data-i18n="fourPanels">4 格</option>
+                  <option value="6" data-i18n="sixPanels">6 格</option>
                 </select>
               </label>
               <label>
-                <span>情绪风格</span>
+                <span data-i18n="moodStyle">情绪风格</span>
                 <select id="comicMoodStyleInput">
-                  <option value="cute">可爱</option>
-                  <option value="funny">搞笑</option>
-                  <option value="sad">低落</option>
-                  <option value="healing">治愈</option>
-                  <option value="angry">生气</option>
-                  <option value="strange">奇怪</option>
+                  <option value="cute" data-i18n="moodCute">可爱</option>
+                  <option value="funny" data-i18n="moodFunny">搞笑</option>
+                  <option value="sad" data-i18n="moodSad">低落</option>
+                  <option value="healing" data-i18n="moodHealing">治愈</option>
+                  <option value="angry" data-i18n="moodAngry">生气</option>
+                  <option value="strange" data-i18n="moodStrange">奇怪</option>
                 </select>
               </label>
             </div>
             <label class="comic-source-field">
-              <span>今天发生的事情</span>
+              <span data-i18n="todayStory">今天发生的事情</span>
               <textarea id="comicSourceInput" rows="4" maxlength="420" placeholder="写一段今天发生的事，系统会把它拆成漫画分镜。"></textarea>
             </label>
             <div class="comic-diary-editor-actions">
-              <button class="primary-button" type="button" data-action="generate-comic-diary">生成漫画</button>
-              <button class="ghost-button" type="button" data-action="focus-comic-text">编辑文字</button>
-              <button class="ghost-button" type="button" data-action="clear-comic-diary">清空</button>
+              <button class="primary-button" type="button" data-action="generate-comic-diary" data-i18n="generateComic">生成漫画</button>
+              <button class="ghost-button" type="button" data-action="focus-comic-text" data-i18n="editText">编辑文字</button>
+              <button class="ghost-button" type="button" data-action="clear-comic-diary" data-i18n="clear">清空</button>
             </div>
             <div class="comic-diary-preview" id="comicDiaryPreview"></div>
             <div class="comic-diary-editor-actions">
-              <button class="ghost-button" type="button" data-action="save-comic-diary">保存到日记本</button>
-              <button class="ghost-button" type="button" data-action="generate-comic-diary">重新生成</button>
-              <button class="ghost-button" type="button" data-action="clear-comic-diary">清空</button>
-              <button class="primary-button" type="button" data-action="export-comic-diary-png">导出 PNG</button>
+              <button class="ghost-button" type="button" data-action="save-comic-diary" data-i18n="saveToDiary">保存到日记本</button>
+              <button class="ghost-button" type="button" data-action="generate-comic-diary" data-i18n="regenerate">重新生成</button>
+              <button class="ghost-button" type="button" data-action="clear-comic-diary" data-i18n="clear">清空</button>
+              <button class="primary-button" type="button" data-action="export-comic-diary-png" data-i18n="exportPng">导出 PNG</button>
             </div>
             <div class="comic-diary-saved-list" id="comicDiarySavedList" aria-label="已保存漫画日记"></div>
           </div>
         </section>
         <textarea id="reportInput" rows="6" placeholder="今天完成了什么？情绪如何？明天从哪一步继续？"></textarea>
-        <button class="primary-button" type="button" data-action="close-diary">保存并关闭</button>
+        <button class="primary-button" type="button" data-action="close-diary" data-i18n="saveAndClose">保存并关闭</button>
       </form>
     </dialog>
 
@@ -703,6 +708,7 @@
         <label id="editCardDurationField" hidden>
           <span>固定时长</span>
           <select id="editCardDurationInput">
+            <option value="30">30 分钟卡片</option>
             <option value="120">2 小时卡片</option>
             <option value="60">1 小时卡片</option>
           </select>
@@ -748,6 +754,40 @@
         </label>
         <p class="field-hint">生命维护任务会影响今日情绪值。</p>
         <button class="primary-button" type="button" data-action="save-main-task">创建卡片</button>
+      </form>
+    </dialog>
+
+    <dialog class="edit-card-dialog" id="sideTaskDialog">
+      <form class="dialog-card edit-card-form" method="dialog">
+        <button class="dialog-close" type="button" data-action="close-side-task-create" aria-label="关闭">×</button>
+        <p class="black-pill">新增副线卡片</p>
+        <h2>创建一张副线任务</h2>
+        <label>
+          <span>名字</span>
+          <input id="sideTaskTitleInput" type="text" maxlength="36" placeholder="例如：作品集整理" />
+        </label>
+        <label>
+          <span>小图标</span>
+          <input id="sideTaskIconInput" type="text" maxlength="4" value="副" />
+        </label>
+        <div class="task-icon-picker-field">
+          <span>卡片插画</span>
+          <input id="sideTaskArtInput" type="hidden" />
+          <div class="task-icon-picker" id="sideTaskArtPicker" aria-label="选择副线卡片插画"></div>
+        </div>
+        <label>
+          <span>说明</span>
+          <textarea id="sideTaskTextInput" rows="3" maxlength="80" placeholder="写下这张卡要推进的一小步"></textarea>
+        </label>
+        <label>
+          <span>固定时长</span>
+          <select id="sideTaskDurationInput">
+            <option value="30">30 分钟卡片</option>
+            <option value="60">1 小时卡片</option>
+            <option value="120">2 小时卡片</option>
+          </select>
+        </label>
+        <button class="primary-button" type="button" data-action="save-side-task">创建卡片</button>
       </form>
     </dialog>
 
@@ -811,12 +851,60 @@
       </div>
     </dialog>
 
+    <dialog class="game-daily-reminder-dialog" id="gameDailyReminderDialog">
+      <div class="dialog-card game-daily-reminder-card">
+        <button class="dialog-close" type="button" data-action="close-game-daily-reminder" aria-label="关闭">×</button>
+        <p class="black-pill" data-i18n="taskReminders">任务提醒</p>
+        <h2 data-i18n="allTodayTasksRemind">当天规划任务都提醒</h2>
+        <p class="dialog-summary" data-i18n="reminderSharedSummary">这里和日程 App 使用同一套设置。开启后，今天的日程任务和游戏同步任务都会提醒。</p>
+        <div class="game-daily-reminder-settings">
+          <label>
+            <span data-i18n="todayReminder">今日提醒</span>
+            <select id="gameDailyReminderEnabledInput">
+              <option value="off" data-i18n="off">关闭</option>
+              <option value="on" data-i18n="on">开启</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="reminderTime">提醒时间</span>
+            <select id="gameDailyReminderOffsetInput">
+              <option value="0" data-i18n="atStart">开始时</option>
+              <option value="5" data-i18n="fiveMinEarly">提前 5 分钟</option>
+              <option value="10" data-i18n="tenMinEarly">提前 10 分钟</option>
+              <option value="30" data-i18n="thirtyMinEarly">提前 30 分钟</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="reminderMode">提醒方式</span>
+            <select id="gameDailyReminderModeInput">
+              <option value="popup-notification" data-i18n="popupNotification">弹窗 + 系统通知</option>
+              <option value="popup-only" data-i18n="popupOnly">App 弹窗</option>
+              <option value="notification-only" data-i18n="notificationOnly">系统通知</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="sound">提示音</span>
+            <select id="gameDailyReminderSoundInput">
+              <option value="soft" data-i18n="softSound">柔和</option>
+              <option value="bell" data-i18n="bellSound">铃铛</option>
+              <option value="game" data-i18n="gameSound">游戏音</option>
+              <option value="none" data-i18n="silentSound">静音</option>
+            </select>
+          </label>
+        </div>
+        <div class="dialog-actions game-daily-reminder-actions">
+          <button class="ghost-button" type="button" data-action="preview-game-daily-reminder-sound" data-i18n="preview">试听</button>
+          <button class="primary-button" type="button" data-action="save-game-daily-reminder" data-i18n="saveSettings">保存设置</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog class="task-progress-dialog" id="taskProgressDialog">
       <div class="task-progress-card" id="taskProgressContent"></div>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="./app.js?v=206"></script>
+    <script src="./app.js?v=212"></script>
   </body>
 </html>

@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=64" />
+    <link rel="stylesheet" href="./styles.css?v=67" />
   </head>
   <body>
     <div class="app-shell">
@@ -144,15 +144,23 @@
               <a class="journal-game-entry" href="./graduation-game-v2/index.html" aria-label="进入新皮肤游戏">
                 <span class="journal-game-entry-icon" aria-hidden="true"></span>
                 <span>
-                  <strong>私人排期人生游戏挑战</strong>
-                  <small>进入新皮肤游戏</small>
+                  <strong data-i18n="lifeGameChallenge">私人排期人生游戏挑战</strong>
+                  <small data-i18n="lifeGameChallengeSub">进入新皮肤游戏</small>
                 </span>
                 <em aria-hidden="true">›</em>
               </a>
+              <button id="dailyReminderEntry" class="journal-reminder-entry" type="button" data-action="open-daily-reminder-settings" aria-label="打开任务提醒">
+                <span class="journal-reminder-entry-icon" aria-hidden="true">⏰</span>
+                <span>
+                  <strong data-i18n="taskReminderEntry">任务提醒</strong>
+                  <small id="dailyReminderEntryStatus">今日提醒：关闭</small>
+                </span>
+                <em aria-hidden="true">›</em>
+              </button>
               <button id="accountCenterEntry" class="journal-account-entry" type="button" data-action="open-account-center" aria-label="打开账号中心">
                 <span class="journal-account-entry-icon" aria-hidden="true">＠</span>
                 <span>
-                  <strong>账号中心</strong>
+                  <strong data-i18n="accountCenterEntry">账号中心</strong>
                   <small id="accountEntryStatus">本地模式</small>
                 </span>
                 <em aria-hidden="true">›</em>
@@ -282,31 +290,6 @@
             <span data-i18n="color">颜色 / Color</span>
             <input id="taskColorInput" type="color" value="#f2994a" />
           </label>
-          <label class="field task-reminder-field">
-            <span data-i18n="taskReminder">闹钟 / Alarm</span>
-            <select id="taskReminderInput">
-              <option value="off" data-i18n="reminderOff">关闭 / Off</option>
-              <option value="start" data-i18n="reminderAtStart">开始提醒 / At Start</option>
-            </select>
-          </label>
-          <div id="taskReminderOptions" class="task-reminder-options" hidden>
-            <label class="field task-reminder-volume-field">
-              <span data-i18n="reminderVolume">音量 / Volume</span>
-              <select id="taskReminderVolumeInput">
-                <option value="0.35" data-i18n="volumeLow">低 / Low</option>
-                <option value="0.65" data-i18n="volumeMedium">中 / Medium</option>
-                <option value="1" data-i18n="volumeHigh">高 / High</option>
-              </select>
-            </label>
-            <label class="field task-reminder-sound-field">
-              <span data-i18n="reminderSound">音乐 / Sound</span>
-              <select id="taskReminderSoundInput">
-                <option value="soft" data-i18n="soundSoft">柔和 / Soft</option>
-                <option value="bright" data-i18n="soundBright">清亮 / Bright</option>
-                <option value="pulse" data-i18n="soundPulse">节奏 / Pulse</option>
-              </select>
-            </label>
-          </div>
         </div>
         <label class="field full task-detail-field">
           <span data-i18n="details">细节 / Details</span>
@@ -317,6 +300,83 @@
           <span></span>
           <button class="ghost-button" type="button" data-action="close-dialog" data-dialog="taskDialog" data-i18n="cancel">取消 / Cancel</button>
           <button class="primary-button" type="submit" data-i18n="save">保存 / Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dailyReminderDialog" class="dialog daily-reminder-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">任务提醒</p>
+            <h2>统一开启当天任务提醒</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-dialog" data-dialog="dailyReminderDialog" aria-label="关闭 / Close">×</button>
+        </div>
+        <p class="daily-reminder-note">开启后，今天规划的所有任务都会提醒，包括日程任务和从人生游戏同步过来的任务。</p>
+        <label class="field">
+          <span>今日提醒</span>
+          <select id="dailyReminderEnabledInput">
+            <option value="off">关闭</option>
+            <option value="on">开启</option>
+          </select>
+        </label>
+        <div class="daily-reminder-settings">
+          <label class="field">
+            <span>提醒时间</span>
+            <select id="dailyReminderOffsetInput">
+              <option value="0">开始时</option>
+              <option value="5">提前 5 分钟</option>
+              <option value="10">提前 10 分钟</option>
+              <option value="30">提前 30 分钟</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>提醒方式</span>
+            <select id="dailyReminderModeInput">
+              <option value="popup-notification">弹窗 + 系统通知</option>
+              <option value="popup-only">App 弹窗</option>
+              <option value="notification-only">系统通知</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>提示音</span>
+            <select id="dailyReminderSoundInput">
+              <option value="soft">柔和</option>
+              <option value="bell">铃铛</option>
+              <option value="game">游戏音</option>
+              <option value="none">静音</option>
+            </select>
+          </label>
+        </div>
+        <div class="dialog-actions daily-reminder-actions">
+          <button class="ghost-button" type="button" data-action="request-task-notification-permission">开启系统通知权限</button>
+          <button class="primary-button" type="button" data-action="save-daily-reminder-settings">保存设置</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="taskReminderDialog" class="dialog task-reminder-dialog">
+      <form method="dialog">
+        <input id="taskReminderDialogTaskId" type="hidden" />
+        <div class="task-reminder-card-head">
+          <span class="task-reminder-bell" aria-hidden="true">⏰</span>
+          <div>
+            <p>任务开始啦！</p>
+            <h2>小闹钟敲门了</h2>
+          </div>
+        </div>
+        <p class="task-reminder-lead">现在轮到这个任务登场。</p>
+        <div class="task-reminder-detail">
+          <strong id="taskReminderDialogTitle">任务</strong>
+          <span id="taskReminderDialogProject">所属项目：-</span>
+          <span id="taskReminderDialogTime">开始时间：-</span>
+          <span id="taskReminderDialogDuration">预计时长：-</span>
+        </div>
+        <div class="dialog-actions task-reminder-actions">
+          <button class="primary-button" type="button" data-action="start-reminded-task">开始任务</button>
+          <button class="ghost-button" type="button" data-action="snooze-reminded-task">稍后 10 分钟</button>
+          <button class="ghost-button" type="button" data-action="dismiss-reminded-task">我知道了</button>
         </div>
       </form>
     </dialog>
@@ -470,8 +530,8 @@
       </a>
     </nav>
 
-    <script src="./native-notifications.js?v=64"></script>
-    <script src="./app.js?v=64"></script>
+    <script src="./native-notifications.js?v=67"></script>
+    <script src="./app.js?v=67"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

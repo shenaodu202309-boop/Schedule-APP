@@ -6,6 +6,9 @@ const SUPABASE_CONFIG = {
 const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
 const CLOUD_BACKUP_SCHEMA_VERSION = "cloud-backup-v1";
 const CLOUD_LOCAL_META_KEY = "private-schedule-cloud-sync-meta-v1";
+const DAILY_REMINDER_STORAGE_KEY = "private-schedule-daily-reminder-v1";
+const TASK_REMINDER_CHECK_MS = 30 * 1000;
+const TASK_REMINDER_MISSED_GRACE_MS = 12 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const HOUR_HEIGHT = 64;
@@ -200,6 +203,19 @@ const I18N = {
   journalRemoveCover: { zh: "删封面图", en: "Remove image" },
   journalConfirmRemoveCover: { zh: "确定删除这本本子的封面图片吗？", en: "Remove this notebook cover image?" },
   journalDeleteNotebook: { zh: "删除本子", en: "Delete notebook" },
+  lifeGameChallenge: { zh: "私人排期人生游戏挑战", en: "Private Schedule Life Game" },
+  lifeGameChallengeSub: { zh: "进入新皮肤游戏", en: "Open game mode" },
+  taskReminderEntry: { zh: "任务提醒", en: "Task Reminders" },
+  dailyReminderOffStatus: { zh: "今日提醒：关闭", en: "Today: Off" },
+  dailyReminderOnStatus: { zh: "今日提醒：{offset} · {sound}", en: "Today: {offset} · {sound}" },
+  dailyReminderOffsetStart: { zh: "开始时", en: "At start" },
+  dailyReminderOffsetMinutes: { zh: "提前 {minutes} 分钟", en: "{minutes} min early" },
+  soundBell: { zh: "铃铛", en: "Bell" },
+  soundGame: { zh: "游戏音", en: "Game" },
+  soundSilent: { zh: "静音", en: "Silent" },
+  accountCenterEntry: { zh: "账号中心", en: "Account Center" },
+  localMode: { zh: "本地模式", en: "Local Mode" },
+  signedInAs: { zh: "已登录：{email}", en: "Signed in: {email}" },
   journalConfirmDeleteNotebook: { zh: "确定删除这本本子吗？里面的草稿也会一起删除。", en: "Delete this notebook? Its canvas will be deleted too." },
   journalAddPage: { zh: "新增页", en: "Add Page" },
   journalDeletePage: { zh: "删除页", en: "Delete Page" },
@@ -347,6 +363,8 @@ let journalInkSaveTimer = null;
 let journalInkSnapshotTimer = null;
 let reminderTimer = null;
 let nativeReminderSyncTimer = null;
+let taskReminderTimeouts = [];
+let activeTaskReminderId = "";
 let supabaseClient = null;
 let currentAuthUser = null;
 let cloudBackupStatus = null;
@@ -361,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
   render();
   scheduleMidnightRefresh();
   scheduleMinuteRefresh();
-  scheduleTaskReminderCheck();
+  initTaskReminderSystem();
 });
 
 function cacheDom() {
@@ -424,10 +442,19 @@ function cacheDom() {
   dom.taskDurationInput = document.querySelector("#taskDurationInput");
   dom.taskStatusInput = document.querySelector("#taskStatusInput");
   dom.taskColorInput = document.querySelector("#taskColorInput");
-  dom.taskReminderInput = document.querySelector("#taskReminderInput");
-  dom.taskReminderOptions = document.querySelector("#taskReminderOptions");
-  dom.taskReminderVolumeInput = document.querySelector("#taskReminderVolumeInput");
-  dom.taskReminderSoundInput = document.querySelector("#taskReminderSoundInput");
+  dom.dailyReminderEntry = document.querySelector("#dailyReminderEntry");
+  dom.dailyReminderEntryStatus = document.querySelector("#dailyReminderEntryStatus");
+  dom.dailyReminderDialog = document.querySelector("#dailyReminderDialog");
+  dom.dailyReminderEnabledInput = document.querySelector("#dailyReminderEnabledInput");
+  dom.dailyReminderOffsetInput = document.querySelector("#dailyReminderOffsetInput");
+  dom.dailyReminderModeInput = document.querySelector("#dailyReminderModeInput");
+  dom.dailyReminderSoundInput = document.querySelector("#dailyReminderSoundInput");
+  dom.taskReminderDialog = document.querySelector("#taskReminderDialog");
+  dom.taskReminderDialogTaskId = document.querySelector("#taskReminderDialogTaskId");
+  dom.taskReminderDialogTitle = document.querySelector("#taskReminderDialogTitle");
+  dom.taskReminderDialogProject = document.querySelector("#taskReminderDialogProject");
+  dom.taskReminderDialogTime = document.querySelector("#taskReminderDialogTime");
+  dom.taskReminderDialogDuration = document.querySelector("#taskReminderDialogDuration");
   dom.taskDetailInput = document.querySelector("#taskDetailInput");
   dom.deleteTaskButton = document.querySelector("#deleteTaskButton");
   dom.dateMarkDialog = document.querySelector("#dateMarkDialog");
@@ -514,7 +541,18 @@ function bindEvents() {
   dom.reviewFeelRow?.addEventListener("click", handleReviewMetaClick);
   dom.projectForm.addEventListener("submit", handleProjectSubmit);
   dom.taskForm.addEventListener("submit", handleTaskSubmit);
-  dom.taskReminderInput?.addEventListener("change", updateTaskReminderOptions);
+  dom.dailyReminderEnabledInput?.addEventListener("change", updateDailyReminderDialogState);
+  dom.dailyReminderSoundInput?.addEventListener("change", previewDailyReminderSound);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      checkMissedTaskRemindersOnResume();
+      scheduleTodayTaskReminders();
+    }
+  });
+  window.addEventListener("focus", () => {
+    checkMissedTaskRemindersOnResume();
+    scheduleTodayTaskReminders();
+  });
   dom.dateMarkForm?.addEventListener("submit", handleDateMarkSubmit);
   dom.dateMarkColorInput?.addEventListener("input", updateDateMarkPickerColor);
   dom.importInput.addEventListener("change", handleImport);
@@ -782,12 +820,76 @@ function closePastDays() {
 
 function normalizeTaskReminder(value = {}) {
   const reminder = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  const sound = ["soft", "bright", "pulse"].includes(reminder.sound) ? reminder.sound : "soft";
+  const soundValue = reminder.reminderSound || reminder.sound;
+  const sound = ["soft", "bell", "game", "none"].includes(soundValue)
+    ? soundValue
+    : ["bright", "pulse"].includes(soundValue)
+      ? "game"
+      : "soft";
+  const mode = ["popup-only", "notification-only", "popup-notification"].includes(reminder.reminderMode)
+    ? reminder.reminderMode
+    : "popup-notification";
   return {
-    enabled: Boolean(reminder.enabled),
+    enabled: Boolean(reminder.enabled ?? reminder.reminderEnabled),
+    reminderEnabled: Boolean(reminder.enabled ?? reminder.reminderEnabled),
+    reminderMode: mode,
+    reminderOffsetMinutes: clamp(Number(reminder.reminderOffsetMinutes) || 0, 0, 180),
+    reminderSound: sound,
+    lastReminderAt: reminder.lastReminderAt || null,
+    snoozeUntil: reminder.snoozeUntil || null,
     volume: clamp(Number(reminder.volume) || 0.65, 0.1, 1),
     sound,
   };
+}
+
+function defaultDailyReminderSettings() {
+  return normalizeTaskReminder({
+    enabled: false,
+    reminderEnabled: false,
+    reminderMode: "popup-notification",
+    reminderOffsetMinutes: 0,
+    reminderSound: "soft",
+    sound: "soft",
+  });
+}
+
+function normalizeDailyReminderSettings(value = {}) {
+  const normalized = normalizeTaskReminder(value);
+  normalized.enabled = Boolean(value?.enabled ?? value?.reminderEnabled);
+  normalized.reminderEnabled = normalized.enabled;
+  return normalized;
+}
+
+function loadDailyReminderSettings() {
+  try {
+    const raw = localStorage.getItem(DAILY_REMINDER_STORAGE_KEY);
+    return normalizeDailyReminderSettings(raw ? JSON.parse(raw) : defaultDailyReminderSettings());
+  } catch {
+    return defaultDailyReminderSettings();
+  }
+}
+
+function saveDailyReminderSettings(settings) {
+  const normalized = normalizeDailyReminderSettings(settings);
+  localStorage.setItem(DAILY_REMINDER_STORAGE_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+function getDailyReminderSettingsForDate(date = todayISO()) {
+  const settings = loadDailyReminderSettings();
+  if (date !== todayISO()) return { ...settings, enabled: false, reminderEnabled: false };
+  return settings;
+}
+
+function taskReminderForScheduling(task) {
+  const dailyReminder = getDailyReminderSettingsForDate(task?.date);
+  const storedReminder = normalizeTaskReminder(task?.reminder);
+  if (!dailyReminder.enabled) return { ...storedReminder, enabled: false, reminderEnabled: false };
+  return normalizeTaskReminder({
+    ...dailyReminder,
+    lastReminderAt: storedReminder.lastReminderAt,
+    snoozeUntil: storedReminder.snoozeUntil,
+  });
 }
 
 function saveState() {
@@ -852,6 +954,7 @@ function render() {
   renderTimeline();
   renderDayBoard();
   renderJournal();
+  renderDailyReminderEntry();
   renderTaskProjectOptions();
   applyAppView();
   updateUndoButton();
@@ -2568,11 +2671,15 @@ function updateAuthUI(user = currentAuthUser) {
   currentAuthUser = user || null;
   const email = currentAuthUser?.email || "";
   if (dom.accountEntryStatus) {
-    dom.accountEntryStatus.textContent = email ? `已登录：${email}` : "本地模式";
+    dom.accountEntryStatus.textContent = email
+      ? text("signedInAs").replace("{email}", email)
+      : text("localMode");
   }
   if (dom.accountCenterEntry) {
     dom.accountCenterEntry.classList.toggle("is-signed-in", Boolean(email));
-    dom.accountCenterEntry.title = email ? `已登录：${email}` : "当前为本地模式";
+    dom.accountCenterEntry.title = email
+      ? text("signedInAs").replace("{email}", email)
+      : text("localMode");
   }
   if (dom.accountModeText) {
     dom.accountModeText.textContent = email
@@ -4250,6 +4357,14 @@ function handleDocumentClick(event) {
     openAccountCenter();
     return;
   }
+  if (action === "open-daily-reminder-settings") {
+    openDailyReminderSettings();
+    return;
+  }
+  if (action === "save-daily-reminder-settings") {
+    saveDailyReminderSettingsFromDialog();
+    return;
+  }
   if (action === "close-account-center") {
     closeAccountCenter();
     return;
@@ -4409,6 +4524,10 @@ function handleDocumentClick(event) {
   if (action === "add-task-to-project") openTaskDialog(null, button.dataset.projectId);
   if (action === "edit-task") openTaskDialog(button.dataset.taskId);
   if (action === "delete-task") deleteCurrentTask();
+  if (action === "request-task-notification-permission") void requestTaskNotificationPermission();
+  if (action === "start-reminded-task") startActiveTaskReminder();
+  if (action === "snooze-reminded-task") snoozeActiveTaskReminder();
+  if (action === "dismiss-reminded-task") dismissActiveTaskReminder();
   if (action === "cycle-task-status") cycleTaskStatus(button.dataset.taskId);
   if (action === "close-dialog") document.querySelector(`#${button.dataset.dialog}`)?.close();
   if (action === "export-data") exportData();
@@ -4906,11 +5025,6 @@ function openTaskDialog(taskId = "", projectId = "") {
   dom.taskDurationInput.value = task?.duration || 1;
   dom.taskStatusInput.value = task?.status || "todo";
   dom.taskColorInput.value = task?.color || project.color || nextColor();
-  const reminder = normalizeTaskReminder(task?.reminder);
-  dom.taskReminderInput.value = reminder.enabled ? "start" : "off";
-  dom.taskReminderVolumeInput.value = String(reminder.volume);
-  dom.taskReminderSoundInput.value = reminder.sound;
-  updateTaskReminderOptions();
   dom.taskDetailInput.value = task?.detail || "";
   dom.deleteTaskButton.hidden = !task;
   dom.taskDialog.showModal();
@@ -4929,7 +5043,7 @@ function handleTaskSubmit(event) {
     duration: Math.max(0.25, Number(dom.taskDurationInput.value) || 1),
     status: dom.taskStatusInput.value,
     color: dom.taskColorInput.value,
-    reminder: readTaskReminderForm(),
+    reminder: normalizeTaskReminder(id ? findTask(id)?.task?.reminder : {}),
     detail: dom.taskDetailInput.value.trim(),
   };
   if (!payload.title) return;
@@ -4949,21 +5063,92 @@ function handleTaskSubmit(event) {
   }
   dom.taskDialog.close();
   saveAndRender();
-  if (savedTask) scheduleNativeTaskReminder(savedTask, targetProject.title);
+  if (savedTask) {
+    scheduleTodayTaskReminders();
+    scheduleNativeTaskReminder(savedTask, targetProject.title);
+  }
 }
 
-function updateTaskReminderOptions() {
-  if (!dom.taskReminderOptions || !dom.taskReminderInput) return;
-  dom.taskReminderOptions.hidden = dom.taskReminderInput.value !== "start";
+function fillDailyReminderDialog() {
+  const settings = loadDailyReminderSettings();
+  if (dom.dailyReminderEnabledInput) dom.dailyReminderEnabledInput.value = settings.enabled ? "on" : "off";
+  if (dom.dailyReminderOffsetInput) dom.dailyReminderOffsetInput.value = String(settings.reminderOffsetMinutes || 0);
+  if (dom.dailyReminderModeInput) dom.dailyReminderModeInput.value = settings.reminderMode || "popup-notification";
+  if (dom.dailyReminderSoundInput) dom.dailyReminderSoundInput.value = settings.reminderSound || settings.sound || "soft";
+  updateDailyReminderDialogState();
 }
 
-function readTaskReminderForm() {
-  const enabled = dom.taskReminderInput?.value === "start";
-  return normalizeTaskReminder({
+function updateDailyReminderDialogState() {
+  const enabled = dom.dailyReminderEnabledInput?.value === "on";
+  dom.dailyReminderDialog?.querySelector(".daily-reminder-settings")?.classList.toggle("is-disabled", !enabled);
+}
+
+function readDailyReminderDialog() {
+  const enabled = dom.dailyReminderEnabledInput?.value === "on";
+  return normalizeDailyReminderSettings({
     enabled,
-    volume: Number(dom.taskReminderVolumeInput?.value) || 0.65,
-    sound: dom.taskReminderSoundInput?.value || "soft",
+    reminderEnabled: enabled,
+    reminderOffsetMinutes: Number(dom.dailyReminderOffsetInput?.value) || 0,
+    reminderMode: dom.dailyReminderModeInput?.value || "popup-notification",
+    reminderSound: dom.dailyReminderSoundInput?.value || "soft",
+    sound: dom.dailyReminderSoundInput?.value || "soft",
   });
+}
+
+function previewDailyReminderSound() {
+  const sound = dom.dailyReminderSoundInput?.value || "soft";
+  if (sound === "none") return;
+  playTaskReminderSound(normalizeTaskReminder({
+    enabled: true,
+    reminderSound: sound,
+    sound,
+  }));
+  if ("vibrate" in navigator) navigator.vibrate(60);
+}
+
+function openDailyReminderSettings() {
+  fillDailyReminderDialog();
+  if (typeof dom.dailyReminderDialog?.showModal === "function") {
+    if (!dom.dailyReminderDialog.open) dom.dailyReminderDialog.showModal();
+  } else {
+    dom.dailyReminderDialog?.setAttribute("open", "");
+  }
+}
+
+function saveDailyReminderSettingsFromDialog() {
+  const settings = saveDailyReminderSettings(readDailyReminderDialog());
+  if (typeof dom.dailyReminderDialog?.close === "function") {
+    dom.dailyReminderDialog.close();
+  } else {
+    dom.dailyReminderDialog?.removeAttribute("open");
+  }
+  renderDailyReminderEntry();
+  scheduleTodayTaskReminders();
+  scheduleNativeReminderSync({ requestPermission: settings.enabled && settings.reminderMode !== "popup-only" });
+  showToast(settings.enabled ? "任务提醒已开启。" : "任务提醒已关闭。");
+}
+
+function renderDailyReminderEntry() {
+  const settings = loadDailyReminderSettings();
+  const enabled = settings.enabled;
+  dom.dailyReminderEntry?.classList.toggle("is-enabled", enabled);
+  if (!dom.dailyReminderEntryStatus) return;
+  if (!enabled) {
+    dom.dailyReminderEntryStatus.textContent = text("dailyReminderOffStatus");
+    return;
+  }
+  const offsetText = settings.reminderOffsetMinutes
+    ? text("dailyReminderOffsetMinutes").replace("{minutes}", settings.reminderOffsetMinutes)
+    : text("dailyReminderOffsetStart");
+  const soundText = ({
+    soft: text("soundSoft"),
+    bell: text("soundBell"),
+    game: text("soundGame"),
+    none: text("soundSilent"),
+  })[settings.reminderSound] || text("soundSoft");
+  dom.dailyReminderEntryStatus.textContent = text("dailyReminderOnStatus")
+    .replace("{offset}", offsetText)
+    .replace("{sound}", soundText);
 }
 
 function deleteCurrentTask() {
@@ -5602,35 +5787,258 @@ function scheduleMinuteRefresh() {
 
 function scheduleTaskReminderCheck() {
   clearInterval(reminderTimer);
+  reminderTimer = setInterval(() => {
+    checkMissedTaskRemindersOnResume();
+    scheduleTodayTaskReminders();
+  }, TASK_REMINDER_CHECK_MS);
   scheduleNativeReminderSync();
 }
 
 function checkTaskReminders() {
+  checkMissedTaskRemindersOnResume();
+  scheduleTodayTaskReminders();
   scheduleNativeReminderSync();
 }
 
+function initTaskReminderSystem() {
+  scheduleTaskReminderCheck();
+  scheduleTodayTaskReminders();
+  checkMissedTaskRemindersOnResume();
+}
+
+function clearTaskReminderTimers() {
+  taskReminderTimeouts.forEach((timerId) => clearTimeout(timerId));
+  taskReminderTimeouts = [];
+}
+
+function scheduleTodayTaskReminders() {
+  if (!state) return;
+  clearTaskReminderTimers();
+  const now = new Date();
+  getReminderTaskItemsForToday().forEach(({ task }) => {
+    const reminderAt = getTaskReminderDateTime(task);
+    if (!reminderAt) return;
+    const delay = reminderAt.getTime() - now.getTime();
+    if (delay > 0 && delay <= DAY_MS) {
+      const timerId = setTimeout(() => {
+        void triggerTaskReminder(task.id);
+      }, delay);
+      taskReminderTimeouts.push(timerId);
+    }
+  });
+}
+
+function getReminderTaskItemsForToday() {
+  return getAllTasks().filter(({ task }) => {
+    const reminder = taskReminderForScheduling(task);
+    return reminder.enabled && task.status !== "done" && task.status !== "missed" && task.date === todayISO();
+  });
+}
+
+function getTaskStartDateTime(task) {
+  const date = String(task?.date || "");
+  const time = String(task?.startTime || "09:00");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
+  const start = new Date(`${date}T${time}:00`);
+  return Number.isNaN(start.getTime()) ? null : start;
+}
+
+function getTaskReminderDateTime(task) {
+  const reminder = taskReminderForScheduling(task);
+  if (reminder.snoozeUntil) {
+    const snoozeDate = new Date(reminder.snoozeUntil);
+    if (!Number.isNaN(snoozeDate.getTime()) && snoozeDate > new Date()) return snoozeDate;
+  }
+  const start = getTaskStartDateTime(task);
+  if (!start) return null;
+  return new Date(start.getTime() - (reminder.reminderOffsetMinutes || 0) * 60 * 1000);
+}
+
+function shouldRemindTaskNow(task, now = new Date()) {
+  const reminder = taskReminderForScheduling(task);
+  if (!reminder.enabled || task.status === "done" || task.status === "missed") return false;
+  const reminderAt = getTaskReminderDateTime(task);
+  if (!reminderAt || reminderAt > now) return false;
+  if (now.getTime() - reminderAt.getTime() > TASK_REMINDER_MISSED_GRACE_MS) return false;
+  if (reminder.lastReminderAt) {
+    const last = new Date(reminder.lastReminderAt);
+    if (!Number.isNaN(last.getTime()) && last >= reminderAt) return false;
+  }
+  return true;
+}
+
+function checkMissedTaskRemindersOnResume() {
+  if (!state) return;
+  const now = new Date();
+  const due = getReminderTaskItemsForToday().find(({ task }) => shouldRemindTaskNow(task, now));
+  if (due) void triggerTaskReminder(due.task.id);
+}
+
 function playTaskReminderSound(reminder) {
+  const safeReminder = normalizeTaskReminder(reminder);
+  if (safeReminder.reminderSound === "none" || safeReminder.sound === "none") return;
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return;
-  const context = new AudioContextClass();
-  const gain = context.createGain();
-  gain.gain.value = clamp(Number(reminder.volume) || 0.65, 0.1, 1) * 0.16;
-  gain.connect(context.destination);
-  const patterns = {
-    soft: [523, 659],
-    bright: [784, 988],
-    pulse: [440, 440, 660],
+  try {
+    const context = new AudioContextClass();
+    const gain = context.createGain();
+    gain.gain.value = 0.16;
+    gain.connect(context.destination);
+    const patterns = {
+      soft: [520, 660],
+      bell: [880, 1046],
+      game: [660, 880, 1174],
+    };
+    (patterns[safeReminder.reminderSound] || patterns.soft).forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = safeReminder.reminderSound === "game" ? "square" : "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      const start = context.currentTime + index * 0.22;
+      oscillator.start(start);
+      oscillator.stop(start + 0.18);
+    });
+    setTimeout(() => context.close?.(), 1400);
+  } catch (error) {
+    console.warn("无法播放提醒音", error);
+  }
+}
+
+async function triggerTaskReminder(taskId) {
+  const found = findTask(taskId);
+  if (!found) return false;
+  const { task, project } = found;
+  if (!shouldRemindTaskNow(task)) return false;
+  if (dom.taskReminderDialog?.open && activeTaskReminderId === task.id) return false;
+  const reminder = taskReminderForScheduling(task);
+  let didNotify = false;
+  if (reminder.reminderMode !== "popup-only") {
+    didNotify = await showTaskSystemNotification(task, project);
+  }
+  if (document.hidden) {
+    if (didNotify) markTaskReminderShown(taskId);
+    return didNotify;
+  }
+  if (reminder.reminderMode === "notification-only" && didNotify) {
+    markTaskReminderShown(taskId);
+    return true;
+  }
+  showTaskReminderPopup(task, project);
+  playTaskReminderSound(reminder);
+  if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+  return true;
+}
+
+function showTaskReminderPopup(task, project) {
+  activeTaskReminderId = task.id;
+  if (dom.taskReminderDialogTaskId) dom.taskReminderDialogTaskId.value = task.id;
+  if (dom.taskReminderDialogTitle) dom.taskReminderDialogTitle.textContent = `「${task.title}」`;
+  if (dom.taskReminderDialogProject) dom.taskReminderDialogProject.textContent = `所属项目：${project?.title || "未命名项目"}`;
+  if (dom.taskReminderDialogTime) dom.taskReminderDialogTime.textContent = `开始时间：${task.startTime || "09:00"}`;
+  if (dom.taskReminderDialogDuration) dom.taskReminderDialogDuration.textContent = `预计时长：${trimNumber(task.duration || 1)} 小时`;
+  if (typeof dom.taskReminderDialog?.showModal === "function") {
+    if (!dom.taskReminderDialog.open) dom.taskReminderDialog.showModal();
+  } else {
+    dom.taskReminderDialog?.setAttribute("open", "");
+  }
+}
+
+async function requestTaskNotificationPermission() {
+  if (!("Notification" in window)) {
+    alert("当前浏览器不支持系统通知。");
+    return "unsupported";
+  }
+  const permission = await Notification.requestPermission();
+  alert(permission === "granted" ? "系统通知已开启。" : "你没有开启系统通知，任务开始时只能使用 App 内弹窗。");
+  return permission;
+}
+
+async function showTaskSystemNotification(task, project) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return false;
+  const title = "任务开始提醒";
+  const options = {
+    body: `现在该开始：${task.title}${project?.title ? ` · ${project.title}` : ""}`,
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    tag: `task-reminder-${task.id}`,
+    renotify: true,
+    data: {
+      taskId: task.id,
+      url: "./index.html#todaySection",
+    },
   };
-  (patterns[reminder.sound] || patterns.soft).forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    oscillator.type = reminder.sound === "pulse" ? "square" : "sine";
-    oscillator.frequency.value = frequency;
-    oscillator.connect(gain);
-    const start = context.currentTime + index * 0.22;
-    oscillator.start(start);
-    oscillator.stop(start + 0.16);
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, options);
+      return true;
+    }
+    new Notification(title, options);
+    return true;
+  } catch (error) {
+    console.warn("Failed to show task notification.", error);
+    return false;
+  }
+}
+
+function updateTaskReminderState(taskId, updater) {
+  const found = findTask(taskId);
+  if (!found) return false;
+  found.task.reminder = normalizeTaskReminder(found.task.reminder);
+  updater(found.task.reminder, found.task);
+  saveAndRender();
+  scheduleTodayTaskReminders();
+  scheduleNativeReminderSync();
+  return true;
+}
+
+function markTaskReminderShown(taskId) {
+  return updateTaskReminderState(taskId, (reminder) => {
+    reminder.lastReminderAt = new Date().toISOString();
+    reminder.snoozeUntil = null;
   });
-  setTimeout(() => context.close?.(), 1400);
+}
+
+function snoozeTaskReminder(taskId, minutes = 10) {
+  return updateTaskReminderState(taskId, (reminder) => {
+    reminder.snoozeUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+    reminder.lastReminderAt = null;
+  });
+}
+
+function closeTaskReminderDialog() {
+  if (typeof dom.taskReminderDialog?.close === "function") {
+    dom.taskReminderDialog.close();
+  } else {
+    dom.taskReminderDialog?.removeAttribute("open");
+  }
+}
+
+function dismissActiveTaskReminder() {
+  const taskId = dom.taskReminderDialogTaskId?.value || activeTaskReminderId;
+  if (taskId) markTaskReminderShown(taskId);
+  closeTaskReminderDialog();
+}
+
+function snoozeActiveTaskReminder() {
+  const taskId = dom.taskReminderDialogTaskId?.value || activeTaskReminderId;
+  if (taskId) {
+    snoozeTaskReminder(taskId, 10);
+    showToast("已推迟 10 分钟提醒。");
+  }
+  closeTaskReminderDialog();
+}
+
+function startActiveTaskReminder() {
+  const taskId = dom.taskReminderDialogTaskId?.value || activeTaskReminderId;
+  if (!taskId) return;
+  markTaskReminderShown(taskId);
+  state.selectedDate = todayISO();
+  saveAndRender();
+  location.hash = "#todaySection";
+  setActiveViewFromHash();
+  closeTaskReminderDialog();
+  showToast("已进入今天任务。");
 }
 
 function getNativeReminderClient() {
@@ -5640,7 +6048,7 @@ function getNativeReminderClient() {
 function getNativeReminderItems() {
   return getAllTasks()
     .filter(({ task }) => {
-      const reminder = normalizeTaskReminder(task.reminder);
+      const reminder = taskReminderForScheduling(task);
       return reminder.enabled && task.status !== "done" && task.status !== "missed";
     })
     .map(({ task, project }) => ({
@@ -5669,7 +6077,7 @@ async function syncNativeTaskReminders(options = {}) {
 }
 
 async function scheduleNativeTaskReminder(task, projectTitle) {
-  const reminder = normalizeTaskReminder(task?.reminder);
+  const reminder = taskReminderForScheduling(task);
   const client = getNativeReminderClient();
   if (!reminder.enabled) {
     cancelNativeTaskReminder(task?.id);

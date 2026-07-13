@@ -48,11 +48,18 @@
   }
 
   function parseReminderDate(task) {
+    const reminder = task?.reminder && typeof task.reminder === "object" ? task.reminder : {};
+    if (reminder.snoozeUntil) {
+      const snoozeDate = new Date(reminder.snoozeUntil);
+      if (!Number.isNaN(snoozeDate.getTime())) return snoozeDate;
+    }
     const date = String(task?.date || "");
     const time = String(task?.startTime || "09:00");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
     const at = new Date(`${date}T${time}:00`);
-    return Number.isNaN(at.getTime()) ? null : at;
+    if (Number.isNaN(at.getTime())) return null;
+    const offsetMinutes = Math.max(0, Number(reminder.reminderOffsetMinutes || 0) || 0);
+    return new Date(at.getTime() - offsetMinutes * 60 * 1000);
   }
 
   function buildNotification(task, projectTitle) {

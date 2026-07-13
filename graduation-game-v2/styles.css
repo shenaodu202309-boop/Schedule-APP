@@ -298,6 +298,39 @@ button:active,
   font-weight: 900;
 }
 
+.game-daily-reminder-button {
+  display: inline-grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: min(280px, 100%);
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  background: #fff8ee;
+  box-shadow: 0 4px 0 rgba(18, 11, 31, 0.34);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.game-daily-reminder-button.is-enabled {
+  background: var(--yellow);
+}
+
+.game-daily-reminder-button small {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(18, 11, 31, 0.72);
+  font-size: 11px;
+  font-weight: 1000;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .editable-text {
   cursor: text;
   outline: none;
@@ -3051,7 +3084,7 @@ textarea:focus {
   }
 
   .finance-card-seal {
-    top: 0;
+    top: 8px;
     right: 9px;
     min-width: 66px;
     height: 22px;
@@ -3060,10 +3093,10 @@ textarea:focus {
   }
 
   .finance-card-badge-cover {
-    top: -1px;
-    right: 5px;
-    width: 80px;
-    height: 25px;
+    top: 3px;
+    right: 4px;
+    width: 84px;
+    height: 38px;
   }
 
   .finance-card-stat {
@@ -4082,6 +4115,7 @@ textarea:focus {
 .battle-settings-dialog,
 .calendar-dialog,
 .delete-schedule-dialog,
+.game-daily-reminder-dialog,
 .task-progress-dialog,
 .tarot-dialog,
 .modal {
@@ -4105,6 +4139,7 @@ textarea:focus {
 .battle-settings-dialog[open],
 .calendar-dialog[open],
 .delete-schedule-dialog[open],
+.game-daily-reminder-dialog[open],
 .task-progress-dialog[open],
 .tarot-dialog[open],
 .modal.is-open {
@@ -4119,6 +4154,7 @@ textarea:focus {
 .battle-settings-dialog::backdrop,
 .calendar-dialog::backdrop,
 .delete-schedule-dialog::backdrop,
+.game-daily-reminder-dialog::backdrop,
 .task-progress-dialog::backdrop,
 .tarot-dialog::backdrop,
 .modal-backdrop {
@@ -4135,6 +4171,7 @@ textarea:focus {
 .battle-settings-dialog[open]::backdrop,
 .calendar-dialog[open]::backdrop,
 .delete-schedule-dialog[open]::backdrop,
+.game-daily-reminder-dialog[open]::backdrop,
 .task-progress-dialog[open]::backdrop,
 .tarot-dialog[open]::backdrop,
 .modal-backdrop.is-open {
@@ -4189,6 +4226,49 @@ textarea:focus {
 
 .dialog-card h2 {
   margin: 12px 0 6px;
+}
+
+.game-daily-reminder-card {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(255, 216, 77, 0.32), transparent 28%),
+    linear-gradient(145deg, #fff8ee 0%, #f7efff 100%);
+}
+
+.game-daily-reminder-settings {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.game-daily-reminder-settings label {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.game-daily-reminder-settings span {
+  color: rgba(20, 11, 42, 0.72);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.game-daily-reminder-settings select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(20, 11, 42, 0.18);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.game-daily-reminder-actions {
+  margin-top: 14px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
 }
 
 .onboarding-card {
@@ -13413,7 +13493,7 @@ body.skill-market-page-body .skill-market-add-stock-button {
   }
 
   .printer-receipt-peek {
-    z-index: 4;
+    z-index: 2;
     left: 22px;
     right: 44px;
     bottom: 9px;

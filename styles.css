@@ -1982,6 +1982,10 @@ body.nav-hidden .undo-button {
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.24);
 }
 
+.project-fab[hidden] {
+  display: none;
+}
+
 .project-fab span {
   display: grid;
   width: 46px;

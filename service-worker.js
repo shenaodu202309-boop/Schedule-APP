@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-schedule-native-v416';
+const CACHE_NAME = 'daily-schedule-native-v417';
 const GARDEN_PLANT_ASSETS = [
   'rose',
   'tulip',
@@ -467,10 +467,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const request = event.request;
+  const url = new URL(request.url);
+  const isAppShellRequest = url.origin === self.location.origin
+    && (request.mode === 'navigate' || request.destination === 'script' || request.destination === 'style');
 
-  if (request.mode === 'navigate') {
+  if (isAppShellRequest) {
     event.respondWith(
-      fetch(request).catch(() => caches.match('./index.html', { ignoreSearch: true }))
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())).catch(() => undefined);
+          }
+          return response;
+        })
+        .catch(() => caches.match(request, { ignoreSearch: true }))
     );
     return;
   }

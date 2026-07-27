@@ -2640,7 +2640,7 @@ body[data-view="overviewSection"] .topbar {
 .topbar-actions {
   grid-column: auto;
   display: grid;
-  grid-template-columns: 50px 22px 120px 52px 22px 44px;
+  grid-template-columns: 48px 22px 110px 46px 22px 42px;
   gap: 6px;
   align-items: end;
   justify-content: center;
@@ -2664,6 +2664,7 @@ body[data-view="overviewSection"] .topbar {
 
 .topbar-actions .field.compact {
   grid-column: 3;
+  overflow: hidden;
 }
 
 .topbar-actions .field.tiny {
@@ -2693,9 +2694,17 @@ body[data-view="overviewSection"] .topbar {
 
 .topbar-actions input,
 .topbar-actions select {
+  max-width: 100%;
   min-width: 0;
+  min-inline-size: 0;
   padding: 0 7px;
   font-size: 0.75rem;
+}
+
+.topbar-actions input[type="date"]::-webkit-datetime-edit {
+  overflow: hidden;
+  padding: 0;
+  white-space: nowrap;
 }
 
 .topbar-actions .icon-button {
@@ -2812,8 +2821,9 @@ body[data-view="collaborationSection"] .undo-button {
 
 .collaboration-timeline-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 9px;
+  grid-template-columns: 126px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
 }
 
 .collaboration-head-summary {
@@ -2821,7 +2831,7 @@ body[data-view="collaborationSection"] .undo-button {
   grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
   min-width: 0;
-  gap: 6px;
+  gap: 3px;
 }
 
 .collaboration-section-label {
@@ -2835,7 +2845,7 @@ body[data-view="collaborationSection"] .undo-button {
 .collaboration-timeline-meta {
   margin: 0;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.62rem;
   font-weight: 850;
   white-space: nowrap;
 }
@@ -2881,18 +2891,23 @@ body[data-view="collaborationSection"] .undo-button {
 
 .collaboration-current-workspace {
   display: inline-flex;
-  min-height: 34px;
-  padding: 0 13px;
+  min-width: 0;
+  max-width: 80px;
+  min-height: 28px;
+  padding: 0 7px;
   align-items: center;
   border: 1px solid #196f73 !important;
   border-radius: 18px;
   color: #fff !important;
   background: #196f73 !important;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.collaboration-current-workspace::after { content: "⌄"; margin-left: 6px; font-size: 0.72rem; }
+.collaboration-current-workspace::after { content: "⌄"; margin-left: 3px; font-size: 0.62rem; }
 
 .collaboration-workspace-menu {
   position: absolute;
@@ -3035,11 +3050,11 @@ body[data-view="collaborationSection"] .undo-button {
 }
 
 .collaboration-head-actions .ghost-button {
-  min-height: 28px;
+  min-height: 26px;
   min-width: 0;
-  padding: 0 5px;
-  border-radius: 14px;
-  font-size: 0.64rem;
+  padding: 0 2px;
+  border-radius: 13px;
+  font-size: 0.58rem;
   font-weight: 850;
   white-space: nowrap;
 }

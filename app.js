@@ -619,6 +619,7 @@ function cacheDom() {
   dom.collaborationDayPlanTitle = document.querySelector("#collaborationDayPlanTitle");
   dom.collaborationDayPlanToggle = document.querySelector("#collaborationDayPlanToggle");
   dom.collaborationDayPlanContent = document.querySelector("#collaborationDayPlanContent");
+  dom.collaborationDayPlan = document.querySelector(".collaboration-day-plan");
   dom.collaborationCalendar = document.querySelector("#collaborationCalendar");
   dom.collaborationViewToggle = document.querySelector("#collaborationViewToggle");
   dom.collaborationTimelineMeta = document.querySelector("#collaborationTimelineMeta");
@@ -1242,7 +1243,12 @@ function applyAppView() {
 
 function updateCreateFab(viewId) {
   if (!dom.createFab) return;
-  dom.createFab.hidden = viewId === "collaborationSection";
+  const isCollaborationView = viewId === "collaborationSection";
+  dom.createFab.hidden = isCollaborationView;
+  if (!isCollaborationView) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    closeCollaborationCreateMenu();
+  }
   const label = viewId === "todaySection" ? text("taskDialogTodayNew") : localizedPair("新建", "Create");
   dom.createFab.setAttribute("aria-label", label);
   dom.createFab.setAttribute("aria-haspopup", viewId === "todaySection" ? "dialog" : "menu");
@@ -2216,7 +2222,9 @@ function renderCollaborationDaySchedule(workspace) {
   const rows = tasks.map(({ task, project }) => {
     const left = ((timeToMinutes(task.startTime) - START_HOUR * 60) / 60) * DAY_HOUR_WIDTH + 8;
     const width = task.duration * DAY_HOUR_WIDTH;
-    const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
+    const dailyCompleted = Boolean(task.dailyCompleted) || task.status === "done";
+    const dailyStatus = dailyCompleted ? "done" : task.status;
+    const statusMark = dailyCompleted ? "✓ " : task.status === "missed" ? "! " : "";
     const lockMark = task.assigneeId ? `<span class="task-assignment-lock" aria-label="已分配">🔒</span>` : "";
     const dailyTaskLabel = task.assigneeId
       ? (memberNames.get(task.assigneeId) || task.assigneeName || "协作成员")
@@ -2233,7 +2241,7 @@ function renderCollaborationDaySchedule(workspace) {
       <div class="day-track-row" data-search="${escapeHtml(`${task.title} ${task.detail} ${project.title}`)}">
         <div class="day-track-label"><strong>${timeRange(task)}</strong><small>${trimNumber(task.duration)}h</small></div>
         <div class="day-track">
-          <button class="day-task-block ${task.status} ${canPlan ? "" : "is-readonly"}" type="button" data-action="edit-collab-task" ${dragAttributes} data-daily-plan-task="true" data-workspace-id="${workspace.id}" data-task-id="${task.id}" style="left:${left}px;width:${Math.max(56, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}">
+          <button class="day-task-block ${dailyStatus} ${canPlan ? "" : "is-readonly"}" type="button" data-action="edit-collab-task" ${dragAttributes} data-daily-plan-task="true" data-workspace-id="${workspace.id}" data-task-id="${task.id}" style="left:${left}px;width:${Math.max(56, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}">
             ${leftResizeHandle}
             <strong>${lockMark}${statusMark}${escapeHtml(dailyTaskLabel)}</strong><small>${timeRange(task)}</small>
             ${rightResizeHandle}
@@ -6624,6 +6632,7 @@ function handleDocumentClick(event) {
   }
   if (action === "show-collaboration-calendar") {
     dom.collaborationTimeline.hidden = true;
+    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = true;
     dom.collaborationCalendar.hidden = false;
     if (dom.collaborationViewToggle) {
       dom.collaborationViewToggle.dataset.action = "show-collaboration-timeline";
@@ -6634,6 +6643,7 @@ function handleDocumentClick(event) {
   if (action === "show-collaboration-timeline") {
     dom.collaborationCalendar.hidden = true;
     dom.collaborationTimeline.hidden = false;
+    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = false;
     if (dom.collaborationViewToggle) {
       dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
       dom.collaborationViewToggle.textContent = "日历";
@@ -6651,6 +6661,7 @@ function handleDocumentClick(event) {
     state.selectedDate = button.dataset.date || state.selectedDate;
     dom.collaborationCalendar.hidden = true;
     dom.collaborationTimeline.hidden = false;
+    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = false;
     if (dom.collaborationViewToggle) {
       dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
       dom.collaborationViewToggle.textContent = "日历";
@@ -6727,6 +6738,7 @@ function handleDocumentClick(event) {
     return;
   }
   if (action === "toggle-collab-create-menu") {
+    if (getActiveViewId() !== "collaborationSection") return;
     collaborationCreateMenuOpen = !collaborationCreateMenuOpen;
     collaborationWorkspaceMenuOpen = false;
     if (dom.collaborationCreateMenu) dom.collaborationCreateMenu.hidden = !collaborationCreateMenuOpen;
@@ -7005,6 +7017,7 @@ function handleDocumentDoubleClick(event) {
 }
 
 function toggleCreateMenu() {
+  if (getActiveViewId() === "collaborationSection") return;
   if (!dom.createMenu) return;
   const shouldOpen = dom.createMenu.hidden;
   dom.createMenu.hidden = !shouldOpen;
@@ -7694,12 +7707,17 @@ function showBlockActionMenu(x, y) {
     ? (contextTarget.scope === "collab" ? findCollabProject(contextTarget.workspaceId, contextTarget.projectId) : findProject(contextTarget.projectId))
     : null;
   if (completeButton) {
-    const isDone = task ? task.status === "done" : Boolean(project?.completed);
+    const isDailyCollaborationPlan = contextTarget?.scope === "collab" && contextTarget?.kind === "day-task";
+    const isDone = task
+      ? (isDailyCollaborationPlan ? (Boolean(task.dailyCompleted) || task.status === "done") : task.status === "done")
+      : Boolean(project?.completed);
     const canUndo = contextTarget?.scope !== "collab" || canManageCollaborationWorkspace(contextTarget.workspaceId);
     const canEditTask = !task || contextTarget?.scope !== "collab"
       || (contextTarget?.kind === "day-task" ? canPlanCollaborationDailyTask(task) : canEditCollaborationTask(contextTarget.workspaceId, task));
     completeButton.hidden = (!task && !project) || !canEditTask || (isDone && !canUndo);
-    completeButton.textContent = isDone ? (project ? "取消完成项目" : "取消完成任务") : (project ? "完成项目" : "完成任务");
+    completeButton.textContent = isDailyCollaborationPlan
+      ? (isDone ? "取消完成今日安排" : "完成今日安排")
+      : (isDone ? (project ? "取消完成项目" : "取消完成任务") : (project ? "完成项目" : "完成任务"));
   }
   const pasteButton = dom.blockActionMenu.querySelector("[data-action='paste-block']");
   const dailyTaskLockedForViewer = contextTarget?.scope === "collab"
@@ -7763,6 +7781,12 @@ async function completeContextTask() {
     const timeline = cloneCollaborationTimeline(workspace.timeline);
     const task = timeline.projects.flatMap((project) => project.tasks).find((item) => item.id === contextTarget.taskId);
     if (!task) return;
+    if (contextTarget.kind === "day-task") {
+      task.dailyCompleted = !task.dailyCompleted;
+      closeBlockActionMenu();
+      await persistCollaborationTimeline(contextTarget.workspaceId, timeline);
+      return;
+    }
     task.status = task.status === "done" ? "todo" : "done";
     closeBlockActionMenu();
     if (await persistCollaborationTimeline(contextTarget.workspaceId, timeline) && task.status === "done") playTaskFireworks();

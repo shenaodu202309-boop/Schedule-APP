@@ -59,6 +59,7 @@ const TASK_REMINDER_CHECK_MS = 30 * 1000;
 const TASK_REMINDER_MISSED_GRACE_MS = 30 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
+const TIMELINE_STUB_WIDTH_KEY = "private-schedule-timeline-stub-width-v1";
 const HOUR_HEIGHT = 64;
 const DAY_HOUR_WIDTH = 34;
 const START_HOUR = 0;
@@ -384,6 +385,8 @@ const WEEKDAYS = {
 const dom = {};
 let state = null;
 let dragState = null;
+let timelineStubPressTimer = null;
+let timelineStubPressStart = null;
 let suppressNextClick = false;
 let lastDateTap = { date: "", time: 0 };
 let longPressTimer = null;
@@ -479,6 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cacheDom();
   state = loadState();
   normalizeState();
+  restoreTimelineStubWidth();
   workspaceChatUnread = loadWorkspaceChatUnread();
   if (consumeCollaborationGameUpdates()) saveState();
   bindEvents();
@@ -777,6 +781,7 @@ function bindEvents() {
   document.addEventListener("pointerup", handleJournalCanvasItemEnd);
   document.addEventListener("pointerup", clearJournalLongPressTimers);
   document.addEventListener("pointercancel", handleJournalCanvasItemEnd);
+  document.addEventListener("pointercancel", cancelTimelineStubLongPress);
   document.addEventListener("pointercancel", cancelCollaborationWorkspaceLongPress);
   document.addEventListener("pointercancel", cancelWorkspaceMemberLongPress);
   document.addEventListener("pointercancel", clearJournalLongPressTimers);
@@ -7502,6 +7507,57 @@ function getStubWidth() {
   return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--stub-width")) || 210;
 }
 
+function setTimelineStubWidth(width, persist = false) {
+  const nextWidth = clamp(Math.round(width), 18, 320);
+  document.documentElement.style.setProperty("--stub-width", `${nextWidth}px`);
+  document.body.classList.toggle("timeline-stub-collapsed", nextWidth < 86);
+  if (persist) localStorage.setItem(TIMELINE_STUB_WIDTH_KEY, String(nextWidth));
+}
+
+function restoreTimelineStubWidth() {
+  const storedWidth = Number(localStorage.getItem(TIMELINE_STUB_WIDTH_KEY));
+  if (Number.isFinite(storedWidth) && storedWidth > 0) setTimelineStubWidth(storedWidth);
+}
+
+function prepareTimelineStubLongPress(event, target) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  cancelTimelineStubLongPress();
+  timelineStubPressStart = {
+    x: event.clientX,
+    y: event.clientY,
+    target,
+    pointerId: event.pointerId,
+  };
+  timelineStubPressTimer = window.setTimeout(() => {
+    const press = timelineStubPressStart;
+    if (!press) return;
+    timelineStubPressTimer = null;
+    timelineStubPressStart = null;
+    dragState = {
+      type: "timeline-stub",
+      startX: press.x,
+      startStubWidth: getStubWidth(),
+      captureTarget: press.target,
+      pointerId: press.pointerId,
+      moved: false,
+    };
+    if (press.target.setPointerCapture && press.pointerId !== undefined) {
+      try {
+        press.target.setPointerCapture(press.pointerId);
+      } catch (error) {
+        // Some touch browsers reject pointer capture after a long press.
+      }
+    }
+  }, 420);
+}
+
+function cancelTimelineStubLongPress() {
+  if (timelineStubPressTimer) window.clearTimeout(timelineStubPressTimer);
+  timelineStubPressTimer = null;
+  timelineStubPressStart = null;
+}
+
 function prepareCollaborationWorkspaceLongPress(event) {
   if (event.button !== 0) return;
   const workspaceButton = event.target.closest(".collaboration-workspace-menu [data-action='select-collab-workspace']");
@@ -8054,6 +8110,11 @@ async function createCollaborationDailyOnlyTask(workspaceId, projectId, task, sp
 }
 
 function handlePointerDown(event) {
+  const projectMeta = event.target.closest(".project-meta");
+  if (projectMeta && !event.target.closest("button, input, select, textarea")) {
+    prepareTimelineStubLongPress(event, projectMeta);
+    return;
+  }
   const dragTarget = event.target.closest("[data-drag-type]");
   const block = event.target.closest(".project-bar, .timeline-task, .day-task-block");
   if (!dragTarget && block) prepareLongPress(event, block);
@@ -8557,7 +8618,21 @@ function handlePointerMove(event) {
   if (longPressStart && (Math.abs(event.clientX - longPressStart.x) > 8 || Math.abs(event.clientY - longPressStart.y) > 8)) {
     cancelLongPress();
   }
+  if (timelineStubPressStart
+    && (Math.abs(event.clientX - timelineStubPressStart.x) > 8
+      || Math.abs(event.clientY - timelineStubPressStart.y) > 8)) {
+    cancelTimelineStubLongPress();
+  }
   if (!dragState) return;
+
+  if (dragState.type === "timeline-stub") {
+    const nextWidth = dragState.startStubWidth + event.clientX - dragState.startX;
+    setTimelineStubWidth(nextWidth);
+    dragState.moved = true;
+    handleTimelineScroll({ currentTarget: dom.timeline });
+    handleTimelineScroll({ currentTarget: dom.collaborationTimeline });
+    return;
+  }
 
   if (dragState.type === "project") {
     const project = getDragProject(dragState);
@@ -8649,6 +8724,7 @@ function handlePointerMove(event) {
 
 function stopDrag() {
   cancelLongPress();
+  cancelTimelineStubLongPress();
   if (!dragState) return;
   const completedDrag = dragState;
   const wasMoved = completedDrag.moved;
@@ -8661,6 +8737,10 @@ function stopDrag() {
     }
   }
   dragState = null;
+  if (completedDrag.type === "timeline-stub") {
+    if (wasMoved) setTimelineStubWidth(getStubWidth(), true);
+    return;
+  }
   if (wasMoved) {
     suppressNextClick = true;
     if (completedDrag.scope === "collab") {

@@ -937,6 +937,21 @@ textarea:focus {
   background: #e7e7e7;
 }
 
+body.timeline-stub-collapsed .corner-cell,
+body.timeline-stub-collapsed .project-meta {
+  padding: 0;
+  border-right-color: transparent;
+  overflow: hidden;
+}
+
+body.timeline-stub-collapsed .corner-cell {
+  font-size: 0;
+}
+
+body.timeline-stub-collapsed .project-meta > * {
+  visibility: hidden;
+}
+
 .project-title-row {
   display: flex;
   align-items: flex-start;
@@ -1916,8 +1931,8 @@ textarea:focus {
   flex-wrap: nowrap;
   gap: 5px;
   width: min(calc(100% - 28px), 390px);
-  min-height: 70px;
-  padding: 7px;
+  min-height: 40px;
+  padding: 3px 5px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   background: #050505;
@@ -1953,7 +1968,7 @@ body.nav-hidden .undo-button {
 .project-fab {
   position: fixed;
   right: max(16px, calc((100vw - var(--phone-shell-width)) / 2 + 18px));
-  bottom: max(96px, calc(env(safe-area-inset-bottom) + 92px));
+  bottom: max(66px, calc(env(safe-area-inset-bottom) + 62px));
   z-index: 35;
   display: grid;
   width: 62px;
@@ -2154,7 +2169,7 @@ body.nav-hidden .undo-button {
 .undo-button {
   position: fixed;
   right: max(86px, calc((100vw - var(--phone-shell-width)) / 2 + 88px));
-  bottom: max(106px, calc(env(safe-area-inset-bottom) + 102px));
+  bottom: max(76px, calc(env(safe-area-inset-bottom) + 72px));
   z-index: 35;
   display: inline-flex;
   align-items: center;
@@ -2192,7 +2207,7 @@ body.nav-hidden .undo-button {
 .create-menu {
   position: fixed;
   right: max(16px, calc((100vw - var(--phone-shell-width)) / 2 + 18px));
-  bottom: max(166px, calc(env(safe-area-inset-bottom) + 162px));
+  bottom: max(136px, calc(env(safe-area-inset-bottom) + 132px));
   z-index: 34;
   display: grid;
   gap: 8px;
@@ -2430,10 +2445,10 @@ body.nav-hidden .undo-button {
 .bottom-nav-item {
   display: grid;
   place-items: center;
-  gap: 2px;
+  gap: 0;
   flex: 1 1 0;
   min-width: 0;
-  min-height: 54px;
+  min-height: 32px;
   border-radius: 999px;
   background: transparent;
   color: #9b9b9b;
@@ -2442,16 +2457,16 @@ body.nav-hidden .undo-button {
 
 .bottom-nav-item span {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 17px;
+  height: 17px;
   place-items: center;
   border-radius: 50%;
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 950;
 }
 
 .bottom-nav-item small {
-  font-size: 0.65rem;
+  font-size: 0.5rem;
   font-weight: 900;
 }
 
@@ -2593,7 +2608,7 @@ body.nav-hidden .undo-button {
 }
 
 body {
-  padding-bottom: max(108px, env(safe-area-inset-bottom));
+  padding-bottom: max(70px, env(safe-area-inset-bottom));
 }
 
 h1 {
@@ -2625,9 +2640,10 @@ body[data-view="overviewSection"] .topbar {
 .topbar-actions {
   grid-column: auto;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 76px 44px;
-  gap: 8px;
-  justify-content: stretch;
+  grid-template-columns: 50px 22px 120px 52px 22px 44px;
+  gap: 6px;
+  align-items: end;
+  justify-content: center;
   overflow: visible;
   padding: 0;
 }
@@ -2635,30 +2651,63 @@ body[data-view="overviewSection"] .topbar {
 .topbar-actions .field {
   min-width: 0;
   flex: initial;
+  width: auto;
 }
 
 .topbar-actions .language-field {
-  grid-column: 1 / -1;
-}
-
-.topbar-actions [data-action="previous-range"] {
   grid-column: 1;
 }
 
-.topbar-actions .field.compact {
+.topbar-actions [data-action="previous-range"] {
   grid-column: 2;
 }
 
-.topbar-actions .field.tiny {
+.topbar-actions .field.compact {
   grid-column: 3;
 }
 
-.topbar-actions [data-action="next-range"] {
+.topbar-actions .field.tiny {
   grid-column: 4;
 }
 
+.topbar-actions [data-action="next-range"] {
+  grid-column: 5;
+}
+
 .topbar-actions [data-action="go-today"] {
-  grid-column: 1 / -1;
+  grid-column: 6;
+}
+
+.topbar-actions .field > span {
+  display: none;
+}
+
+.topbar-actions input,
+.topbar-actions select,
+.topbar-actions .icon-button,
+.topbar-actions .secondary-button {
+  min-height: 30px;
+  height: 30px;
+  border-radius: 15px;
+}
+
+.topbar-actions input,
+.topbar-actions select {
+  min-width: 0;
+  padding: 0 7px;
+  font-size: 0.75rem;
+}
+
+.topbar-actions .icon-button {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font-size: 1.15rem;
+}
+
+.topbar-actions .secondary-button {
+  padding: 0 7px;
+  font-size: 0.72rem;
 }
 
 .workspace {
@@ -2706,6 +2755,10 @@ body[data-view="overviewSection"] .topbar {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+
+#timelineSection.main-board {
+  gap: 4px;
 }
 
 .day-layout,
@@ -3350,13 +3403,54 @@ body[data-view="collaborationSection"] .undo-button {
 
 /* Mobile app refinements: compact header, Stats page, and horizontal Today schedule. */
 .brand-block {
-  padding: 4px 2px 0;
+  width: 33.333%;
+  margin: 0 auto;
+  padding: 0;
 }
 
-.brand-block .eyebrow {
-  color: var(--ink);
-  font-size: 1.02rem;
-  text-transform: none;
+.brand-block .brand-toggle {
+  position: relative;
+  width: 100%;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.brand-block .brand-toggle::before {
+  position: absolute;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  content: "";
+}
+
+.brand-block .brand-toggle::after {
+  position: absolute;
+  bottom: 1px;
+  left: calc(50% - 11px);
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #196f73;
+  box-shadow: 4px 0 #196f73, 8px 0 #196f73, 12px 0 #196f73, 16px 0 #196f73, 20px 0 #196f73;
+  content: "";
+}
+
+.brand-block .eyebrow,
+.brand-block .brand-chevron {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 #overviewSection.is-active-view {

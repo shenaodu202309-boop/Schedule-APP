@@ -367,6 +367,7 @@ let taskReminderTimeouts = [];
 let activeTaskReminderId = "";
 let supabaseClient = null;
 let currentAuthUser = null;
+let passwordRecoveryMode = false;
 let cloudBackupStatus = null;
 let cloudBackupBusy = false;
 
@@ -481,6 +482,8 @@ function cacheDom() {
   dom.accountMessage = document.querySelector("#accountMessage");
   dom.accountSignUpButton = document.querySelector("#accountSignUpButton");
   dom.accountSignInButton = document.querySelector("#accountSignInButton");
+  dom.accountRecoveryButton = document.querySelector("#accountRecoveryButton");
+  dom.accountUpdatePasswordButton = document.querySelector("#accountUpdatePasswordButton");
   dom.accountSignOutButton = document.querySelector("#accountSignOutButton");
   dom.cloudBackupPanel = document.querySelector("#cloudBackupPanel");
   dom.cloudBackupStatusText = document.querySelector("#cloudBackupStatusText");
@@ -2449,6 +2452,7 @@ function isSupabaseConfigured() {
 
 async function initSupabaseClient() {
   renderAccountCenter();
+  const recoveryLinkOpened = isPasswordRecoveryLink();
   if (!isSupabaseConfigured()) {
     setAccountMessage("请先填入 Supabase Project URL 和 anon public key，未登录时仍可继续使用本地模式。", "muted");
     updateAuthUI(null);
@@ -2470,10 +2474,26 @@ async function initSupabaseClient() {
     );
     if (error) throw error;
     currentAuthUser = data?.session?.user || null;
+    passwordRecoveryMode = Boolean(currentAuthUser && recoveryLinkOpened);
+    if (passwordRecoveryMode) clearPasswordRecoveryCallback();
     updateAuthUI(currentAuthUser);
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (passwordRecoveryMode) {
+      openAccountCenter();
+      setAccountMessage("请输入至少 6 位的新密码，然后点击“设置新密码”。", "muted");
+    }
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       currentAuthUser = session?.user || null;
+      if (event === "PASSWORD_RECOVERY") {
+        passwordRecoveryMode = true;
+        clearPasswordRecoveryCallback();
+      } else if (event === "SIGNED_OUT") {
+        passwordRecoveryMode = false;
+      }
       updateAuthUI(currentAuthUser);
+      if (passwordRecoveryMode) {
+        openAccountCenter();
+        setAccountMessage("请输入至少 6 位的新密码，然后点击“设置新密码”。", "muted");
+      }
       if (currentAuthUser) {
         void getCloudBackupStatus({ silent: true });
       } else {
@@ -2488,6 +2508,20 @@ async function initSupabaseClient() {
     updateAuthUI(null);
     return null;
   }
+}
+
+function isPasswordRecoveryLink() {
+  const query = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return query.get("type") === "recovery" || hash.get("type") === "recovery";
+}
+
+function clearPasswordRecoveryCallback() {
+  const query = new URLSearchParams(window.location.search);
+  query.delete("code");
+  query.delete("type");
+  const search = query.toString();
+  window.history.replaceState(null, document.title, `${window.location.pathname}${search ? `?${search}` : ""}#timelineSection`);
 }
 
 function getCurrentUser() {
@@ -2621,6 +2655,53 @@ async function signInWithEmail() {
   }
 }
 
+async function sendAccountRecoveryEmail() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email } = accountCredentials();
+  if (!email || !email.includes("@")) {
+    setAccountMessage("请输入有效邮箱。", "error");
+    dom.accountEmailInput?.focus();
+    return;
+  }
+  setAccountBusy(true);
+  setAccountMessage("正在发送找回邮件...", "muted");
+  try {
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT_URL });
+    if (error) throw error;
+    setAccountMessage("已发送找回邮件。请使用最新一封邮件设置新密码。", "success");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function updateRecoveredAccountPassword() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { password } = accountCredentials();
+  if (!password || password.length < 6) {
+    setAccountMessage("新密码至少需要 6 位。", "error");
+    dom.accountPasswordInput?.focus();
+    return;
+  }
+  setAccountBusy(true);
+  setAccountMessage("正在设置新密码...", "muted");
+  try {
+    const { data, error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    passwordRecoveryMode = false;
+    currentAuthUser = data?.user || currentAuthUser;
+    updateAuthUI(currentAuthUser);
+    setAccountMessage("新密码已设置，可以继续使用云端账号。", "success");
+  } catch (error) {
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
 async function signOutAccount() {
   const client = await ensureSupabaseClientForAuth();
   if (!client) return;
@@ -2630,6 +2711,7 @@ async function signOutAccount() {
     const { error } = await client.auth.signOut();
     if (error) throw error;
     currentAuthUser = null;
+    passwordRecoveryMode = false;
     updateAuthUI(null);
     setAccountMessage("已退出登录。现在继续使用本地模式。", "success");
   } catch (error) {
@@ -2691,6 +2773,8 @@ function updateAuthUI(user = currentAuthUser) {
   if (dom.accountSignOutButton) dom.accountSignOutButton.hidden = !email;
   if (dom.accountSignInButton) dom.accountSignInButton.hidden = Boolean(email);
   if (dom.accountSignUpButton) dom.accountSignUpButton.hidden = Boolean(email);
+  if (dom.accountRecoveryButton) dom.accountRecoveryButton.hidden = Boolean(email);
+  if (dom.accountUpdatePasswordButton) dom.accountUpdatePasswordButton.hidden = !passwordRecoveryMode || !email;
   updateCloudBackupStatusUI();
 }
 
@@ -2701,7 +2785,13 @@ function setAccountMessage(message, type = "muted") {
 }
 
 function setAccountBusy(isBusy) {
-  [dom.accountSignUpButton, dom.accountSignInButton, dom.accountSignOutButton].forEach((button) => {
+  [
+    dom.accountSignUpButton,
+    dom.accountSignInButton,
+    dom.accountRecoveryButton,
+    dom.accountUpdatePasswordButton,
+    dom.accountSignOutButton,
+  ].forEach((button) => {
     if (button) button.disabled = isBusy;
   });
 }
@@ -4375,6 +4465,14 @@ function handleDocumentClick(event) {
   }
   if (action === "account-sign-in") {
     void signInWithEmail();
+    return;
+  }
+  if (action === "account-send-recovery") {
+    void sendAccountRecoveryEmail();
+    return;
+  }
+  if (action === "account-update-password") {
+    void updateRecoveredAccountPassword();
     return;
   }
   if (action === "account-sign-out") {

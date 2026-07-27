@@ -1,0 +1,841 @@
+{
+  "skinId": "warm-pixel",
+  "source": "generated concept sheet",
+  "version": "1.0.0",
+  "assets": {
+    "company-map/tile_hidden": {
+      "path": "company-map/tile_hidden.png",
+      "path2x": "company-map/tile_hidden@2x.png",
+      "width": 34,
+      "height": 34
+    },
+    "company-map/tile_hidden_pressed": {
+      "path": "company-map/tile_hidden_pressed.png",
+      "path2x": "company-map/tile_hidden_pressed@2x.png",
+      "width": 34,
+      "height": 36
+    },
+    "company-map/tile_revealed": {
+      "path": "company-map/tile_revealed.png",
+      "path2x": "company-map/tile_revealed@2x.png",
+      "width": 35,
+      "height": 36
+    },
+    "company-map/department_entrance": {
+      "path": "company-map/department_entrance.png",
+      "path2x": "company-map/department_entrance@2x.png",
+      "width": 34,
+      "height": 37
+    },
+    "company-map/department_locked": {
+      "path": "company-map/department_locked.png",
+      "path2x": "company-map/department_locked@2x.png",
+      "width": 26,
+      "height": 32
+    },
+    "company-map/department_open": {
+      "path": "company-map/department_open.png",
+      "path2x": "company-map/department_open@2x.png",
+      "width": 26,
+      "height": 30
+    },
+    "company-map/department_complete": {
+      "path": "company-map/department_complete.png",
+      "path2x": "company-map/department_complete@2x.png",
+      "width": 26,
+      "height": 30
+    },
+    "company-map/current_highlight": {
+      "path": "company-map/current_highlight.png",
+      "path2x": "company-map/current_highlight@2x.png",
+      "width": 36,
+      "height": 37
+    },
+    "company-map/decor_rock": {
+      "path": "company-map/decor_rock.png",
+      "path2x": "company-map/decor_rock@2x.png",
+      "width": 36,
+      "height": 43
+    },
+    "company-map/decor_grass": {
+      "path": "company-map/decor_grass.png",
+      "path2x": "company-map/decor_grass@2x.png",
+      "width": 36,
+      "height": 42
+    },
+    "company-map/decor_stone": {
+      "path": "company-map/decor_stone.png",
+      "path2x": "company-map/decor_stone@2x.png",
+      "width": 28,
+      "height": 22
+    },
+    "company-map/decor_sign": {
+      "path": "company-map/decor_sign.png",
+      "path2x": "company-map/decor_sign@2x.png",
+      "width": 29,
+      "height": 41
+    },
+    "company-map/decor_crate": {
+      "path": "company-map/decor_crate.png",
+      "path2x": "company-map/decor_crate@2x.png",
+      "width": 42,
+      "height": 41
+    },
+    "company-map/decor_lamp": {
+      "path": "company-map/decor_lamp.png",
+      "path2x": "company-map/decor_lamp@2x.png",
+      "width": 25,
+      "height": 37
+    },
+    "company-map/decor_files": {
+      "path": "company-map/decor_files.png",
+      "path2x": "company-map/decor_files@2x.png",
+      "width": 35,
+      "height": 34
+    },
+    "company-map/decor_coffee_machine": {
+      "path": "company-map/decor_coffee_machine.png",
+      "path2x": "company-map/decor_coffee_machine@2x.png",
+      "width": 31,
+      "height": 37
+    },
+    "company-map/clue_number_1": {
+      "path": "company-map/clue_number_1.png",
+      "path2x": "company-map/clue_number_1@2x.png",
+      "width": 38,
+      "height": 49
+    },
+    "company-map/clue_number_2": {
+      "path": "company-map/clue_number_2.png",
+      "path2x": "company-map/clue_number_2@2x.png",
+      "width": 35,
+      "height": 49
+    },
+    "company-map/clue_number_3": {
+      "path": "company-map/clue_number_3.png",
+      "path2x": "company-map/clue_number_3@2x.png",
+      "width": 29,
+      "height": 35
+    },
+    "company-map/completion_badge": {
+      "path": "company-map/completion_badge.png",
+      "path2x": "company-map/completion_badge@2x.png",
+      "width": 234,
+      "height": 107
+    },
+    "company-map/next_portal": {
+      "path": "company-map/next_portal.png",
+      "path2x": "company-map/next_portal@2x.png",
+      "width": 137,
+      "height": 119
+    },
+    "office/door": {
+      "path": "office/door.png",
+      "path2x": "office/door@2x.png",
+      "width": 42,
+      "height": 64
+    },
+    "office/window": {
+      "path": "office/window.png",
+      "path2x": "office/window@2x.png",
+      "width": 52,
+      "height": 63
+    },
+    "office/department_sign_blank": {
+      "path": "office/department_sign_blank.png",
+      "path2x": "office/department_sign_blank@2x.png",
+      "width": 58,
+      "height": 34
+    },
+    "office/clock": {
+      "path": "office/clock.png",
+      "path2x": "office/clock@2x.png",
+      "width": 34,
+      "height": 35
+    },
+    "office/desk_computer": {
+      "path": "office/desk_computer.png",
+      "path2x": "office/desk_computer@2x.png",
+      "width": 71,
+      "height": 68
+    },
+    "office/chair": {
+      "path": "office/chair.png",
+      "path2x": "office/chair@2x.png",
+      "width": 42,
+      "height": 67
+    },
+    "office/lamp": {
+      "path": "office/lamp.png",
+      "path2x": "office/lamp@2x.png",
+      "width": 31,
+      "height": 61
+    },
+    "office/bookshelf": {
+      "path": "office/bookshelf.png",
+      "path2x": "office/bookshelf@2x.png",
+      "width": 66,
+      "height": 100
+    },
+    "office/easel": {
+      "path": "office/easel.png",
+      "path2x": "office/easel@2x.png",
+      "width": 49,
+      "height": 52
+    },
+    "office/trash_bin": {
+      "path": "office/trash_bin.png",
+      "path2x": "office/trash_bin@2x.png",
+      "width": 33,
+      "height": 41
+    },
+    "office/plant": {
+      "path": "office/plant.png",
+      "path2x": "office/plant@2x.png",
+      "width": 48,
+      "height": 64
+    },
+    "office/file_box": {
+      "path": "office/file_box.png",
+      "path2x": "office/file_box@2x.png",
+      "width": 31,
+      "height": 26
+    },
+    "office/paper_single": {
+      "path": "office/paper_single.png",
+      "path2x": "office/paper_single@2x.png",
+      "width": 36,
+      "height": 24
+    },
+    "office/papers_stack": {
+      "path": "office/papers_stack.png",
+      "path2x": "office/papers_stack@2x.png",
+      "width": 38,
+      "height": 28
+    },
+    "office/books_stack": {
+      "path": "office/books_stack.png",
+      "path2x": "office/books_stack@2x.png",
+      "width": 33,
+      "height": 28
+    },
+    "characters/base_character_front": {
+      "path": "characters/base_character_front.png",
+      "path2x": "characters/base_character_front@2x.png",
+      "width": 89,
+      "height": 147
+    },
+    "characters/parts/head_front_01": {
+      "path": "characters/parts/head_front_01.png",
+      "path2x": "characters/parts/head_front_01@2x.png",
+      "width": 32,
+      "height": 38
+    },
+    "characters/parts/head_front_02": {
+      "path": "characters/parts/head_front_02.png",
+      "path2x": "characters/parts/head_front_02@2x.png",
+      "width": 35,
+      "height": 37
+    },
+    "characters/parts/hair_back": {
+      "path": "characters/parts/hair_back.png",
+      "path2x": "characters/parts/hair_back@2x.png",
+      "width": 32,
+      "height": 37
+    },
+    "characters/parts/face_alt": {
+      "path": "characters/parts/face_alt.png",
+      "path2x": "characters/parts/face_alt@2x.png",
+      "width": 35,
+      "height": 36
+    },
+    "characters/parts/top_blue": {
+      "path": "characters/parts/top_blue.png",
+      "path2x": "characters/parts/top_blue@2x.png",
+      "width": 36,
+      "height": 36
+    },
+    "characters/parts/bottom_black": {
+      "path": "characters/parts/bottom_black.png",
+      "path2x": "characters/parts/bottom_black@2x.png",
+      "width": 32,
+      "height": 37
+    },
+    "characters/parts/shoes_black": {
+      "path": "characters/parts/shoes_black.png",
+      "path2x": "characters/parts/shoes_black@2x.png",
+      "width": 32,
+      "height": 21
+    },
+    "characters/parts/hand_mug": {
+      "path": "characters/parts/hand_mug.png",
+      "path2x": "characters/parts/hand_mug@2x.png",
+      "width": 25,
+      "height": 23
+    },
+    "characters/parts/hand_book": {
+      "path": "characters/parts/hand_book.png",
+      "path2x": "characters/parts/hand_book@2x.png",
+      "width": 27,
+      "height": 21
+    },
+    "characters/parts/hand_laptop": {
+      "path": "characters/parts/hand_laptop.png",
+      "path2x": "characters/parts/hand_laptop@2x.png",
+      "width": 27,
+      "height": 20
+    },
+    "characters/parts/body_shadow": {
+      "path": "characters/parts/body_shadow.png",
+      "path2x": "characters/parts/body_shadow@2x.png",
+      "width": 55,
+      "height": 30
+    },
+    "characters/parts/nameplate_blank": {
+      "path": "characters/parts/nameplate_blank.png",
+      "path2x": "characters/parts/nameplate_blank@2x.png",
+      "width": 86,
+      "height": 36
+    },
+    "characters/actions/stand_front": {
+      "path": "characters/actions/stand_front.png",
+      "path2x": "characters/actions/stand_front@2x.png",
+      "width": 45,
+      "height": 74
+    },
+    "characters/actions/stand_side": {
+      "path": "characters/actions/stand_side.png",
+      "path2x": "characters/actions/stand_side@2x.png",
+      "width": 43,
+      "height": 73
+    },
+    "characters/actions/walk": {
+      "path": "characters/actions/walk.png",
+      "path2x": "characters/actions/walk@2x.png",
+      "width": 44,
+      "height": 73
+    },
+    "characters/actions/use_computer": {
+      "path": "characters/actions/use_computer.png",
+      "path2x": "characters/actions/use_computer@2x.png",
+      "width": 68,
+      "height": 68
+    },
+    "characters/actions/read_file": {
+      "path": "characters/actions/read_file.png",
+      "path2x": "characters/actions/read_file@2x.png",
+      "width": 49,
+      "height": 76
+    },
+    "characters/actions/rest": {
+      "path": "characters/actions/rest.png",
+      "path2x": "characters/actions/rest@2x.png",
+      "width": 62,
+      "height": 64
+    },
+    "characters/actions/celebrate": {
+      "path": "characters/actions/celebrate.png",
+      "path2x": "characters/actions/celebrate@2x.png",
+      "width": 71,
+      "height": 75
+    },
+    "garden/gate_closed": {
+      "path": "garden/gate_closed.png",
+      "path2x": "garden/gate_closed@2x.png",
+      "width": 50,
+      "height": 66
+    },
+    "garden/gate_open": {
+      "path": "garden/gate_open.png",
+      "path2x": "garden/gate_open@2x.png",
+      "width": 58,
+      "height": 68
+    },
+    "garden/lamp": {
+      "path": "garden/lamp.png",
+      "path2x": "garden/lamp@2x.png",
+      "width": 20,
+      "height": 56
+    },
+    "garden/bench": {
+      "path": "garden/bench.png",
+      "path2x": "garden/bench@2x.png",
+      "width": 60,
+      "height": 43
+    },
+    "garden/sign": {
+      "path": "garden/sign.png",
+      "path2x": "garden/sign@2x.png",
+      "width": 26,
+      "height": 51
+    },
+    "garden/watering_can": {
+      "path": "garden/watering_can.png",
+      "path2x": "garden/watering_can@2x.png",
+      "width": 41,
+      "height": 35
+    },
+    "garden/pot": {
+      "path": "garden/pot.png",
+      "path2x": "garden/pot@2x.png",
+      "width": 28,
+      "height": 34
+    },
+    "garden/flower_pot": {
+      "path": "garden/flower_pot.png",
+      "path2x": "garden/flower_pot@2x.png",
+      "width": 33,
+      "height": 51
+    },
+    "garden/greenhouse": {
+      "path": "garden/greenhouse.png",
+      "path2x": "garden/greenhouse@2x.png",
+      "width": 71,
+      "height": 86
+    },
+    "garden/soil_patch": {
+      "path": "garden/soil_patch.png",
+      "path2x": "garden/soil_patch@2x.png",
+      "width": 51,
+      "height": 32
+    },
+    "garden/grass_patch": {
+      "path": "garden/grass_patch.png",
+      "path2x": "garden/grass_patch@2x.png",
+      "width": 93,
+      "height": 30
+    },
+    "garden/flower_bed": {
+      "path": "garden/flower_bed.png",
+      "path2x": "garden/flower_bed@2x.png",
+      "width": 74,
+      "height": 43
+    },
+    "garden/stone_round": {
+      "path": "garden/stone_round.png",
+      "path2x": "garden/stone_round@2x.png",
+      "width": 56,
+      "height": 28
+    },
+    "garden/stone_path": {
+      "path": "garden/stone_path.png",
+      "path2x": "garden/stone_path@2x.png",
+      "width": 63,
+      "height": 33
+    },
+    "garden/greenhouse_small": {
+      "path": "garden/greenhouse_small.png",
+      "path2x": "garden/greenhouse_small@2x.png",
+      "width": 70,
+      "height": 51
+    },
+    "plants/rose/stage_01": {
+      "path": "plants/rose/stage_01.png",
+      "path2x": "plants/rose/stage_01@2x.png",
+      "width": 33,
+      "height": 29
+    },
+    "plants/rose/stage_02": {
+      "path": "plants/rose/stage_02.png",
+      "path2x": "plants/rose/stage_02@2x.png",
+      "width": 43,
+      "height": 35
+    },
+    "plants/rose/stage_03": {
+      "path": "plants/rose/stage_03.png",
+      "path2x": "plants/rose/stage_03@2x.png",
+      "width": 51,
+      "height": 55
+    },
+    "plants/rose/stage_04": {
+      "path": "plants/rose/stage_04.png",
+      "path2x": "plants/rose/stage_04@2x.png",
+      "width": 52,
+      "height": 54
+    },
+    "plants/rose/stage_05": {
+      "path": "plants/rose/stage_05.png",
+      "path2x": "plants/rose/stage_05@2x.png",
+      "width": 63,
+      "height": 66
+    },
+    "plants/rose/growth_glow": {
+      "path": "plants/rose/growth_glow.png",
+      "path2x": "plants/rose/growth_glow@2x.png",
+      "width": 46,
+      "height": 45
+    },
+    "plants/rose/completed": {
+      "path": "plants/rose/completed.png",
+      "path2x": "plants/rose/completed@2x.png",
+      "width": 53,
+      "height": 45
+    },
+    "plants/rose/selected": {
+      "path": "plants/rose/selected.png",
+      "path2x": "plants/rose/selected@2x.png",
+      "width": 54,
+      "height": 45
+    },
+    "plants/rose/watering": {
+      "path": "plants/rose/watering.png",
+      "path2x": "plants/rose/watering@2x.png",
+      "width": 45,
+      "height": 46
+    },
+    "plants/daisy/stage_01": {
+      "path": "plants/daisy/stage_01.png",
+      "path2x": "plants/daisy/stage_01@2x.png",
+      "width": 44,
+      "height": 48
+    },
+    "plants/daisy/stage_02": {
+      "path": "plants/daisy/stage_02.png",
+      "path2x": "plants/daisy/stage_02@2x.png",
+      "width": 46,
+      "height": 57
+    },
+    "plants/daisy/stage_03": {
+      "path": "plants/daisy/stage_03.png",
+      "path2x": "plants/daisy/stage_03@2x.png",
+      "width": 49,
+      "height": 66
+    },
+    "plants/daisy/stage_04": {
+      "path": "plants/daisy/stage_04.png",
+      "path2x": "plants/daisy/stage_04@2x.png",
+      "width": 52,
+      "height": 76
+    },
+    "plants/daisy/stage_05": {
+      "path": "plants/daisy/stage_05.png",
+      "path2x": "plants/daisy/stage_05@2x.png",
+      "width": 55,
+      "height": 76
+    },
+    "plants/daisy/growth_glow": {
+      "path": "plants/daisy/growth_glow.png",
+      "path2x": "plants/daisy/growth_glow@2x.png",
+      "width": 40,
+      "height": 50
+    },
+    "plants/daisy/completed": {
+      "path": "plants/daisy/completed.png",
+      "path2x": "plants/daisy/completed@2x.png",
+      "width": 49,
+      "height": 49
+    },
+    "plants/daisy/selected": {
+      "path": "plants/daisy/selected.png",
+      "path2x": "plants/daisy/selected@2x.png",
+      "width": 49,
+      "height": 47
+    },
+    "plants/daisy/watering": {
+      "path": "plants/daisy/watering.png",
+      "path2x": "plants/daisy/watering@2x.png",
+      "width": 42,
+      "height": 45
+    },
+    "plants/family-tree/stage_01": {
+      "path": "plants/family-tree/stage_01.png",
+      "path2x": "plants/family-tree/stage_01@2x.png",
+      "width": 40,
+      "height": 54
+    },
+    "plants/family-tree/stage_02": {
+      "path": "plants/family-tree/stage_02.png",
+      "path2x": "plants/family-tree/stage_02@2x.png",
+      "width": 55,
+      "height": 74
+    },
+    "plants/family-tree/stage_03": {
+      "path": "plants/family-tree/stage_03.png",
+      "path2x": "plants/family-tree/stage_03@2x.png",
+      "width": 57,
+      "height": 75
+    },
+    "plants/family-tree/stage_04": {
+      "path": "plants/family-tree/stage_04.png",
+      "path2x": "plants/family-tree/stage_04@2x.png",
+      "width": 64,
+      "height": 77
+    },
+    "plants/family-tree/stage_05": {
+      "path": "plants/family-tree/stage_05.png",
+      "path2x": "plants/family-tree/stage_05@2x.png",
+      "width": 66,
+      "height": 77
+    },
+    "plants/family-tree/growth_glow": {
+      "path": "plants/family-tree/growth_glow.png",
+      "path2x": "plants/family-tree/growth_glow@2x.png",
+      "width": 41,
+      "height": 44
+    },
+    "plants/family-tree/completed": {
+      "path": "plants/family-tree/completed.png",
+      "path2x": "plants/family-tree/completed@2x.png",
+      "width": 47,
+      "height": 46
+    },
+    "plants/family-tree/selected": {
+      "path": "plants/family-tree/selected.png",
+      "path2x": "plants/family-tree/selected@2x.png",
+      "width": 46,
+      "height": 46
+    },
+    "plants/family-tree/watering": {
+      "path": "plants/family-tree/watering.png",
+      "path2x": "plants/family-tree/watering@2x.png",
+      "width": 42,
+      "height": 45
+    },
+    "relationship-ui/avatar_frame": {
+      "path": "relationship-ui/avatar_frame.png",
+      "path2x": "relationship-ui/avatar_frame@2x.png",
+      "width": 93,
+      "height": 94
+    },
+    "relationship-ui/event_heart": {
+      "path": "relationship-ui/event_heart.png",
+      "path2x": "relationship-ui/event_heart@2x.png",
+      "width": 40,
+      "height": 35
+    },
+    "relationship-ui/event_gift": {
+      "path": "relationship-ui/event_gift.png",
+      "path2x": "relationship-ui/event_gift@2x.png",
+      "width": 32,
+      "height": 34
+    },
+    "relationship-ui/event_message": {
+      "path": "relationship-ui/event_message.png",
+      "path2x": "relationship-ui/event_message@2x.png",
+      "width": 30,
+      "height": 33
+    },
+    "relationship-ui/event_record": {
+      "path": "relationship-ui/event_record.png",
+      "path2x": "relationship-ui/event_record@2x.png",
+      "width": 34,
+      "height": 30
+    },
+    "relationship-ui/progress_bar": {
+      "path": "relationship-ui/progress_bar.png",
+      "path2x": "relationship-ui/progress_bar@2x.png",
+      "width": 157,
+      "height": 21
+    },
+    "relationship-ui/feedback_plus_10": {
+      "path": "relationship-ui/feedback_plus_10.png",
+      "path2x": "relationship-ui/feedback_plus_10@2x.png",
+      "width": 54,
+      "height": 64
+    },
+    "relationship-ui/plant_growth_effect": {
+      "path": "relationship-ui/plant_growth_effect.png",
+      "path2x": "relationship-ui/plant_growth_effect@2x.png",
+      "width": 62,
+      "height": 64
+    },
+    "relationship-ui/relationship_complete_effect": {
+      "path": "relationship-ui/relationship_complete_effect.png",
+      "path2x": "relationship-ui/relationship_complete_effect@2x.png",
+      "width": 62,
+      "height": 64
+    },
+    "relationship-ui/celebration_garland": {
+      "path": "relationship-ui/celebration_garland.png",
+      "path2x": "relationship-ui/celebration_garland@2x.png",
+      "width": 72,
+      "height": 60
+    },
+    "strategy-book/cover": {
+      "path": "strategy-book/cover.png",
+      "path2x": "strategy-book/cover@2x.png",
+      "width": 141,
+      "height": 194
+    },
+    "strategy-book/open_book": {
+      "path": "strategy-book/open_book.png",
+      "path2x": "strategy-book/open_book@2x.png",
+      "width": 318,
+      "height": 187
+    },
+    "strategy-book/page_left_arrow": {
+      "path": "strategy-book/page_left_arrow.png",
+      "path2x": "strategy-book/page_left_arrow@2x.png",
+      "width": 33,
+      "height": 54
+    },
+    "strategy-book/page_right_arrow": {
+      "path": "strategy-book/page_right_arrow.png",
+      "path2x": "strategy-book/page_right_arrow@2x.png",
+      "width": 33,
+      "height": 54
+    },
+    "strategy-book/tab_love": {
+      "path": "strategy-book/tab_love.png",
+      "path2x": "strategy-book/tab_love@2x.png",
+      "width": 55,
+      "height": 38
+    },
+    "strategy-book/tab_friendship": {
+      "path": "strategy-book/tab_friendship.png",
+      "path2x": "strategy-book/tab_friendship@2x.png",
+      "width": 61,
+      "height": 39
+    },
+    "strategy-book/tab_family": {
+      "path": "strategy-book/tab_family.png",
+      "path2x": "strategy-book/tab_family@2x.png",
+      "width": 61,
+      "height": 38
+    },
+    "strategy-book/complete_stamp": {
+      "path": "strategy-book/complete_stamp.png",
+      "path2x": "strategy-book/complete_stamp@2x.png",
+      "width": 74,
+      "height": 50
+    },
+    "ui/button_normal": {
+      "path": "ui/button_normal.png",
+      "path2x": "ui/button_normal@2x.png",
+      "width": 58,
+      "height": 20
+    },
+    "ui/button_pressed": {
+      "path": "ui/button_pressed.png",
+      "path2x": "ui/button_pressed@2x.png",
+      "width": 55,
+      "height": 21
+    },
+    "ui/button_selected": {
+      "path": "ui/button_selected.png",
+      "path2x": "ui/button_selected@2x.png",
+      "width": 56,
+      "height": 20
+    },
+    "ui/button_disabled": {
+      "path": "ui/button_disabled.png",
+      "path2x": "ui/button_disabled@2x.png",
+      "width": 58,
+      "height": 21
+    },
+    "ui/button_primary": {
+      "path": "ui/button_primary.png",
+      "path2x": "ui/button_primary@2x.png",
+      "width": 92,
+      "height": 25
+    },
+    "ui/button_close_pink": {
+      "path": "ui/button_close_pink.png",
+      "path2x": "ui/button_close_pink@2x.png",
+      "width": 31,
+      "height": 24
+    },
+    "ui/button_close_gray": {
+      "path": "ui/button_close_gray.png",
+      "path2x": "ui/button_close_gray@2x.png",
+      "width": 32,
+      "height": 24
+    },
+    "ui/progress_bar_frame_fill": {
+      "path": "ui/progress_bar_frame_fill.png",
+      "path2x": "ui/progress_bar_frame_fill@2x.png",
+      "width": 122,
+      "height": 16
+    },
+    "ui/number_badge": {
+      "path": "ui/number_badge.png",
+      "path2x": "ui/number_badge@2x.png",
+      "width": 33,
+      "height": 39
+    },
+    "ui/icon_lock": {
+      "path": "ui/icon_lock.png",
+      "path2x": "ui/icon_lock@2x.png",
+      "width": 30,
+      "height": 32
+    },
+    "ui/icon_edit": {
+      "path": "ui/icon_edit.png",
+      "path2x": "ui/icon_edit@2x.png",
+      "width": 30,
+      "height": 34
+    },
+    "ui/icon_garden": {
+      "path": "ui/icon_garden.png",
+      "path2x": "ui/icon_garden@2x.png",
+      "width": 36,
+      "height": 36
+    },
+    "ui/icon_company": {
+      "path": "ui/icon_company.png",
+      "path2x": "ui/icon_company@2x.png",
+      "width": 40,
+      "height": 37
+    },
+    "ui/modal_background": {
+      "path": "ui/modal_background.png",
+      "path2x": "ui/modal_background@2x.png",
+      "width": 94,
+      "height": 53
+    },
+    "ui/toast_success": {
+      "path": "ui/toast_success.png",
+      "path2x": "ui/toast_success@2x.png",
+      "width": 147,
+      "height": 48
+    },
+    "ui/toast_error": {
+      "path": "ui/toast_error.png",
+      "path2x": "ui/toast_error@2x.png",
+      "width": 149,
+      "height": 49
+    },
+    "previews/company_map_full": {
+      "path": "previews/company_map_full.png",
+      "path2x": "previews/company_map_full@2x.png",
+      "width": 360,
+      "height": 337
+    },
+    "previews/creative_office_full": {
+      "path": "previews/creative_office_full.png",
+      "path2x": "previews/creative_office_full@2x.png",
+      "width": 473,
+      "height": 245
+    },
+    "previews/garden_full": {
+      "path": "previews/garden_full.png",
+      "path2x": "previews/garden_full@2x.png",
+      "width": 502,
+      "height": 231
+    },
+    "previews/office_empty": {
+      "path": "previews/office_empty.png",
+      "path2x": "previews/office_empty@2x.png",
+      "width": 196,
+      "height": 151
+    },
+    "previews/office_occupied": {
+      "path": "previews/office_occupied.png",
+      "path2x": "previews/office_occupied@2x.png",
+      "width": 267,
+      "height": 151
+    },
+    "previews/strategy_book_full": {
+      "path": "previews/strategy_book_full.png",
+      "path2x": "previews/strategy_book_full@2x.png",
+      "width": 476,
+      "height": 195
+    },
+    "previews/ui_kit_full": {
+      "path": "previews/ui_kit_full.png",
+      "path2x": "previews/ui_kit_full@2x.png",
+      "width": 486,
+      "height": 204
+    }
+  }
+}

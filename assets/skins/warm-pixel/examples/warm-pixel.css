@@ -1,0 +1,46 @@
+[data-skin="warm-pixel"] {
+  --skin-cream: #f6e8d0;
+  --skin-brown: #5a3b32;
+  --skin-pink: #e95b86;
+  --skin-green: #83a95c;
+  --skin-blue: #65a7bc;
+  --skin-gold: #e8b84e;
+}
+
+[data-skin="warm-pixel"] img,
+[data-skin="warm-pixel"] .pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+[data-skin="warm-pixel"] .skin-panel {
+  background: var(--skin-cream);
+  border: 3px solid var(--skin-brown);
+  box-shadow: 0 5px 0 rgba(90, 59, 50, 0.25);
+}
+
+[data-skin="warm-pixel"] .skin-sprite {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+[data-skin="warm-pixel"] .skin-button {
+  min-width: 96px;
+  min-height: 42px;
+  padding: 8px 18px;
+  border: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: #3f2930;
+  font: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 390px) {
+  [data-skin="warm-pixel"] .skin-panel {
+    max-width: 100%;
+  }
+}

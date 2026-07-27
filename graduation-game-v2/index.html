@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="../icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png" />
     <title>30天计划 · 动画主线作战台</title>
-    <link rel="stylesheet" href="./styles.css?v=209" />
+    <link rel="stylesheet" href="./styles.css?v=215" />
   </head>
   <body>
     <main class="phone-shell" id="top">
@@ -421,9 +421,14 @@
         <div class="ledger-list" id="ledgerList" aria-label="账本记录列表"></div>
       </section>
 
-      <section class="panel diary-entry-panel finance-settlement-panel" id="report-zone" data-finance-home-only aria-label="日记">
-        <img id="reportCharacterSprite" class="report-character" src="./assets/characters/bunny-white.png" alt="" aria-hidden="true" />
-        <button class="settle-button diary-entry-button" type="button" data-action="open-diary" data-i18n="diary">日记</button>
+      <section class="panel ootd-entry-panel" id="ootd-zone" data-finance-home-only aria-labelledby="ootdEntryTitle">
+        <div class="ootd-entry-copy">
+          <p class="eyebrow">OOTD</p>
+          <h2 id="ootdEntryTitle" data-i18n="ootdToday">今日穿搭</h2>
+          <span id="ootdEntryStatus">拍下今天的穿搭，生成 AI 评分与卡通形象</span>
+        </div>
+        <img id="ootdEntryPreview" alt="今日穿搭卡通形象" hidden />
+        <button class="primary-button" type="button" data-action="open-ootd" data-i18n="ootdCaptureToday">拍摄今日穿搭</button>
       </section>
 
       <section class="panel archive-panel" id="archive-zone" data-finance-home-only aria-labelledby="archiveTitle">
@@ -521,7 +526,7 @@
       </div>
     </dialog>
 
-    <dialog class="edit-card-dialog" id="diaryDialog">
+    <template id="removedDiaryModule">
       <form class="dialog-card edit-card-form diary-dialog-form calendar-list-diary" method="dialog">
         <button class="dialog-close" type="button" data-action="close-diary" aria-label="关闭">×</button>
         <p class="black-pill" data-i18n="diary">日记</p>
@@ -547,61 +552,93 @@
           </div>
           <div class="diary-checklist" id="diaryChecklist"></div>
         </section>
-        <section class="comic-diary-entry" aria-label="漫画日记">
-          <div class="comic-diary-entry-head">
-            <div>
-              <strong data-i18n="comicDiary">漫画日记</strong>
-              <span data-i18n="comicDiarySub">把今天变成一页小漫画</span>
-            </div>
-            <button type="button" data-action="open-comic-diary" data-i18n="comicDiary">漫画日记</button>
-          </div>
-          <div class="comic-diary-panel" id="comicDiaryPanel" hidden>
-            <div class="comic-diary-form-grid">
-              <label>
-                <span data-i18n="selectCharacter">选择角色</span>
-                <select id="comicCharacterSelect"></select>
-              </label>
-              <label>
-                <span data-i18n="comicPanelCount">漫画格数</span>
-                <select id="comicPanelCountInput">
-                  <option value="4" data-i18n="fourPanels">4 格</option>
-                  <option value="6" data-i18n="sixPanels">6 格</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="moodStyle">情绪风格</span>
-                <select id="comicMoodStyleInput">
-                  <option value="cute" data-i18n="moodCute">可爱</option>
-                  <option value="funny" data-i18n="moodFunny">搞笑</option>
-                  <option value="sad" data-i18n="moodSad">低落</option>
-                  <option value="healing" data-i18n="moodHealing">治愈</option>
-                  <option value="angry" data-i18n="moodAngry">生气</option>
-                  <option value="strange" data-i18n="moodStrange">奇怪</option>
-                </select>
-              </label>
-            </div>
-            <label class="comic-source-field">
-              <span data-i18n="todayStory">今天发生的事情</span>
-              <textarea id="comicSourceInput" rows="4" maxlength="420" placeholder="写一段今天发生的事，系统会把它拆成漫画分镜。"></textarea>
-            </label>
-            <div class="comic-diary-editor-actions">
-              <button class="primary-button" type="button" data-action="generate-comic-diary" data-i18n="generateComic">生成漫画</button>
-              <button class="ghost-button" type="button" data-action="focus-comic-text" data-i18n="editText">编辑文字</button>
-              <button class="ghost-button" type="button" data-action="clear-comic-diary" data-i18n="clear">清空</button>
-            </div>
-            <div class="comic-diary-preview" id="comicDiaryPreview"></div>
-            <div class="comic-diary-editor-actions">
-              <button class="ghost-button" type="button" data-action="save-comic-diary" data-i18n="saveToDiary">保存到日记本</button>
-              <button class="ghost-button" type="button" data-action="generate-comic-diary" data-i18n="regenerate">重新生成</button>
-              <button class="ghost-button" type="button" data-action="clear-comic-diary" data-i18n="clear">清空</button>
-              <button class="primary-button" type="button" data-action="export-comic-diary-png" data-i18n="exportPng">导出 PNG</button>
-            </div>
-            <div class="comic-diary-saved-list" id="comicDiarySavedList" aria-label="已保存漫画日记"></div>
-          </div>
-        </section>
         <textarea id="reportInput" rows="6" placeholder="今天完成了什么？情绪如何？明天从哪一步继续？"></textarea>
         <button class="primary-button" type="button" data-action="close-diary" data-i18n="saveAndClose">保存并关闭</button>
       </form>
+    </template>
+
+    <dialog class="edit-card-dialog ootd-dialog" id="ootdDialog">
+      <div class="dialog-card ootd-dialog-card">
+        <button class="dialog-close" type="button" data-action="close-ootd" aria-label="关闭">×</button>
+        <p class="black-pill">OOTD</p>
+        <div class="ootd-dialog-head">
+          <div>
+            <h2 data-i18n="ootdAiTitle">今日穿搭 AI</h2>
+            <p data-i18n="ootdSafetyCopy">评分只分析服装配色、层次、完整度和场景适配，不评价身材或长相。</p>
+          </div>
+          <strong id="ootdDateLabel">今天</strong>
+        </div>
+
+        <div class="ootd-photo-stage" id="ootdPhotoStage">
+          <img id="ootdPhotoPreview" alt="待分析的今日穿搭照片" hidden />
+          <div id="ootdPhotoPlaceholder">
+            <strong data-i18n="ootdAddPhoto">添加一张全身或半身穿搭照</strong>
+            <span data-i18n="ootdPhotoHint">尽量保证光线清楚、衣服没有被大面积遮挡。</span>
+          </div>
+        </div>
+
+        <input id="ootdCameraInput" type="file" accept="image/*" capture="environment" hidden />
+        <input id="ootdGalleryInput" type="file" accept="image/*" hidden />
+        <div class="ootd-photo-actions">
+          <button class="primary-button" id="ootdCaptureButton" type="button" data-action="capture-ootd" data-i18n="ootdCapture">拍摄穿搭</button>
+          <button class="ghost-button" id="ootdGalleryButton" type="button" data-action="choose-ootd-photo" data-i18n="ootdChoosePhoto">从相册选择</button>
+        </div>
+
+        <div class="ootd-settings-grid">
+          <label>
+            <span data-i18n="ootdOccasion">今天的场景</span>
+            <select id="ootdOccasionInput">
+              <option value="daily" data-i18n="ootdOccasionDaily">日常出门</option>
+              <option value="work" data-i18n="ootdOccasionWork">上班 / 上学</option>
+              <option value="date" data-i18n="ootdOccasionDate">约会 / 聚会</option>
+              <option value="sport" data-i18n="ootdOccasionSport">运动 / 户外</option>
+              <option value="formal" data-i18n="ootdOccasionFormal">正式场合</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="ootdCartoonStyle">卡通画风</span>
+            <select id="ootdCartoonStyleInput">
+              <option value="clean" data-i18n="ootdStyleClean">清爽日常卡通</option>
+              <option value="handdrawn" data-i18n="ootdStyleHanddrawn">手绘彩铅</option>
+              <option value="comic" data-i18n="ootdStyleComic">生活漫画</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="ootd-consent-row">
+          <input id="ootdConsentInput" type="checkbox" />
+          <span data-i18n="ootdConsent">我同意将这张照片发送给 AI 完成本次分析；原照片不会保存到 App。</span>
+        </label>
+        <button class="primary-button ootd-analyze-button" id="ootdAnalyzeButton" type="button" data-action="analyze-ootd" data-i18n="ootdAnalyze">AI 评分并生成卡通形象</button>
+        <p class="ootd-status" id="ootdStatus" aria-live="polite"></p>
+
+        <section class="ootd-result" id="ootdResult" hidden>
+          <div class="ootd-score-head">
+            <span data-i18n="ootdScoreTitle">今日穿搭评分</span>
+            <strong id="ootdOverallScore">--</strong>
+          </div>
+          <div class="ootd-score-grid" id="ootdScoreGrid"></div>
+          <div class="ootd-feedback">
+            <div>
+              <strong data-i18n="ootdStrengths">穿搭亮点</strong>
+              <ul id="ootdStrengths"></ul>
+            </div>
+            <div>
+              <strong data-i18n="ootdSuggestions">下次可以试试</strong>
+              <ul id="ootdSuggestions"></ul>
+            </div>
+          </div>
+          <figure class="ootd-cartoon-result">
+            <img id="ootdCartoonImage" alt="AI 生成的今日卡通形象" />
+            <figcaption id="ootdSummary"></figcaption>
+          </figure>
+          <div class="ootd-result-actions">
+            <button class="ghost-button" type="button" data-action="delete-ootd-card" data-i18n="ootdDelete">删除当天记录</button>
+            <button class="ghost-button" type="button" data-action="export-ootd-cartoon" data-i18n="ootdExport">导出图片</button>
+            <button class="primary-button" type="button" data-action="save-ootd-card" data-i18n="ootdSave">保存当天卡片</button>
+          </div>
+        </section>
+      </div>
     </dialog>
 
     <dialog class="edit-card-dialog" id="balanceAdjustDialog">
@@ -905,6 +942,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="./app.js?v=212"></script>
+    <script src="./app.js?v=225"></script>
   </body>
 </html>

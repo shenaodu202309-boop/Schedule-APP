@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=67" />
+    <link rel="stylesheet" href="./styles.css?v=86" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,6 +45,31 @@
             </div>
           </header>
           <div id="timeline" class="timeline" aria-label="项目时间轴 / Project timeline"></div>
+        </section>
+
+        <section id="collaborationSection" class="main-board collaboration-timeline-panel" hidden aria-label="多人协作时间轴">
+          <div class="collaboration-timeline-head">
+            <div class="collaboration-head-summary">
+              <div id="collaborationWorkspaceTabs" class="collaboration-workspace-tabs" aria-label="协作项目列表"></div>
+              <p id="collaborationTimelineMeta" class="collaboration-timeline-meta">登录后可与好友共同编辑。</p>
+            </div>
+            <div class="collaboration-head-actions">
+              <button id="collaborationViewToggle" class="ghost-button" type="button" data-action="show-collaboration-calendar">日历</button>
+              <button class="ghost-button collaboration-friends-button" type="button" data-action="open-collaboration-dialog">好友</button>
+              <button id="collaborationInviteButton" class="ghost-button" type="button" data-action="open-workspace-invite">当前成员</button>
+              <button id="workspaceChatButton" class="ghost-button workspace-chat-button" type="button" data-action="open-workspace-chat">当前聊天室<span id="workspaceChatUnreadBadge" class="workspace-chat-unread" hidden aria-label="未读消息"></span></button>
+            </div>
+          </div>
+          <div id="collaborationTimeline" class="timeline collaboration-timeline" aria-label="多人协作时间轴"></div>
+          <section class="collaboration-day-plan" aria-label="协作每日计划">
+            <button id="collaborationDayPlanToggle" class="collaboration-day-plan-toggle" type="button" data-action="toggle-collaboration-day-plan" aria-expanded="false" aria-controls="collaborationDayPlanContent">
+              <span>协作每日计划</span><small id="collaborationDayPlanTitle">当天安排</small><b aria-hidden="true">⌄</b>
+            </button>
+            <div id="collaborationDayPlanContent" hidden>
+              <div id="collaborationDaySchedule" class="day-schedule collaboration-day-schedule" aria-label="协作当天时间安排"></div>
+            </div>
+          </section>
+          <section id="collaborationCalendar" class="collaboration-calendar" hidden aria-label="协作日历"></section>
         </section>
 
         <aside id="overviewSection" class="sidebar">
@@ -232,11 +257,15 @@
             <span data-i18n="goal">目标 / Goal</span>
             <input id="projectGoalInput" type="text" maxlength="80" />
           </label>
-          <label class="field project-complete-field">
-            <span data-i18n="projectComplete">完成长期任务 / Complete Project</span>
-            <input id="projectCompleteInput" type="checkbox" />
+          <label class="field project-commercial-field">
+            <span>开启商业模式</span>
+            <input id="projectCommercialInput" type="checkbox" />
           </label>
         </div>
+        <section id="projectCollaborationHistory" class="collaboration-edit-history" hidden>
+          <button class="collaboration-history-toggle" type="button" data-action="toggle-collaboration-edit-history" data-history-panel="projectCollaborationHistoryList" aria-controls="projectCollaborationHistoryList" aria-expanded="false"><span>修改历史</span><span aria-hidden="true">⌄</span></button>
+          <div id="projectCollaborationHistoryList" class="collaboration-history-list" hidden></div>
+        </section>
         <div class="dialog-actions">
           <button id="deleteProjectButton" class="danger-button" type="button" data-action="delete-project" data-i18n="delete">删除 / Delete</button>
           <span></span>
@@ -253,6 +282,7 @@
           <h2 id="taskDialogTitle">小任务 / Task</h2>
           <button class="icon-button" type="button" data-action="close-dialog" data-dialog="taskDialog" aria-label="关闭 / Close">×</button>
         </div>
+        <p id="taskPermissionNotice" class="task-permission-notice" hidden>你没有权限编辑此任务。仅负责人可以修改、移动或删除。</p>
         <label class="field full task-title-field">
           <span data-i18n="taskText">任务文字 / Task Text</span>
           <input id="taskTitleInput" type="text" required maxlength="60" />
@@ -261,6 +291,10 @@
           <label class="field task-project-field">
             <span data-i18n="project">所属项目 / Project</span>
             <select id="taskProjectInput" required></select>
+          </label>
+          <label id="taskAssigneeField" class="field task-assignee-field" hidden>
+            <span>所属成员</span>
+            <select id="taskAssigneeInput"></select>
           </label>
           <label class="field task-date-field">
             <span data-i18n="date">日期 / Date</span>
@@ -278,14 +312,6 @@
             <span data-i18n="durationHours">时长 / Duration</span>
             <input id="taskDurationInput" type="number" min="0.25" max="24" step="0.25" required />
           </label>
-          <label class="field task-status-field">
-            <span data-i18n="status">状态 / Status</span>
-            <select id="taskStatusInput">
-              <option value="todo" data-i18n="statusTodo">未完成 / To Do</option>
-              <option value="done" data-i18n="statusDone">已完成 / Done</option>
-              <option value="missed" data-i18n="statusMissed">未做完 / Missed</option>
-            </select>
-          </label>
           <label class="field task-color-field">
             <span data-i18n="color">颜色 / Color</span>
             <input id="taskColorInput" type="color" value="#f2994a" />
@@ -295,6 +321,10 @@
           <span data-i18n="details">细节 / Details</span>
           <textarea id="taskDetailInput" rows="3" maxlength="160"></textarea>
         </label>
+        <section id="taskCollaborationHistory" class="collaboration-edit-history" hidden>
+          <button class="collaboration-history-toggle" type="button" data-action="toggle-collaboration-edit-history" data-history-panel="taskCollaborationHistoryList" aria-controls="taskCollaborationHistoryList" aria-expanded="false"><span>修改历史</span><span aria-hidden="true">⌄</span></button>
+          <div id="taskCollaborationHistoryList" class="collaboration-history-list" hidden></div>
+        </section>
         <div class="dialog-actions">
           <button id="deleteTaskButton" class="danger-button" type="button" data-action="delete-task" data-i18n="delete">删除 / Delete</button>
           <span></span>
@@ -413,6 +443,54 @@
       </form>
     </dialog>
 
+    <dialog class="dialog voice-task-dialog" id="voiceTaskDialog">
+      <div class="voice-task-card">
+        <div class="dialog-header">
+          <div>
+            <p class="voice-task-kicker" data-i18n="voiceTaskEntry">语音安排</p>
+            <h2 data-i18n="voiceTaskTitle">说出今天要做的事</h2>
+          </div>
+          <button class="dialog-close" type="button" data-action="close-voice-task" aria-label="关闭">×</button>
+        </div>
+        <p class="voice-task-hint" data-i18n="voiceTaskHint">例如：今天下午三点画角色设定一个小时。</p>
+        <button class="voice-task-mic" id="voiceTaskMicButton" type="button" data-action="toggle-voice-task-listening" aria-pressed="false">
+          <span aria-hidden="true">声</span>
+          <strong data-i18n="voiceTaskListen">开始说话</strong>
+        </button>
+        <p class="voice-task-status" id="voiceTaskStatus" role="status" aria-live="polite"></p>
+        <label class="voice-task-transcript">
+          <span data-i18n="voiceTaskTranscript">识别到的内容</span>
+          <textarea id="voiceTaskTranscriptInput" rows="3" maxlength="300" data-i18n-placeholder="voiceTaskHint" placeholder="例如：今天下午三点画角色设定一个小时。"></textarea>
+        </label>
+        <div class="voice-task-fields">
+          <label>
+            <span data-i18n="voiceTaskName">任务名称</span>
+            <input id="voiceTaskTitleInput" type="text" maxlength="80" />
+          </label>
+          <label>
+            <span data-i18n="voiceTaskDate">安排日期</span>
+            <input id="voiceTaskDateInput" type="date" />
+          </label>
+          <label>
+            <span data-i18n="voiceTaskTime">开始时间</span>
+            <input id="voiceTaskTimeInput" type="time" step="900" />
+          </label>
+          <label>
+            <span data-i18n="voiceTaskDuration">任务时长</span>
+            <select id="voiceTaskDurationInput">
+              <option value="0.5" data-i18n="voiceTaskHalfHour">30 分钟</option>
+              <option value="1" data-i18n="voiceTaskOneHour">1 小时</option>
+              <option value="2" data-i18n="voiceTaskTwoHours">2 小时</option>
+            </select>
+          </label>
+        </div>
+        <div class="voice-task-actions">
+          <button class="ghost-button" type="button" data-action="analyze-voice-task" data-i18n="voiceTaskAnalyze">重新识别</button>
+          <button class="primary-button" type="button" data-action="save-voice-task" data-i18n="voiceTaskSave">加入今日任务</button>
+        </div>
+      </div>
+    </dialog>
+
     <button class="project-fab" type="button" data-action="open-create-menu" aria-label="新建 / Create" aria-haspopup="menu" aria-controls="createMenu" aria-expanded="false">
       <span aria-hidden="true">＋</span>
     </button>
@@ -426,10 +504,24 @@
         <span aria-hidden="true">＋</span>
         <strong data-i18n="newTask">新建小任务 / New Task</strong>
       </button>
+      <button type="button" data-action="open-voice-task" role="menuitem">
+        <span aria-hidden="true">声</span>
+        <strong data-i18n="voiceTaskEntry">语音安排 / Voice Task</strong>
+      </button>
       <button type="button" data-action="paste-block" role="menuitem">
         <span aria-hidden="true">⧉</span>
         <strong data-i18n="pasteBlock">粘贴 / Paste</strong>
       </button>
+    </div>
+
+    <button id="collaborationCreateFab" class="project-fab collaboration-project-fab" type="button" data-action="toggle-collab-create-menu" aria-label="新建协作内容" aria-haspopup="menu" aria-controls="collaborationCreateMenu" aria-expanded="false" hidden>
+      <span aria-hidden="true">＋</span>
+    </button>
+
+    <div id="collaborationCreateMenu" class="create-menu collaboration-create-menu" role="menu" hidden>
+      <button type="button" data-action="add-collab-project" role="menuitem"><span aria-hidden="true">＋</span><strong>新建协作时间轴</strong></button>
+      <button type="button" data-action="add-collab-big-project" role="menuitem"><span aria-hidden="true">＋</span><strong>新建大项目</strong></button>
+      <button type="button" data-action="add-collab-small-task" role="menuitem"><span aria-hidden="true">＋</span><strong>新建小项目</strong></button>
     </div>
 
     <button id="undoButton" class="undo-button" type="button" data-action="undo-change" aria-label="撤销 / Undo" hidden>
@@ -439,6 +531,9 @@
 
     <div id="blockActionMenu" class="block-action-menu" role="menu" hidden>
       <strong id="blockActionTitle">条形操作 / Block actions</strong>
+      <button type="button" data-action="sync-collab-project" role="menuitem" data-i18n="syncProjectToPersonal" hidden>同步整个项目 / Sync Entire Project</button>
+      <button type="button" data-action="sync-collab-task" role="menuitem" data-i18n="syncTaskToPersonal" hidden>仅同步此小项目 / Sync This Task</button>
+      <button type="button" data-action="complete-context-task" role="menuitem" hidden>完成任务</button>
       <button type="button" data-action="copy-block" role="menuitem" data-i18n="copyBlock">复制 / Copy</button>
       <button type="button" data-action="split-block" role="menuitem" data-i18n="splitBlock">拆分 / Split</button>
       <button type="button" data-action="paste-block" role="menuitem" data-i18n="pasteBlock">粘贴 / Paste</button>
@@ -490,6 +585,17 @@
           </div>
         </section>
 
+        <section class="ai-plugin-card" id="aiPluginCenter" aria-label="AI 插槽中心">
+          <div class="ai-plugin-head">
+            <span class="ai-plugin-icon" aria-hidden="true">✦</span>
+            <div>
+              <strong>AI 插槽中心</strong>
+              <small>统一管理未来接入的 AI 能力。</small>
+            </div>
+          </div>
+          <div class="ai-plugin-list" id="aiPluginList"></div>
+        </section>
+
         <div class="account-form-grid">
           <label>
             <span>邮箱</span>
@@ -506,9 +612,88 @@
         <div class="account-actions">
           <button class="ghost-button" id="accountSignUpButton" type="button" data-action="account-sign-up">注册</button>
           <button class="primary-button" id="accountSignInButton" type="button" data-action="account-sign-in">登录</button>
+          <button class="ghost-button" id="accountResendConfirmationButton" type="button" data-action="account-resend-confirmation">重发确认邮件</button>
           <button class="ghost-button" id="accountRecoveryButton" type="button" data-action="account-send-recovery">找回密码</button>
           <button class="primary-button" id="accountUpdatePasswordButton" type="button" data-action="account-update-password" hidden>设置新密码</button>
           <button class="danger-button" id="accountSignOutButton" type="button" data-action="account-sign-out" hidden>退出登录</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="dialog collaboration-dialog" id="collaborationDialog">
+      <div class="collaboration-card">
+        <div class="dialog-header">
+          <div>
+            <p class="account-kicker">商业模式</p>
+            <h2>好友与协作</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-collaboration-dialog" aria-label="关闭">×</button>
+        </div>
+        <form id="collaborationFriendForm" class="collaboration-add-friend-form">
+          <label>
+            <span>好友邮箱</span>
+            <input id="collaborationFriendEmailInput" type="email" autocomplete="email" placeholder="friend@example.com" required />
+          </label>
+          <button class="primary-button" type="submit">添加好友</button>
+        </form>
+        <form id="collaborationProfileForm" class="collaboration-profile-form">
+          <label>
+            <span>我的协作名称</span>
+            <input id="collaborationDisplayNameInput" type="text" maxlength="40" placeholder="好友将看见这个名称" />
+          </label>
+          <button class="secondary-button" type="submit">保存名称</button>
+        </form>
+        <p id="collaborationMessage" class="account-message" role="status" aria-live="polite">登录后可添加好友。</p>
+        <section class="collaboration-friend-list-wrap" aria-label="协作邀请">
+          <div class="section-heading"><h3>协作邀请</h3></div>
+          <div id="workspaceInviteRequestList" class="collaboration-friend-list"></div>
+        </section>
+        <section class="collaboration-friend-list-wrap" aria-label="好友列表">
+          <div class="section-heading">
+            <h3>好友</h3>
+            <span id="collaborationFriendCount" class="collaboration-count">0</span>
+          </div>
+          <div id="collaborationFriendList" class="collaboration-friend-list"></div>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog class="dialog collaboration-history-dialog" id="collaborationHistoryDialog">
+      <div class="collaboration-card">
+        <div class="dialog-header"><div><p class="account-kicker">商业模式</p><h2>修改历史</h2></div><button class="icon-button" type="button" data-action="close-collaboration-history" aria-label="关闭">×</button></div>
+        <p id="collaborationHistoryTitle" class="collaboration-history-title"></p>
+        <div id="collaborationHistoryList" class="collaboration-history-list"></div>
+      </div>
+    </dialog>
+
+    <dialog class="dialog collaboration-dialog" id="workspaceInviteDialog">
+      <div class="collaboration-card">
+        <div class="dialog-header"><div><p class="account-kicker">协作时间轴</p><h2>当前成员</h2></div><button class="icon-button" type="button" data-action="close-workspace-invite" aria-label="关闭">×</button></div>
+        <div id="workspaceInviteApprovalList" class="workspace-invite-approval-list"></div>
+        <label class="workspace-invite-search" for="workspaceInviteSearchInput"><input id="workspaceInviteSearchInput" type="search" autocomplete="off" placeholder="搜索好友邮箱或昵称" /></label>
+        <form id="workspaceInviteForm"><div id="workspaceInviteList" class="workspace-invite-list"></div><button class="primary-button" type="submit">确认邀请</button></form>
+      </div>
+    </dialog>
+
+    <dialog class="dialog collaboration-dialog workspace-chat-dialog" id="workspaceChatDialog">
+      <div class="collaboration-card workspace-chat-card">
+        <div class="dialog-header"><div><p class="account-kicker">协作时间轴</p><h2 id="workspaceChatTitle">当前聊天室</h2></div><button class="icon-button" type="button" data-action="close-workspace-chat" aria-label="关闭">×</button></div>
+        <p id="workspaceChatMeta" class="account-message">仅当前协作时间轴成员可见。</p>
+        <div id="workspaceChatMessages" class="workspace-chat-messages" aria-live="polite"></div>
+        <form id="workspaceChatForm" class="workspace-chat-form">
+          <textarea id="workspaceChatInput" rows="2" maxlength="800" placeholder="输入消息" required></textarea>
+          <button class="primary-button" type="submit">发送</button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="dialog collaboration-dialog" id="workspaceMemberActionDialog">
+      <div class="collaboration-card workspace-member-action-card">
+        <div class="dialog-header"><div><p class="account-kicker">当前成员</p><h2 id="workspaceMemberActionTitle">成员操作</h2></div><button class="icon-button" type="button" data-action="close-workspace-member-actions" aria-label="关闭">×</button></div>
+        <p id="workspaceMemberActionMeta" class="account-message"></p>
+        <div class="workspace-member-action-buttons">
+          <button class="danger-button" type="button" data-action="confirm-remove-workspace-member">删除成员</button>
+          <button class="secondary-button" type="button" data-action="confirm-transfer-workspace-owner">移交管理员头衔</button>
         </div>
       </div>
     </dialog>
@@ -530,10 +715,14 @@
         <span aria-hidden="true">✎</span>
         <small data-i18n="navJournal">日记</small>
       </a>
+      <a id="collaborationNav" class="bottom-nav-item" href="#collaborationSection">
+        <span aria-hidden="true">♧</span>
+        <small>协作</small>
+      </a>
     </nav>
 
     <script src="./native-notifications.js?v=67"></script>
-    <script src="./app.js?v=68"></script>
+    <script src="./app.js?v=120"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

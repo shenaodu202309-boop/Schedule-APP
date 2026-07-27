@@ -5,8 +5,56 @@ const SUPABASE_CONFIG = {
 };
 const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
 const CLOUD_BACKUP_SCHEMA_VERSION = "cloud-backup-v1";
+const COLLABORATION_TIMELINE_SCHEMA_VERSION = "collab-timeline-v1";
+const COLLABORATION_PERSONAL_SYNC_VERSION = 1;
 const CLOUD_LOCAL_META_KEY = "private-schedule-cloud-sync-meta-v1";
 const DAILY_REMINDER_STORAGE_KEY = "private-schedule-daily-reminder-v1";
+const VOICE_GAME_SYNC_KEY = "private-schedule-voice-game-sync-v1";
+const COLLABORATION_GAME_SYNC_KEY = "private-schedule-collaboration-game-sync-v1";
+const COLLABORATION_GAME_COMPLETION_KEY = "private-schedule-collaboration-game-completion-v1";
+const COLLABORATION_GAME_UPDATE_KEY = "private-schedule-collaboration-game-update-v1";
+const WORKSPACE_CHAT_UNREAD_KEY = "private-schedule-workspace-chat-unread-v1";
+const GAME_BATTLE_PROJECT_ID = "project-graduation-game-main-battle";
+const GAME_BATTLE_PROJECT_SOURCE = "graduation-game-v2-main-battle";
+const GAME_BATTLE_TASK_SOURCE = "graduation-game-v2-planned-task";
+const AI_PLUGIN_TYPES = {
+  SKILL_MARKET_DAILY_SCAN: "skill-market-daily-scan",
+  SKILL_STOCK_SUGGESTION: "skill-stock-suggestion",
+  SKILL_STOCK_EXPLAIN: "skill-stock-explain",
+  RELATIONSHIP_ANALYSIS: "relationship-analysis",
+  TASK_PLANNING: "task-planning",
+  INVOICE_SUMMARY: "invoice-summary",
+};
+const AI_PLUGIN_DEFINITIONS = [
+  {
+    id: AI_PLUGIN_TYPES.SKILL_MARKET_DAILY_SCAN,
+    name: "技能股市 AI",
+    status: "reserved",
+    statusLabel: "预留中",
+    ability: "未来根据职业工资、招聘岗位数量、技能需求变化，生成市场波动和新的技能股建议。",
+  },
+  {
+    id: AI_PLUGIN_TYPES.RELATIONSHIP_ANALYSIS,
+    name: "关系分析 AI",
+    status: "missing",
+    statusLabel: "未安装",
+    ability: "未来用于整理关系卡和互动建议。",
+  },
+  {
+    id: AI_PLUGIN_TYPES.TASK_PLANNING,
+    name: "任务规划 AI",
+    status: "missing",
+    statusLabel: "未安装",
+    ability: "未来用于根据目标拆解日程任务。",
+  },
+  {
+    id: AI_PLUGIN_TYPES.INVOICE_SUMMARY,
+    name: "发票总结 AI",
+    status: "missing",
+    statusLabel: "未安装",
+    ability: "未来用于总结发票和账本变化。",
+  },
+];
 const TASK_REMINDER_CHECK_MS = 30 * 1000;
 const TASK_REMINDER_MISSED_GRACE_MS = 12 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -164,9 +212,28 @@ const I18N = {
   addTaskToProject: { zh: "给这个项目加任务", en: "Add task to this project" },
   addTaskToProjectShort: { zh: "＋", en: "+" },
   blockActionTitle: { zh: "条形操作", en: "Block actions" },
+  syncProjectToPersonal: { zh: "同步整个项目到个人时间轴", en: "Sync entire project to personal timeline" },
+  syncTaskToPersonal: { zh: "仅同步此小项目到个人时间轴", en: "Sync only this task to personal timeline" },
+  syncProjectConfirm: { zh: "同步后，这个长期项目和其下所有小项目之后的协作修改都会更新到个人时间轴。继续吗？", en: "Future collaboration edits to this project and all of its tasks will update your personal timeline. Continue?" },
+  syncTaskConfirm: { zh: "同步后，只有这个小项目之后的协作修改会更新到个人时间轴。继续吗？", en: "Only future collaboration edits to this task will update your personal timeline. Continue?" },
   copyBlock: { zh: "复制", en: "Copy" },
   splitBlock: { zh: "拆分", en: "Split" },
   pasteBlock: { zh: "粘贴", en: "Paste" },
+  voiceTaskEntry: { zh: "语音安排", en: "Voice Task" },
+  voiceTaskTitle: { zh: "说出今天要做的事", en: "Speak Today's Task" },
+  voiceTaskHint: { zh: "例如：今天下午三点画角色设定一个小时。", en: "For example: Draw character concepts today at 3 PM for one hour." },
+  voiceTaskTranscript: { zh: "识别到的内容", en: "Transcript" },
+  voiceTaskName: { zh: "任务名称", en: "Task Name" },
+  voiceTaskDate: { zh: "安排日期", en: "Date" },
+  voiceTaskTime: { zh: "开始时间", en: "Start Time" },
+  voiceTaskDuration: { zh: "任务时长", en: "Duration" },
+  voiceTaskListen: { zh: "开始说话", en: "Start Speaking" },
+  voiceTaskListening: { zh: "正在聆听…", en: "Listening…" },
+  voiceTaskAnalyze: { zh: "重新识别", en: "Analyze Again" },
+  voiceTaskSave: { zh: "加入今日任务", en: "Add Task" },
+  voiceTaskHalfHour: { zh: "30 分钟", en: "30 minutes" },
+  voiceTaskOneHour: { zh: "1 小时", en: "1 hour" },
+  voiceTaskTwoHours: { zh: "2 小时", en: "2 hours" },
   customDateLabel: { zh: "手动标注", en: "Custom Label" },
   customDatePlaceholder: { zh: "生日、纪念日、考试日", en: "Birthday, anniversary, exam" },
   markDate: { zh: "标注", en: "Mark" },
@@ -367,14 +434,53 @@ let taskReminderTimeouts = [];
 let activeTaskReminderId = "";
 let supabaseClient = null;
 let currentAuthUser = null;
+let authSessionResolved = false;
 let passwordRecoveryMode = false;
+let accountActionBusy = false;
+let accountEmailCooldownUntil = 0;
+let accountEmailCooldownTimer = null;
 let cloudBackupStatus = null;
 let cloudBackupBusy = false;
+let voiceTaskRecognition = null;
+let voiceTaskListening = false;
+let voiceTaskFinalTranscript = "";
+let projectDialogContext = { scope: "private", workspaceId: "" };
+let taskDialogContext = { scope: "private", workspaceId: "" };
+let pendingTaskDraft = null;
+let pendingCommercialProject = null;
+let collaborationSubscription = null;
+let collaborationSessionUserId = "";
+let collaborationCalendarMonth = todayISO().slice(0, 7);
+let collaborationWorkspaceMenuOpen = false;
+let collaborationCreateMenuOpen = false;
+let collaborationDayPlanExpanded = false;
+let collaborationWorkspacePressTimer = null;
+let collaborationWorkspacePressStart = null;
+let workspaceMemberPressTimer = null;
+let workspaceMemberPressStart = null;
+let workspaceMemberAction = null;
+let workspaceInviteSearchOpen = false;
+let workspaceInviteApprovals = [];
+let activeWorkspaceChatId = "";
+let workspaceChatMessages = [];
+let workspaceChatUnread = {};
+let collaboration = {
+  workspaces: [],
+  friends: [],
+  workspaceInvites: [],
+  profile: { displayName: "", email: "" },
+  activeWorkspaceId: "",
+  loading: false,
+  available: true,
+  error: "",
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheDom();
   state = loadState();
   normalizeState();
+  workspaceChatUnread = loadWorkspaceChatUnread();
+  if (consumeCollaborationGameUpdates()) saveState();
   bindEvents();
   void initSupabaseClient();
   render();
@@ -411,6 +517,16 @@ function cacheDom() {
   dom.importInput = document.querySelector("#importInput");
   dom.createMenu = document.querySelector("#createMenu");
   dom.createFab = document.querySelector("[data-action='open-create-menu']");
+  dom.collaborationCreateFab = document.querySelector("#collaborationCreateFab");
+  dom.collaborationCreateMenu = document.querySelector("#collaborationCreateMenu");
+  dom.voiceTaskDialog = document.querySelector("#voiceTaskDialog");
+  dom.voiceTaskStatus = document.querySelector("#voiceTaskStatus");
+  dom.voiceTaskMicButton = document.querySelector("#voiceTaskMicButton");
+  dom.voiceTaskTranscriptInput = document.querySelector("#voiceTaskTranscriptInput");
+  dom.voiceTaskTitleInput = document.querySelector("#voiceTaskTitleInput");
+  dom.voiceTaskDateInput = document.querySelector("#voiceTaskDateInput");
+  dom.voiceTaskTimeInput = document.querySelector("#voiceTaskTimeInput");
+  dom.voiceTaskDurationInput = document.querySelector("#voiceTaskDurationInput");
   dom.undoButton = document.querySelector("#undoButton");
   dom.blockActionMenu = document.querySelector("#blockActionMenu");
   dom.blockActionTitle = document.querySelector("#blockActionTitle");
@@ -418,30 +534,37 @@ function cacheDom() {
   dom.bottomNav = document.querySelector(".bottom-nav");
   dom.settingsPanel = document.querySelector("#settingsPanel");
   dom.settingsToggle = document.querySelector("[data-action='toggle-settings']");
-  dom.appSections = Array.from(document.querySelectorAll("#timelineSection, #overviewSection, #todaySection, #journalSection"));
+  dom.appSections = Array.from(document.querySelectorAll("#timelineSection, #overviewSection, #todaySection, #journalSection, #collaborationSection"));
   dom.navTabs = Array.from(document.querySelectorAll('.bottom-nav a[href^="#"]'));
+  dom.collaborationNav = document.querySelector("#collaborationNav");
   dom.projectDialog = document.querySelector("#projectDialog");
   dom.projectForm = document.querySelector("#projectForm");
   dom.projectDialogTitle = document.querySelector("#projectDialogTitle");
+  dom.projectCollaborationHistory = document.querySelector("#projectCollaborationHistory");
+  dom.projectCollaborationHistoryList = document.querySelector("#projectCollaborationHistoryList");
   dom.projectIdInput = document.querySelector("#projectIdInput");
   dom.projectTitleInput = document.querySelector("#projectTitleInput");
   dom.projectStartInput = document.querySelector("#projectStartInput");
   dom.projectDurationInput = document.querySelector("#projectDurationInput");
   dom.projectColorInput = document.querySelector("#projectColorInput");
   dom.projectGoalInput = document.querySelector("#projectGoalInput");
-  dom.projectCompleteInput = document.querySelector("#projectCompleteInput");
+  dom.projectCommercialInput = document.querySelector("#projectCommercialInput");
   dom.deleteProjectButton = document.querySelector("#deleteProjectButton");
   dom.taskDialog = document.querySelector("#taskDialog");
   dom.taskForm = document.querySelector("#taskForm");
   dom.taskDialogTitle = document.querySelector("#taskDialogTitle");
+  dom.taskPermissionNotice = document.querySelector("#taskPermissionNotice");
+  dom.taskCollaborationHistory = document.querySelector("#taskCollaborationHistory");
+  dom.taskCollaborationHistoryList = document.querySelector("#taskCollaborationHistoryList");
   dom.taskIdInput = document.querySelector("#taskIdInput");
   dom.taskTitleInput = document.querySelector("#taskTitleInput");
   dom.taskProjectInput = document.querySelector("#taskProjectInput");
+  dom.taskAssigneeField = document.querySelector("#taskAssigneeField");
+  dom.taskAssigneeInput = document.querySelector("#taskAssigneeInput");
   dom.taskDateInput = document.querySelector("#taskDateInput");
   dom.taskSpanInput = document.querySelector("#taskSpanInput");
   dom.taskStartInput = document.querySelector("#taskStartInput");
   dom.taskDurationInput = document.querySelector("#taskDurationInput");
-  dom.taskStatusInput = document.querySelector("#taskStatusInput");
   dom.taskColorInput = document.querySelector("#taskColorInput");
   dom.dailyReminderEntry = document.querySelector("#dailyReminderEntry");
   dom.dailyReminderEntryStatus = document.querySelector("#dailyReminderEntryStatus");
@@ -482,9 +605,50 @@ function cacheDom() {
   dom.accountMessage = document.querySelector("#accountMessage");
   dom.accountSignUpButton = document.querySelector("#accountSignUpButton");
   dom.accountSignInButton = document.querySelector("#accountSignInButton");
+  dom.accountResendConfirmationButton = document.querySelector("#accountResendConfirmationButton");
   dom.accountRecoveryButton = document.querySelector("#accountRecoveryButton");
   dom.accountUpdatePasswordButton = document.querySelector("#accountUpdatePasswordButton");
   dom.accountSignOutButton = document.querySelector("#accountSignOutButton");
+  dom.collaborationTimelinePanel = document.querySelector("#collaborationSection");
+  dom.collaborationTimeline = document.querySelector("#collaborationTimeline");
+  dom.collaborationDaySchedule = document.querySelector("#collaborationDaySchedule");
+  dom.collaborationDayPlanTitle = document.querySelector("#collaborationDayPlanTitle");
+  dom.collaborationDayPlanToggle = document.querySelector("#collaborationDayPlanToggle");
+  dom.collaborationDayPlanContent = document.querySelector("#collaborationDayPlanContent");
+  dom.collaborationCalendar = document.querySelector("#collaborationCalendar");
+  dom.collaborationViewToggle = document.querySelector("#collaborationViewToggle");
+  dom.collaborationTimelineMeta = document.querySelector("#collaborationTimelineMeta");
+  dom.collaborationWorkspaceTabs = document.querySelector("#collaborationWorkspaceTabs");
+  dom.collaborationAddProjectButton = document.querySelector("#collaborationAddProjectButton");
+  dom.collaborationInviteButton = document.querySelector("#collaborationInviteButton");
+  dom.workspaceChatButton = document.querySelector("#workspaceChatButton");
+  dom.workspaceChatUnreadBadge = document.querySelector("#workspaceChatUnreadBadge");
+  dom.collaborationDialog = document.querySelector("#collaborationDialog");
+  dom.collaborationHistoryDialog = document.querySelector("#collaborationHistoryDialog");
+  dom.collaborationHistoryTitle = document.querySelector("#collaborationHistoryTitle");
+  dom.collaborationHistoryList = document.querySelector("#collaborationHistoryList");
+  dom.workspaceInviteDialog = document.querySelector("#workspaceInviteDialog");
+  dom.workspaceInviteForm = document.querySelector("#workspaceInviteForm");
+  dom.workspaceInviteList = document.querySelector("#workspaceInviteList");
+  dom.workspaceInviteSearchInput = document.querySelector("#workspaceInviteSearchInput");
+  dom.workspaceInviteApprovalList = document.querySelector("#workspaceInviteApprovalList");
+  dom.workspaceChatDialog = document.querySelector("#workspaceChatDialog");
+  dom.workspaceChatTitle = document.querySelector("#workspaceChatTitle");
+  dom.workspaceChatMeta = document.querySelector("#workspaceChatMeta");
+  dom.workspaceChatMessages = document.querySelector("#workspaceChatMessages");
+  dom.workspaceChatForm = document.querySelector("#workspaceChatForm");
+  dom.workspaceChatInput = document.querySelector("#workspaceChatInput");
+  dom.workspaceMemberActionDialog = document.querySelector("#workspaceMemberActionDialog");
+  dom.workspaceMemberActionTitle = document.querySelector("#workspaceMemberActionTitle");
+  dom.workspaceMemberActionMeta = document.querySelector("#workspaceMemberActionMeta");
+  dom.collaborationProfileForm = document.querySelector("#collaborationProfileForm");
+  dom.collaborationDisplayNameInput = document.querySelector("#collaborationDisplayNameInput");
+  dom.collaborationFriendForm = document.querySelector("#collaborationFriendForm");
+  dom.collaborationFriendEmailInput = document.querySelector("#collaborationFriendEmailInput");
+  dom.collaborationFriendList = document.querySelector("#collaborationFriendList");
+  dom.collaborationFriendCount = document.querySelector("#collaborationFriendCount");
+  dom.workspaceInviteRequestList = document.querySelector("#workspaceInviteRequestList");
+  dom.collaborationMessage = document.querySelector("#collaborationMessage");
   dom.cloudBackupPanel = document.querySelector("#cloudBackupPanel");
   dom.cloudBackupStatusText = document.querySelector("#cloudBackupStatusText");
   dom.cloudBackupEmail = document.querySelector("#cloudBackupEmail");
@@ -495,6 +659,7 @@ function cacheDom() {
   dom.cloudUploadButton = document.querySelector("#cloudUploadButton");
   dom.cloudDownloadButton = document.querySelector("#cloudDownloadButton");
   dom.cloudStatusButton = document.querySelector("#cloudStatusButton");
+  dom.aiPluginList = document.querySelector("#aiPluginList");
   dom.journalNotebookList = document.querySelector("#journalNotebookList");
   dom.journalNotebookTitle = document.querySelector("#journalNotebookTitle");
   dom.journalPageButton = document.querySelector("#journalPageButton");
@@ -514,9 +679,12 @@ function cacheDom() {
 }
 
 function bindEvents() {
+  window.addEventListener("storage", handleCollaborationGameStorageUpdate);
   document.addEventListener("click", handleDocumentClick);
   document.addEventListener("dblclick", handleDocumentDoubleClick);
   document.addEventListener("pointerdown", handlePointerDown);
+  document.addEventListener("pointerdown", prepareCollaborationWorkspaceLongPress);
+  document.addEventListener("pointerdown", prepareWorkspaceMemberLongPress);
   document.addEventListener("pointerdown", handleJournalLongPressStart);
   document.addEventListener("pointermove", handleJournalLongPressMove);
   document.addEventListener("dragstart", handleDateMarkDragStart);
@@ -544,6 +712,19 @@ function bindEvents() {
   dom.reviewFeelRow?.addEventListener("click", handleReviewMetaClick);
   dom.projectForm.addEventListener("submit", handleProjectSubmit);
   dom.taskForm.addEventListener("submit", handleTaskSubmit);
+  dom.taskDialog.addEventListener("close", () => { pendingTaskDraft = null; });
+  dom.collaborationFriendForm?.addEventListener("submit", handleCollaborationFriendSubmit);
+  dom.collaborationProfileForm?.addEventListener("submit", handleCollaborationProfileSubmit);
+  dom.workspaceInviteForm?.addEventListener("submit", handleWorkspaceInviteSubmit);
+  dom.workspaceInviteSearchInput?.addEventListener("focus", () => {
+    workspaceInviteSearchOpen = true;
+    renderWorkspaceInviteList(getCollaborationWorkspace(dom.workspaceInviteForm?.dataset.workspaceId));
+  });
+  dom.workspaceInviteSearchInput?.addEventListener("input", () => {
+    workspaceInviteSearchOpen = true;
+    renderWorkspaceInviteList(getCollaborationWorkspace(dom.workspaceInviteForm?.dataset.workspaceId));
+  });
+  dom.workspaceChatForm?.addEventListener("submit", handleWorkspaceChatSubmit);
   dom.dailyReminderEnabledInput?.addEventListener("change", updateDailyReminderDialogState);
   dom.dailyReminderSoundInput?.addEventListener("change", previewDailyReminderSound);
   document.addEventListener("visibilitychange", () => {
@@ -586,13 +767,18 @@ function bindEvents() {
   dom.journalCanvasShell?.addEventListener("touchend", handleJournalCanvasTouchEnd);
   dom.journalCanvasShell?.addEventListener("touchcancel", handleJournalCanvasTouchEnd);
   dom.timeline.addEventListener("scroll", handleTimelineScroll, { passive: true });
+  dom.collaborationTimeline?.addEventListener("scroll", handleTimelineScroll, { passive: true });
   window.addEventListener("hashchange", applyAppView);
   document.addEventListener("pointermove", handlePointerMove);
   document.addEventListener("pointermove", handleJournalCanvasItemMove);
   document.addEventListener("pointerup", stopDrag);
+  document.addEventListener("pointerup", cancelCollaborationWorkspaceLongPress);
+  document.addEventListener("pointerup", cancelWorkspaceMemberLongPress);
   document.addEventListener("pointerup", handleJournalCanvasItemEnd);
   document.addEventListener("pointerup", clearJournalLongPressTimers);
   document.addEventListener("pointercancel", handleJournalCanvasItemEnd);
+  document.addEventListener("pointercancel", cancelCollaborationWorkspaceLongPress);
+  document.addEventListener("pointercancel", cancelWorkspaceMemberLongPress);
   document.addEventListener("pointercancel", clearJournalLongPressTimers);
   document.addEventListener("contextmenu", handleJournalNativeMenu);
   document.addEventListener("selectstart", handleJournalNativeSelection);
@@ -783,6 +969,17 @@ function normalizeState() {
   state.dateMarkOrder = state.dateMarkOrder && typeof state.dateMarkOrder === "object" && !Array.isArray(state.dateMarkOrder)
     ? state.dateMarkOrder
     : {};
+  state.collaborationFriendAliases = state.collaborationFriendAliases
+    && typeof state.collaborationFriendAliases === "object"
+    && !Array.isArray(state.collaborationFriendAliases)
+    ? state.collaborationFriendAliases
+    : {};
+  Object.keys(state.collaborationFriendAliases).forEach((friendshipId) => {
+    const alias = String(state.collaborationFriendAliases[friendshipId] || "").trim().slice(0, 40);
+    if (alias) state.collaborationFriendAliases[friendshipId] = alias;
+    else delete state.collaborationFriendAliases[friendshipId];
+  });
+  state.collaborationSync = normalizeCollaborationSyncState(state.collaborationSync);
   state.projects = Array.isArray(state.projects) ? state.projects : [];
   state.projects.forEach((project, index) => {
     project.id ||= makeId("project");
@@ -804,11 +1001,60 @@ function normalizeState() {
       task.status = ["todo", "done", "missed"].includes(task.status) ? task.status : "todo";
       task.color ||= project.color;
       task.detail ||= "";
+      task.dailyOnly = Boolean(task.dailyOnly);
       task.reminder = normalizeTaskReminder(task.reminder);
     });
   });
   closePastDays();
   saveState();
+}
+
+function normalizeCollaborationSyncState(value = {}) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const normalizeProjectLink = (link) => {
+    const sourceLink = link && typeof link === "object" && !Array.isArray(link) ? link : {};
+    const workspaceId = String(sourceLink.workspaceId || "").trim();
+    const projectId = String(sourceLink.projectId || "").trim();
+    const personalProjectId = String(sourceLink.personalProjectId || "").trim();
+    if (!workspaceId || !projectId || !personalProjectId) return null;
+    const taskIds = sourceLink.taskIds && typeof sourceLink.taskIds === "object" && !Array.isArray(sourceLink.taskIds)
+      ? Object.fromEntries(Object.entries(sourceLink.taskIds)
+        .map(([collaborationTaskId, personalTaskId]) => [String(collaborationTaskId || "").trim(), String(personalTaskId || "").trim()])
+        .filter(([collaborationTaskId, personalTaskId]) => collaborationTaskId && personalTaskId))
+      : {};
+    return { workspaceId, projectId, personalProjectId, taskIds };
+  };
+  const normalizeTaskLink = (link) => {
+    const sourceLink = link && typeof link === "object" && !Array.isArray(link) ? link : {};
+    const workspaceId = String(sourceLink.workspaceId || "").trim();
+    const projectId = String(sourceLink.projectId || "").trim();
+    const taskId = String(sourceLink.taskId || "").trim();
+    const personalProjectId = String(sourceLink.personalProjectId || "").trim();
+    const personalTaskId = String(sourceLink.personalTaskId || "").trim();
+    if (!workspaceId || !projectId || !taskId || !personalProjectId || !personalTaskId) return null;
+    return { workspaceId, projectId, taskId, personalProjectId, personalTaskId };
+  };
+  const projectLinks = {};
+  Object.entries(source.projectLinks || {}).forEach(([key, link]) => {
+    const normalized = normalizeProjectLink(link);
+    if (normalized) projectLinks[key] = normalized;
+  });
+  const taskProjectLinks = {};
+  Object.entries(source.taskProjectLinks || {}).forEach(([key, link]) => {
+    const normalized = normalizeProjectLink(link);
+    if (normalized) taskProjectLinks[key] = { ...normalized, taskIds: {} };
+  });
+  const taskLinks = {};
+  Object.entries(source.taskLinks || {}).forEach(([key, link]) => {
+    const normalized = normalizeTaskLink(link);
+    if (normalized) taskLinks[key] = normalized;
+  });
+  return {
+    version: COLLABORATION_PERSONAL_SYNC_VERSION,
+    projectLinks,
+    taskProjectLinks,
+    taskLinks,
+  };
 }
 
 function closePastDays() {
@@ -955,6 +1201,7 @@ function render() {
   renderSummary();
   renderSpecialDateEditor();
   renderTimeline();
+  renderCollaborationTimeline();
   renderDayBoard();
   renderJournal();
   renderDailyReminderEntry();
@@ -965,11 +1212,13 @@ function render() {
 
 function applyAppView() {
   const targetId = getActiveViewId();
+  if (targetId === "collaborationSection") renderCollaborationTimeline();
   document.body.dataset.view = targetId;
   dom.appSections.forEach((section) => {
     const isActive = section.id === targetId;
     section.classList.toggle("is-active-view", isActive);
     section.setAttribute("aria-hidden", String(!isActive));
+    if (section.id === "collaborationSection") section.hidden = !isActive;
   });
   dom.navTabs.forEach((tab) => {
     const isActive = tab.getAttribute("href") === `#${targetId}`;
@@ -988,6 +1237,7 @@ function applyAppView() {
 
 function updateCreateFab(viewId) {
   if (!dom.createFab) return;
+  dom.createFab.hidden = viewId === "collaborationSection";
   const label = viewId === "todaySection" ? text("taskDialogTodayNew") : localizedPair("新建", "Create");
   dom.createFab.setAttribute("aria-label", label);
   dom.createFab.setAttribute("aria-haspopup", viewId === "todaySection" ? "dialog" : "menu");
@@ -1210,6 +1460,7 @@ function projectIntersectsVisibleRange(project) {
   const projectEnd = addDays(project.start, Math.max(1, Number(project.duration) || 1));
   const projectVisible = project.start < rangeEnd && projectEnd > rangeStart;
   const taskVisible = project.tasks?.some((task) => {
+    if (task.dailyOnly) return false;
     const taskEnd = addDays(task.date, Math.max(1, Number(task.spanDays) || 1));
     return task.date < rangeEnd && taskEnd > rangeStart;
   });
@@ -1217,12 +1468,13 @@ function projectIntersectsVisibleRange(project) {
 }
 
 function renderProjectRow(project, days) {
-  const lanes = assignTimelineLanes(project.tasks);
+  const timelineTasks = project.tasks.filter((task) => !task.dailyOnly);
+  const lanes = assignTimelineLanes(timelineTasks);
   const maxLane = Math.max(1, ...Object.values(lanes).map((lane) => lane + 1));
   const rowHeight = Math.max(118, 88 + maxLane * 30);
   const progress = getProjectProgress(project);
   const projectBar = renderProjectBar(project);
-  const taskBars = project.tasks.map((task) => renderTimelineTask(project, task, lanes[task.id])).join("");
+  const taskBars = timelineTasks.map((task) => renderTimelineTask(project, task, lanes[task.id])).join("");
   const weekendCells = days.map((date, index) => {
     const day = parseDate(date).getDay();
     if (day !== 0 && day !== 6) return "";
@@ -1297,6 +1549,1660 @@ function renderTimelineTask(project, task, lane) {
       <span class="resize-handle right" data-drag-type="task-right" data-task-id="${task.id}"></span>
     </button>
   `;
+}
+
+function normalizeCollaborationTimeline(value = {}) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const projects = Array.isArray(source.projects) ? source.projects : [];
+  const history = Array.isArray(source.history) ? source.history : [];
+  return {
+    schemaVersion: COLLABORATION_TIMELINE_SCHEMA_VERSION,
+    history: history.map((entry) => ({
+      id: String(entry?.id || makeId("collab_history")),
+      authorName: String(entry?.authorName || "协作成员").trim().slice(0, 40) || "协作成员",
+      authorId: String(entry?.authorId || entry?.authorName || "协作成员").trim().slice(0, 80) || "协作成员",
+      at: typeof entry?.at === "string" && !Number.isNaN(Date.parse(entry.at)) ? entry.at : new Date().toISOString(),
+    })).slice(0, 5),
+    projects: projects.map((project, index) => {
+      const normalizedProject = project && typeof project === "object" ? project : {};
+      const tasks = Array.isArray(normalizedProject.tasks) ? normalizedProject.tasks : [];
+      return {
+        id: String(normalizedProject.id || makeId("collab_project")),
+        title: String(normalizedProject.title || `协作项目 ${index + 1}`).trim(),
+        goal: String(normalizedProject.goal || "").trim(),
+        start: isValidISODate(normalizedProject.start) ? normalizedProject.start : state.selectedDate,
+        duration: clamp(Number(normalizedProject.duration) || 30, 1, 365),
+        color: normalizeHexColor(normalizedProject.color, COLORS[index % COLORS.length]),
+        completed: Boolean(normalizedProject.completed),
+        completedDate: normalizedProject.completed && isValidISODate(normalizedProject.completedDate)
+          ? normalizedProject.completedDate
+          : "",
+        tasks: tasks.map((task, taskIndex) => {
+          const normalizedTask = task && typeof task === "object" ? task : {};
+          return {
+            id: String(normalizedTask.id || makeId("collab_task")),
+            title: String(normalizedTask.title || `协作任务 ${taskIndex + 1}`).trim(),
+            detail: String(normalizedTask.detail || "").trim(),
+            date: isValidISODate(normalizedTask.date) ? normalizedTask.date : normalizedProject.start || state.selectedDate,
+            spanDays: clamp(Number(normalizedTask.spanDays) || 1, 1, 365),
+            startTime: /^\d{2}:\d{2}$/.test(String(normalizedTask.startTime || "")) ? normalizedTask.startTime : "09:00",
+            duration: Math.max(0.25, Number(normalizedTask.duration) || 1),
+            status: ["todo", "done", "missed"].includes(normalizedTask.status) ? normalizedTask.status : "todo",
+            color: normalizeHexColor(normalizedTask.color, normalizedProject.color || COLORS[index % COLORS.length]),
+            reminder: normalizeTaskReminder(normalizedTask.reminder),
+            dailyOnly: Boolean(normalizedTask.dailyOnly),
+            sourceTaskId: String(normalizedTask.sourceTaskId || "").trim(),
+            assigneeId: String(normalizedTask.assigneeId || "").trim(),
+            assigneeName: String(normalizedTask.assigneeName || "").trim().slice(0, 80),
+          };
+        }),
+      };
+    }),
+  };
+}
+
+function cloneCollaborationTimeline(timeline) {
+  return normalizeCollaborationTimeline(JSON.parse(JSON.stringify(timeline || { projects: [] })));
+}
+
+function getCollaborationWorkspace(workspaceId) {
+  return collaboration.workspaces.find((workspace) => workspace.id === workspaceId) || null;
+}
+
+function getActiveCollaborationWorkspace() {
+  if (!collaboration.activeWorkspaceId && collaboration.workspaces[0]) {
+    collaboration.activeWorkspaceId = collaboration.workspaces[0].id;
+  }
+  return getCollaborationWorkspace(collaboration.activeWorkspaceId);
+}
+
+function canManageCollaborationWorkspace(workspaceId) {
+  return getCollaborationWorkspace(workspaceId)?.owner_id === getCurrentUser()?.id;
+}
+
+function canEditCollaborationTask(workspaceId, task) {
+  return !task?.assigneeId || task.assigneeId === getCurrentUser()?.id;
+}
+
+function canPlanCollaborationDailyTask(task) {
+  return Boolean(task?.assigneeId) && task.assigneeId === getCurrentUser()?.id;
+}
+
+function getCollaborationMemberOptions(workspace) {
+  const friendsById = new Map(collaboration.friends.map((friend) => [friend.friend_id, friend]));
+  return (workspace?.members || []).map((member) => {
+    const friend = friendsById.get(member.user_id);
+    return {
+      id: member.user_id,
+      name: member.user_id === getCurrentUser()?.id
+        ? (collaboration.profile?.displayName || collaboration.profile?.email || "我")
+        : (friend?.friend_display_name || friend?.friend_email || "协作成员"),
+    };
+  });
+}
+
+function getCollaborationTimeline(workspace) {
+  if (!workspace) return { projects: [] };
+  if (!workspace.timeline || typeof workspace.timeline !== "object" || Array.isArray(workspace.timeline)) {
+    workspace.timeline = normalizeCollaborationTimeline();
+  }
+  if (!Array.isArray(workspace.timeline.projects)) workspace.timeline = normalizeCollaborationTimeline(workspace.timeline);
+  return workspace.timeline;
+}
+
+function getCollaborationProjects(workspace) {
+  return getCollaborationTimeline(workspace).projects;
+}
+
+function findCollabProject(workspaceId, projectId) {
+  return getCollaborationProjects(getCollaborationWorkspace(workspaceId)).find((project) => project.id === projectId) || null;
+}
+
+function findCollabTask(workspaceId, taskId) {
+  const project = getCollaborationProjects(getCollaborationWorkspace(workspaceId))
+    .find((item) => item.tasks.some((task) => task.id === taskId));
+  if (!project) return null;
+  return { project, task: project.tasks.find((task) => task.id === taskId) || null };
+}
+
+function collaborationProjectSyncKey(workspaceId, projectId) {
+  return `${workspaceId}::${projectId}`;
+}
+
+function collaborationTaskSyncKey(workspaceId, projectId, taskId) {
+  return `${workspaceId}::${projectId}::${taskId}`;
+}
+
+function findPersonalTaskByCollaborationSyncKey(syncKey) {
+  for (const project of state.projects) {
+    const task = project.tasks?.find((item) => item.collaborationSyncKey === syncKey);
+    if (task) return { project, task };
+  }
+  return null;
+}
+
+function getCollaborationSyncState() {
+  state.collaborationSync = normalizeCollaborationSyncState(state.collaborationSync);
+  return state.collaborationSync;
+}
+
+function createPersonalProjectFromCollaboration(project) {
+  return {
+    id: makeId("project"),
+    title: project.title,
+    goal: project.goal,
+    start: project.start,
+    duration: project.duration,
+    color: project.color,
+    completed: Boolean(project.completed),
+    completedDate: project.completed ? project.completedDate : "",
+    tasks: [],
+  };
+}
+
+function ensurePersonalProjectFromCollaboration(project, personalProjectId = "") {
+  let personalProject = personalProjectId ? findProject(personalProjectId) : null;
+  if (!personalProject) {
+    personalProject = createPersonalProjectFromCollaboration(project);
+    if (personalProjectId) personalProject.id = personalProjectId;
+    state.projects.push(personalProject);
+  }
+  return personalProject;
+}
+
+function applyCollaborationProjectToPersonal(project, personalProject) {
+  personalProject.title = project.title;
+  personalProject.goal = project.goal;
+  personalProject.start = project.start;
+  personalProject.duration = project.duration;
+  personalProject.color = project.color;
+  personalProject.completed = Boolean(project.completed);
+  personalProject.completedDate = project.completed ? project.completedDate : "";
+}
+
+function applyCollaborationTaskToPersonal(task, personalTask, syncKey = "") {
+  personalTask.title = task.title;
+  personalTask.detail = task.detail;
+  personalTask.date = task.date;
+  personalTask.spanDays = task.spanDays;
+  personalTask.startTime = task.startTime;
+  personalTask.duration = task.duration;
+  personalTask.status = task.status;
+  personalTask.color = task.color;
+  personalTask.reminder = normalizeTaskReminder(task.reminder);
+  personalTask.dailyOnly = Boolean(task.dailyOnly);
+  if (syncKey) personalTask.collaborationSyncKey = syncKey;
+}
+
+function getLinkedPersonalCollaborationTask(workspaceId, projectId, taskId) {
+  const syncState = getCollaborationSyncState();
+  const taskKey = collaborationTaskSyncKey(workspaceId, projectId, taskId);
+  const taskLink = syncState.taskLinks[taskKey];
+  if (taskLink) {
+    const project = findProject(taskLink.personalProjectId);
+    const task = project?.tasks.find((item) => item.id === taskLink.personalTaskId);
+    if (task) return { project, task };
+  }
+  const projectLink = syncState.projectLinks[collaborationProjectSyncKey(workspaceId, projectId)];
+  const personalTaskId = projectLink?.taskIds?.[taskId];
+  const project = personalTaskId ? findProject(projectLink.personalProjectId) : null;
+  const task = project?.tasks.find((item) => item.id === personalTaskId);
+  return task ? { project, task } : null;
+}
+
+function refreshSyncedCollaborationGameTask(workspaceId, project, task) {
+  const personal = getLinkedPersonalCollaborationTask(workspaceId, project.id, task.id)?.task;
+  if (!personal?.gameMainTaskId) return false;
+  const gameTaskId = enqueueCollaborationTaskForGame(workspaceId, task);
+  if (!gameTaskId) return false;
+  personal.gameMainTaskId = gameTaskId;
+  personal.gameMainTaskDate = task.date;
+  return true;
+}
+
+function synchronizeCollaborationTaskToGame(workspaceId, project, task) {
+  const personal = getLinkedPersonalCollaborationTask(workspaceId, project.id, task.id)?.task;
+  if (!personal) return false;
+  const gameTaskId = enqueueCollaborationTaskForGame(workspaceId, task);
+  if (!gameTaskId) return false;
+  personal.gameMainTaskId = gameTaskId;
+  personal.gameMainTaskDate = task.date;
+  return true;
+}
+
+function synchronizeOwnCollaborationProjectToGame(workspaceId, project) {
+  return project.tasks.reduce((changed, task) => (
+    canPlanCollaborationDailyTask(task)
+      ? synchronizeCollaborationTaskToGame(workspaceId, project, task) || changed
+      : changed
+  ), false);
+}
+
+function synchronizeOwnCollaborationDailyTasks(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return { personalChanged: false, gameChanged: false };
+  return getCollaborationProjects(workspace).reduce((result, project) => {
+    project.tasks.forEach((task) => {
+      if (!canPlanCollaborationDailyTask(task)) return;
+      result.personalChanged = synchronizeSingleCollaborationTask(workspaceId, project, task) || result.personalChanged;
+      result.gameChanged = synchronizeCollaborationTaskToGame(workspaceId, project, task) || result.gameChanged;
+    });
+    return result;
+  }, { personalChanged: false, gameChanged: false });
+}
+
+function handleCollaborationGameStorageUpdate(event) {
+  if (event.key !== COLLABORATION_GAME_UPDATE_KEY) return;
+  if (consumeCollaborationGameUpdates()) {
+    saveAndRender();
+    scheduleNativeReminderSync();
+  }
+}
+
+function consumeCollaborationGameUpdates() {
+  let updates = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_UPDATE_KEY) || "[]");
+    updates = Array.isArray(stored) ? stored : [];
+  } catch {
+    updates = [];
+  }
+  if (!updates.length) return false;
+  let changed = false;
+  updates.forEach((update) => {
+    const gameTaskId = String(update?.gameTaskId || "");
+    if (!gameTaskId) return;
+    for (const project of state.projects) {
+      const task = project.tasks.find((item) => item.gameMainTaskId === gameTaskId);
+      if (!task) continue;
+      task.title = String(update.title || task.title).trim().slice(0, 60) || task.title;
+      task.date = isValidISODate(update.date) ? update.date : task.date;
+      task.startTime = /^\d{2}:\d{2}$/.test(String(update.startTime || "")) ? update.startTime : task.startTime;
+      task.duration = Math.max(0.25, Number(update.durationMinutes || 0) / 60 || task.duration);
+      changed = true;
+      break;
+    }
+  });
+  localStorage.removeItem(COLLABORATION_GAME_UPDATE_KEY);
+  return changed;
+}
+
+function refreshSyncedCollaborationGameTasks(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return false;
+  return getCollaborationProjects(workspace).reduce((changed, project) => (
+    project.tasks.reduce((taskChanged, task) => (
+      refreshSyncedCollaborationGameTask(workspaceId, project, task) || taskChanged
+    ), changed)
+  ), false);
+}
+
+function synchronizeEntireCollaborationProject(workspaceId, project) {
+  const syncState = getCollaborationSyncState();
+  const projectKey = collaborationProjectSyncKey(workspaceId, project.id);
+  let link = syncState.projectLinks[projectKey];
+  const partialLink = syncState.taskProjectLinks[projectKey];
+  const personalProject = ensurePersonalProjectFromCollaboration(project, link?.personalProjectId || partialLink?.personalProjectId || "");
+  if (!link) {
+    link = {
+      workspaceId,
+      projectId: project.id,
+      personalProjectId: personalProject.id,
+      taskIds: {},
+    };
+    syncState.projectLinks[projectKey] = link;
+  }
+  link.personalProjectId = personalProject.id;
+  link.taskIds ||= {};
+  applyCollaborationProjectToPersonal(project, personalProject);
+
+  const tasksForPersonalSync = project.tasks.filter((task) => !task.dailyOnly || canPlanCollaborationDailyTask(task));
+  const activeTaskIds = new Set(tasksForPersonalSync.map((task) => task.id));
+  tasksForPersonalSync.forEach((task) => {
+    const taskKey = collaborationTaskSyncKey(workspaceId, project.id, task.id);
+    const existingTaskLink = syncState.taskLinks[taskKey];
+    if (!link.taskIds[task.id] && existingTaskLink?.personalProjectId === personalProject.id) {
+      link.taskIds[task.id] = existingTaskLink.personalTaskId;
+    }
+    let personalTask = link.taskIds[task.id]
+      ? personalProject.tasks.find((item) => item.id === link.taskIds[task.id])
+      : null;
+    if (!personalTask) {
+      const existing = findPersonalTaskByCollaborationSyncKey(taskKey);
+      if (existing?.project.id === personalProject.id) personalTask = existing.task;
+    }
+    if (personalTask) link.taskIds[task.id] = personalTask.id;
+    if (!personalTask) {
+      personalTask = { id: makeId("task") };
+      personalProject.tasks.push(personalTask);
+      link.taskIds[task.id] = personalTask.id;
+    }
+    applyCollaborationTaskToPersonal(task, personalTask, taskKey);
+  });
+  Object.entries(link.taskIds).forEach(([collaborationTaskId, personalTaskId]) => {
+    if (activeTaskIds.has(collaborationTaskId)) return;
+    personalProject.tasks = personalProject.tasks.filter((task) => task.id !== personalTaskId);
+    delete link.taskIds[collaborationTaskId];
+  });
+  return true;
+}
+
+function synchronizeSingleCollaborationTask(workspaceId, project, task, forceTaskSync = false) {
+  const syncState = getCollaborationSyncState();
+  const projectKey = collaborationProjectSyncKey(workspaceId, project.id);
+  if (syncState.projectLinks[projectKey] && !forceTaskSync) {
+    return synchronizeEntireCollaborationProject(workspaceId, project);
+  }
+  let partialLink = syncState.taskProjectLinks[projectKey];
+  const taskKey = collaborationTaskSyncKey(workspaceId, project.id, task.id);
+  const markedTask = findPersonalTaskByCollaborationSyncKey(taskKey);
+  const personalProject = markedTask?.project || ensurePersonalProjectFromCollaboration(project, partialLink?.personalProjectId || "");
+  if (!partialLink) {
+    partialLink = {
+      workspaceId,
+      projectId: project.id,
+      personalProjectId: personalProject.id,
+      taskIds: {},
+    };
+    syncState.taskProjectLinks[projectKey] = partialLink;
+  }
+  partialLink.personalProjectId = personalProject.id;
+  let taskLink = syncState.taskLinks[taskKey];
+  let personalTask = taskLink?.personalProjectId === personalProject.id
+    ? personalProject.tasks.find((item) => item.id === taskLink.personalTaskId)
+    : markedTask?.task || null;
+  if (!personalTask) {
+    personalTask = { id: makeId("task") };
+    personalProject.tasks.push(personalTask);
+  }
+  taskLink = {
+    workspaceId,
+    projectId: project.id,
+    taskId: task.id,
+    personalProjectId: personalProject.id,
+    personalTaskId: personalTask.id,
+  };
+  syncState.taskLinks[taskKey] = taskLink;
+  applyCollaborationTaskToPersonal(task, personalTask, taskKey);
+  return true;
+}
+
+function synchronizeCollaborationWorkspaceToPersonal(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return false;
+  const syncState = getCollaborationSyncState();
+  const projectsById = new Map(getCollaborationProjects(workspace).map((project) => [project.id, project]));
+  let changed = false;
+  Object.values(syncState.projectLinks).forEach((link) => {
+    if (link.workspaceId !== workspaceId) return;
+    const project = projectsById.get(link.projectId);
+    if (project) changed = synchronizeEntireCollaborationProject(workspaceId, project) || changed;
+  });
+  Object.values(syncState.taskLinks).forEach((link) => {
+    if (link.workspaceId !== workspaceId) return;
+    const projectKey = collaborationProjectSyncKey(workspaceId, link.projectId);
+    if (syncState.projectLinks[projectKey]) return;
+    const project = projectsById.get(link.projectId);
+    const task = project?.tasks.find((item) => item.id === link.taskId);
+    if (project && task) {
+      changed = synchronizeSingleCollaborationTask(workspaceId, project, task) || changed;
+      return;
+    }
+    const personalProject = findProject(link.personalProjectId);
+    if (personalProject) {
+      personalProject.tasks = personalProject.tasks.filter((item) => item.id !== link.personalTaskId);
+    }
+    delete syncState.taskLinks[collaborationTaskSyncKey(workspaceId, link.projectId, link.taskId)];
+    changed = true;
+  });
+  return changed;
+}
+
+function finishCollaborationPersonalSync(changed) {
+  if (!changed) return;
+  saveAndRender();
+  scheduleNativeReminderSync();
+}
+
+function syncCollaborationContextToPersonal(mode) {
+  if (contextTarget?.scope !== "collab") return;
+  const found = contextTarget.kind === "project"
+    ? { project: findCollabProject(contextTarget.workspaceId, contextTarget.projectId), task: null }
+    : findCollabTask(contextTarget.workspaceId, contextTarget.taskId);
+  if (!found?.project || (mode === "task" && !found.task)) return;
+  const confirmationKey = mode === "project" ? "syncProjectConfirm" : "syncTaskConfirm";
+  if (!window.confirm(text(confirmationKey))) return;
+  rememberUndo();
+  const changed = mode === "project"
+    ? synchronizeEntireCollaborationProject(contextTarget.workspaceId, found.project)
+    : synchronizeSingleCollaborationTask(
+      contextTarget.workspaceId,
+      found.project,
+      found.task,
+      contextTarget.kind === "day-task" && !found.task.assigneeId
+    );
+  const manuallySyncedUnassignedDailyTask = mode === "task"
+    && contextTarget.kind === "day-task"
+    && !found.task.assigneeId;
+  if (changed && manuallySyncedUnassignedDailyTask) {
+    const taskKey = collaborationTaskSyncKey(contextTarget.workspaceId, found.project.id, found.task.id);
+    const personalTask = getLinkedPersonalCollaborationTask(contextTarget.workspaceId, found.project.id, found.task.id)?.task;
+    if (personalTask) {
+      personalTask.dailyOnly = false;
+      delete getCollaborationSyncState().taskLinks[taskKey];
+    }
+  }
+  const gameChanged = changed && mode === "project"
+    ? synchronizeOwnCollaborationProjectToGame(contextTarget.workspaceId, found.project)
+    : changed && mode === "task" && contextTarget.kind === "day-task" && canPlanCollaborationDailyTask(found.task)
+      ? synchronizeCollaborationTaskToGame(contextTarget.workspaceId, found.project, found.task)
+      : false;
+  finishCollaborationPersonalSync(changed || gameChanged);
+  closeBlockActionMenu();
+}
+
+function enqueueCollaborationTaskForGame(workspaceId, task) {
+  if (!task?.id || !isValidISODate(task.date)) return "";
+  let queue = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_SYNC_KEY) || "[]");
+    queue = Array.isArray(stored) ? stored : [];
+  } catch {
+    queue = [];
+  }
+  const id = `collab-main-${workspaceId}-${task.id}`.replace(/[^\w-]/g, "-");
+  const entry = {
+    id,
+    title: String(task.title || "协作任务").trim().slice(0, 36),
+    date: task.date,
+    startMinute: timeToMinutes(task.startTime),
+    durationMinutes: Math.max(15, Math.round(Number(task.duration || 1) * 60)),
+    createdAt: new Date().toISOString(),
+  };
+  queue = queue.filter((item) => item?.id !== id);
+  queue.push(entry);
+  localStorage.setItem(COLLABORATION_GAME_SYNC_KEY, JSON.stringify(queue.slice(-30)));
+  return id;
+}
+
+function completeCollaborationGameTask(gameTaskId, date) {
+  if (!gameTaskId || !isValidISODate(date)) return;
+  let queue = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_COMPLETION_KEY) || "[]");
+    queue = Array.isArray(stored) ? stored : [];
+  } catch {
+    queue = [];
+  }
+  queue = queue.filter((item) => item?.id !== gameTaskId);
+  queue.push({ id: gameTaskId, date, completedAt: new Date().toISOString() });
+  localStorage.setItem(COLLABORATION_GAME_COMPLETION_KEY, JSON.stringify(queue.slice(-30)));
+}
+
+function renderCollaborationTimeline() {
+  if (!dom.collaborationTimelinePanel || !dom.collaborationTimeline) return;
+  const user = getCurrentUser();
+  const workspace = getActiveCollaborationWorkspace();
+  const waitingForAuthSession = isSupabaseConfigured() && !authSessionResolved;
+  const viewingCollaboration = getActiveViewId() === "collaborationSection";
+  dom.collaborationTimelinePanel.hidden = !viewingCollaboration;
+  if (dom.collaborationNav) dom.collaborationNav.hidden = false;
+  dom.bottomNav?.classList.add("has-collaboration");
+  if (!viewingCollaboration) {
+    dom.collaborationTimeline.innerHTML = "";
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    closeCollaborationCreateMenu();
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  if (waitingForAuthSession) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    if (dom.collaborationTimelineMeta) dom.collaborationTimelineMeta.textContent = "正在恢复协作账号...";
+    if (dom.collaborationWorkspaceTabs) dom.collaborationWorkspaceTabs.innerHTML = "";
+    if (dom.collaborationAddProjectButton) dom.collaborationAddProjectButton.hidden = true;
+    if (dom.collaborationInviteButton) dom.collaborationInviteButton.hidden = true;
+    if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = true;
+    dom.collaborationTimeline.innerHTML = `<div class="collaboration-empty-state"><p>正在恢复协作时间轴</p></div>`;
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  if (!user) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    if (dom.collaborationTimelineMeta) {
+      dom.collaborationTimelineMeta.textContent = "重新登录后可继续使用协作时间轴。";
+    }
+    if (dom.collaborationWorkspaceTabs) dom.collaborationWorkspaceTabs.innerHTML = "";
+    if (dom.collaborationAddProjectButton) dom.collaborationAddProjectButton.hidden = true;
+    if (dom.collaborationInviteButton) dom.collaborationInviteButton.hidden = true;
+    if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = true;
+    dom.collaborationTimeline.innerHTML = `
+      <div class="collaboration-empty-state">
+        <p>${escapeHtml(collaboration.error || "登录后可创建商业项目并邀请好友共同编辑。")}</p>
+        <button class="secondary-button" type="button" data-action="open-account-center">重新登录</button>
+      </div>
+    `;
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  if (collaboration.loading) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    if (dom.collaborationTimelineMeta) dom.collaborationTimelineMeta.textContent = "正在连接协作空间...";
+    if (dom.collaborationWorkspaceTabs) dom.collaborationWorkspaceTabs.innerHTML = "";
+    if (dom.collaborationAddProjectButton) dom.collaborationAddProjectButton.hidden = true;
+    if (dom.collaborationInviteButton) dom.collaborationInviteButton.hidden = true;
+    if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = true;
+    dom.collaborationTimeline.innerHTML = `<div class="collaboration-empty-state"><p>正在加载协作时间轴</p></div>`;
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  if (!collaboration.available) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    if (dom.collaborationTimelineMeta) dom.collaborationTimelineMeta.textContent = "协作服务暂时不可用。";
+    if (dom.collaborationWorkspaceTabs) dom.collaborationWorkspaceTabs.innerHTML = "";
+    if (dom.collaborationAddProjectButton) dom.collaborationAddProjectButton.hidden = true;
+    if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = true;
+    dom.collaborationTimeline.innerHTML = `
+      <div class="collaboration-empty-state">
+        <p>${escapeHtml(collaboration.error || "协作服务暂时不可用，请稍后重试。")}</p>
+        <button class="secondary-button" type="button" data-action="retry-collaboration">重新连接</button>
+      </div>
+    `;
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  if (dom.collaborationAddProjectButton) {
+    dom.collaborationAddProjectButton.hidden = true;
+  }
+  if (dom.collaborationInviteButton) dom.collaborationInviteButton.hidden = !workspace;
+  if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = !workspace;
+  renderWorkspaceChatUnreadBadge(workspace?.id || "");
+
+  if (!workspace) {
+    if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
+    if (dom.collaborationTimelineMeta) {
+      dom.collaborationTimelineMeta.textContent = "创建一个商业项目后，可邀请好友共同编辑。";
+    }
+    if (dom.collaborationWorkspaceTabs) dom.collaborationWorkspaceTabs.innerHTML = "";
+    if (dom.workspaceChatButton) dom.workspaceChatButton.hidden = true;
+    dom.collaborationTimeline.innerHTML = `
+      <div class="collaboration-empty-state">
+        <p>暂无协作时间轴</p>
+        <button class="secondary-button" type="button" data-action="add-collab-project">创建商业项目</button>
+      </div>
+    `;
+    renderCollaborationDaySchedule(null);
+    return;
+  }
+
+  const projects = getCollaborationProjects(workspace);
+  const memberCount = workspace.members?.length || 1;
+  if (dom.collaborationTimelineMeta) {
+    dom.collaborationTimelineMeta.textContent = "在线 1 人";
+  }
+  if (dom.collaborationWorkspaceTabs) {
+    const workspaceChoices = collaboration.workspaces.map((item) => `
+      <button class="${item.id === workspace.id ? "active" : ""}" type="button" data-action="select-collab-workspace" data-workspace-id="${item.id}">${escapeHtml(item.title)}</button>
+    `).join("");
+    dom.collaborationWorkspaceTabs.innerHTML = `<div class="collaboration-workspace-menu-wrap"><button class="collaboration-current-workspace" type="button" data-action="toggle-collab-workspace-menu" aria-expanded="${collaborationWorkspaceMenuOpen}">${escapeHtml(workspace.title)}</button><div class="collaboration-workspace-menu" ${collaborationWorkspaceMenuOpen ? "" : "hidden"}>${workspaceChoices}</div></div>`;
+  }
+  if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = false;
+
+  const days = getVisibleDays();
+  const visibleProjects = projects.filter(projectIntersectsVisibleRange);
+  const header = `
+    <div class="timeline-header schedule-row">
+      <div class="corner-cell schedule-time-label">协作项目</div>
+      <div class="date-grid schedule-grid-cells">
+        ${days.map((date) => `
+          <button class="date-cell ${date === todayISO() ? "today" : ""} ${date === state.selectedDate ? "active" : ""}" type="button" data-action="select-plan-date" data-date="${date}">
+            <strong>${monthDay(date)}</strong><br />
+            <span>${weekdayName(date)}</span>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  const rows = visibleProjects.length
+    ? visibleProjects.map((project) => renderCollaborationProjectRow(workspace.id, project, days)).join("")
+    : renderEmptyTimelineRange(days);
+  dom.collaborationTimeline.innerHTML = `<div class="timeline-inner day-schedule-inner ${visibleProjects.length ? "" : "empty-timeline"}" style="--days:${days.length}">${header}${rows}</div>`;
+  renderCollaborationDaySchedule(workspace);
+  renderCollaborationCalendar(workspace, projects);
+}
+
+function renderCollaborationDaySchedule(workspace) {
+  if (!dom.collaborationDaySchedule) return;
+  if (dom.collaborationDayPlanContent) dom.collaborationDayPlanContent.hidden = !collaborationDayPlanExpanded;
+  if (dom.collaborationDayPlanToggle) {
+    dom.collaborationDayPlanToggle.setAttribute("aria-expanded", String(collaborationDayPlanExpanded));
+    dom.collaborationDayPlanToggle.classList.toggle("is-expanded", collaborationDayPlanExpanded);
+  }
+  if (!workspace) {
+    dom.collaborationDaySchedule.innerHTML = "";
+    return;
+  }
+  if (dom.collaborationDayPlanTitle) dom.collaborationDayPlanTitle.textContent = `${monthDay(state.selectedDate)} 安排`;
+  const tasks = getCollaborationProjects(workspace)
+    .flatMap((project) => project.tasks.map((task) => ({ project, task })))
+    .filter(({ task }) => {
+      if (!task.assigneeId) return false;
+      const spanDays = Math.max(1, Number(task.spanDays) || 1);
+      return state.selectedDate >= task.date && state.selectedDate < addDays(task.date, spanDays);
+    })
+    .sort((a, b) => timeToMinutes(a.task.startTime) - timeToMinutes(b.task.startTime));
+  if (!tasks.length) {
+    dom.collaborationDaySchedule.innerHTML = `<div class="empty-state">当天没有协作任务。</div>`;
+    return;
+  }
+  const hours = [];
+  for (let hour = START_HOUR; hour <= END_HOUR; hour += 1) {
+    hours.push(`<span>${String(hour).padStart(2, "0")}</span>`);
+  }
+  const nowLine = getDayNowLine();
+  const nowLineHtml = nowLine
+    ? `<span class="day-now-column" style="--now-left:${nowLine.left}px"><i>${nowLine.label}</i></span>`
+    : "";
+  const memberNames = new Map(getCollaborationMemberOptions(workspace).map((member) => [member.id, member.name]));
+  const rows = tasks.map(({ task, project }) => {
+    const left = ((timeToMinutes(task.startTime) - START_HOUR * 60) / 60) * DAY_HOUR_WIDTH + 8;
+    const width = task.duration * DAY_HOUR_WIDTH;
+    const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
+    const lockMark = task.assigneeId ? `<span class="task-assignment-lock" aria-label="已分配">🔒</span>` : "";
+    const dailyTaskLabel = task.assigneeId
+      ? (memberNames.get(task.assigneeId) || task.assigneeName || "协作成员")
+      : task.title;
+    const canPlan = canPlanCollaborationDailyTask(task);
+    const dragAttributes = canPlan ? `data-drag-type="task-time"` : "";
+    const leftResizeHandle = canPlan
+      ? `<span class="time-resize left" data-drag-type="task-start" data-workspace-id="${workspace.id}" data-task-id="${task.id}"></span>`
+      : "";
+    const rightResizeHandle = canPlan
+      ? `<span class="time-resize right" data-drag-type="task-duration" data-workspace-id="${workspace.id}" data-task-id="${task.id}"></span>`
+      : "";
+    return `
+      <div class="day-track-row" data-search="${escapeHtml(`${task.title} ${task.detail} ${project.title}`)}">
+        <div class="day-track-label"><strong>${timeRange(task)}</strong><small>${trimNumber(task.duration)}h</small></div>
+        <div class="day-track">
+          <button class="day-task-block ${task.status} ${canPlan ? "" : "is-readonly"}" type="button" data-action="edit-collab-task" ${dragAttributes} data-daily-plan-task="true" data-workspace-id="${workspace.id}" data-task-id="${task.id}" style="left:${left}px;width:${Math.max(56, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}">
+            ${leftResizeHandle}
+            <strong>${lockMark}${statusMark}${escapeHtml(dailyTaskLabel)}</strong><small>${timeRange(task)}</small>
+            ${rightResizeHandle}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+  dom.collaborationDaySchedule.innerHTML = `<div class="day-schedule-inner" style="--hours:${END_HOUR - START_HOUR}; --ticks:${END_HOUR - START_HOUR + 1}; --hour-width:${DAY_HOUR_WIDTH}px">${nowLineHtml}<div class="day-time-header"><span></span><div class="day-hour-grid">${hours.join("")}</div></div>${rows}</div>`;
+}
+
+function renderCollaborationCalendar(workspace, projects) {
+  if (!dom.collaborationCalendar) return;
+  const [year, month] = collaborationCalendarMonth.split("-").map(Number);
+  const first = new Date(year, month - 1, 1);
+  const start = new Date(year, month - 1, 1 - first.getDay());
+  const monthLabel = `${year}年${month}月`;
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const date = toISO(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
+    const entries = projects.flatMap((project) => project.tasks
+      .filter((task) => date >= task.date && date < addDays(task.date, Math.max(1, task.spanDays || 1)))
+      .map((task) => ({ title: task.title, color: task.color })));
+    return `<button class="collaboration-calendar-day ${date.slice(0, 7) === collaborationCalendarMonth ? "" : "outside"} ${date === todayISO() ? "today" : ""}" type="button" data-action="select-collab-calendar-date" data-date="${date}"><strong>${date.slice(-2).replace(/^0/, "")}</strong><span>${entries.slice(0, 2).map((entry) => `<i style="--calendar-color:${entry.color}">${escapeHtml(entry.title)}</i>`).join("")}</span>${entries.length > 2 ? `<em>+${entries.length - 2}</em>` : ""}</button>`;
+  }).join("");
+  dom.collaborationCalendar.innerHTML = `<div class="collaboration-calendar-head"><button class="icon-button" type="button" data-action="change-collaboration-calendar-month" data-offset="-1" aria-label="上个月">‹</button><strong>${monthLabel}</strong><button class="icon-button" type="button" data-action="change-collaboration-calendar-month" data-offset="1" aria-label="下个月">›</button></div><div class="collaboration-calendar-weekdays">${WEEKDAYS.zh.map((day) => `<span>${day}</span>`).join("")}</div><div class="collaboration-calendar-grid">${cells}</div>`;
+}
+
+function renderCollaborationProjectRow(workspaceId, project, days) {
+  const timelineTasks = project.tasks.filter((task) => !task.dailyOnly);
+  const lanes = assignTimelineLanes(timelineTasks);
+  const maxLane = Math.max(1, ...Object.values(lanes).map((lane) => lane + 1));
+  const rowHeight = Math.max(118, 88 + maxLane * 30);
+  const progress = getProjectProgress(project);
+  const weekendCells = days.map((date, index) => {
+    const day = parseDate(date).getDay();
+    return day === 0 || day === 6 ? `<span class="weekend-cell" style="left:${index * DAY_WIDTH}px"></span>` : "";
+  }).join("");
+  const todayIndex = diffDays(state.settings.rangeStart, todayISO());
+  const todayLine = todayIndex >= 0 && todayIndex < state.settings.rangeDays
+    ? `<span class="today-line" style="left:${todayIndex * DAY_WIDTH}px"></span>`
+    : "";
+  const projectLeft = diffDays(state.settings.rangeStart, project.start) * DAY_WIDTH + 6;
+  const projectWidth = project.duration * DAY_WIDTH - 12;
+  const projectBar = projectLeft + projectWidth < 0 || projectLeft > state.settings.rangeDays * DAY_WIDTH
+    ? ""
+    : `<button class="project-bar ${project.completed ? "completed" : ""}" type="button" data-drag-type="project" data-action="edit-collab-project" data-workspace-id="${workspaceId}" data-project-id="${project.id}" style="left:${projectLeft}px;width:${Math.max(44, projectWidth)}px;--bar-color:${project.color};--bar-text:${readableText(project.color)}"><span class="resize-handle left" data-drag-type="project-left" data-workspace-id="${workspaceId}" data-project-id="${project.id}"></span><span class="floating-bar-label"><strong>${project.completed ? "✓ " : ""}${escapeHtml(project.title)}</strong><small>${formatDays(project.duration)}</small></span><span class="resize-handle right" data-drag-type="project-right" data-workspace-id="${workspaceId}" data-project-id="${project.id}"></span></button>`;
+  const taskBars = timelineTasks.map((task) => {
+    const offset = diffDays(state.settings.rangeStart, task.date);
+    const spanDays = Math.max(1, Number(task.spanDays) || 1);
+    const left = offset * DAY_WIDTH + 8;
+    const width = spanDays * DAY_WIDTH - 16;
+    if (left + width < 0 || left > state.settings.rangeDays * DAY_WIDTH) return "";
+    const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
+    const lockMark = task.assigneeId ? `<span class="task-assignment-lock" aria-label="已分配">🔒</span>` : "";
+    return `<button class="timeline-task ${task.status}" type="button" data-drag-type="task-date" data-action="edit-collab-task" data-workspace-id="${workspaceId}" data-task-id="${task.id}" style="left:${left}px;top:${60 + lanes[task.id] * 28}px;width:${Math.max(48, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}"><span class="resize-handle left" data-drag-type="task-left" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span><span class="floating-bar-label"><strong>${lockMark}${statusMark}${escapeHtml(task.title)}</strong><small>${formatDays(spanDays)}</small></span><span class="resize-handle right" data-drag-type="task-right" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span></button>`;
+  }).join("");
+
+  return `
+    <div class="project-row schedule-row collab-project-row ${project.completed ? "completed" : ""}" style="--row-height:${rowHeight}px">
+      <div class="project-meta schedule-time-label timeline-time-label">
+        <div class="project-title-row">
+          <h3>${escapeHtml(project.title)}</h3>
+          <div class="project-actions">
+            <button class="mini-icon task-shortcut" type="button" data-action="add-task-to-collab-project" data-workspace-id="${workspaceId}" data-project-id="${project.id}" title="新建协作任务" aria-label="新建协作任务">＋</button>
+            <button class="mini-icon" type="button" data-action="edit-collab-project" data-workspace-id="${workspaceId}" data-project-id="${project.id}" title="编辑协作项目" aria-label="编辑协作项目">⋯</button>
+          </div>
+        </div>
+        <p class="project-range">${project.start} · ${formatDays(project.duration)}</p>
+        <div class="progress-track" style="--progress:${progress}"><i></i></div>
+        <p class="muted">${escapeHtml(project.goal || "暂无目标")}</p>
+      </div>
+      <div class="project-grid schedule-grid-cells timeline-grid-cells" style="--days:${days.length}; --row-height:${rowHeight}px">
+        ${weekendCells}${todayLine}${projectBar}${taskBars}
+      </div>
+    </div>
+  `;
+}
+
+function setCollaborationMessage(message, type = "muted") {
+  if (!dom.collaborationMessage) return;
+  dom.collaborationMessage.textContent = message;
+  dom.collaborationMessage.dataset.state = type;
+}
+
+function collaborationErrorMessage(error) {
+  const message = String(error?.message || error?.error_description || error || "");
+  const code = String(error?.code || "");
+  if (/row-level security/i.test(message)) return "你没有编辑这条协作时间轴的权限。";
+  if (code === "42501" || /permission denied/i.test(message)) {
+    return "协作服务权限未配置完成，请刷新页面后重试。";
+  }
+  if (
+    /(?:relation|function)\s+(?:public\.)?collab_[\w.]*\s+does not exist/i.test(message)
+    || /could not find .*collab_.*schema cache/i.test(message)
+  ) {
+    return "协作数据库尚未部署。请先执行本次更新附带的 Supabase 迁移。";
+  }
+  if (message.includes("JWT") || message.includes("请先登录账号")) return "请先登录账号。";
+  return message || "协作请求失败，请稍后重试。";
+}
+
+function isInvalidCollaborationSession(error) {
+  const message = String(error?.message || error?.error_description || error || "");
+  return /请先登录账号|auth session missing|invalid jwt|jwt expired|token.*(?:expired|invalid)|session.*(?:expired|missing)/i.test(message);
+}
+
+async function startCollaborationSession() {
+  const client = await ensureSupabaseClientForAuth();
+  const currentUser = getCurrentUser();
+  if (!client || !currentUser) return false;
+  collaboration.loading = true;
+  collaboration.available = true;
+  collaboration.error = "";
+  renderCollaborationTimeline();
+  try {
+    const { data: sessionData, error: sessionError } = await withTimeout(
+      client.auth.getSession(),
+      8000,
+      "读取登录会话超时，请重新登录。"
+    );
+    if (sessionError) throw sessionError;
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error("Auth session missing");
+    const { data: verifiedUserData, error: verifiedUserError } = await withTimeout(
+      client.auth.getUser(accessToken),
+      8000,
+      "验证登录状态超时，请重新登录。"
+    );
+    if (verifiedUserError) throw verifiedUserError;
+    const verifiedUser = verifiedUserData?.user;
+    if (!verifiedUser) throw new Error("Auth session missing");
+    if (verifiedUser.id !== currentUser.id) {
+      currentAuthUser = verifiedUser;
+      updateAuthUI(currentAuthUser);
+    }
+    if (collaborationSessionUserId && collaborationSessionUserId !== verifiedUser.id) resetCollaborationSession();
+    collaborationSessionUserId = verifiedUser.id;
+    const { error } = await client.rpc("collab_ensure_profile");
+    if (error) throw error;
+    collaboration.available = true;
+    collaboration.error = "";
+    await refreshCollaborationData();
+    subscribeToCollaborationTimeline();
+    await completePendingCommercialProject();
+    return true;
+  } catch (error) {
+    const invalidSession = isInvalidCollaborationSession(error);
+    const message = invalidSession
+      ? "登录状态已过期，请重新登录后继续使用协作。"
+      : collaborationErrorMessage(error);
+    collaboration.available = false;
+    collaboration.error = message;
+    if (invalidSession) {
+      if (collaborationSubscription && client) void client.removeChannel(collaborationSubscription);
+      collaborationSubscription = null;
+      collaborationSessionUserId = "";
+      collaboration.workspaces = [];
+      collaboration.friends = [];
+      collaboration.workspaceInvites = [];
+      collaboration.activeWorkspaceId = "";
+      currentAuthUser = null;
+      authSessionResolved = true;
+      updateAuthUI(null);
+      setAccountMessage("登录状态已过期，请重新输入邮箱和密码登录。", "error");
+    }
+    setCollaborationMessage(message, "error");
+    return false;
+  } finally {
+    collaboration.loading = false;
+    renderCollaborationTimeline();
+  }
+}
+
+function resetCollaborationSession() {
+  if (collaborationSubscription && supabaseClient) {
+    void supabaseClient.removeChannel(collaborationSubscription);
+  }
+  collaborationSubscription = null;
+  collaborationSessionUserId = "";
+  collaboration = { workspaces: [], friends: [], workspaceInvites: [], profile: { displayName: "", email: "" }, activeWorkspaceId: "", loading: false, available: true, error: "" };
+  renderCollaborationTimeline();
+}
+
+async function refreshCollaborationData() {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !getCurrentUser()) return;
+  const { data: workspaces, error: workspaceError } = await client
+    .from("collab_workspaces")
+    .select("id, title, owner_id, created_at, updated_at")
+    .order("created_at", { ascending: true });
+  if (workspaceError) throw workspaceError;
+  const workspaceIds = (workspaces || []).map((workspace) => workspace.id);
+  let memberRows = [];
+  let timelineRows = [];
+  if (workspaceIds.length) {
+    const [{ data: members, error: memberError }, { data: timelines, error: timelineError }] = await Promise.all([
+      client.from("collab_workspace_members").select("workspace_id, user_id, role").in("workspace_id", workspaceIds),
+      client.from("collab_workspace_timeline").select("workspace_id, data_json, updated_at, updated_by").in("workspace_id", workspaceIds),
+    ]);
+    if (memberError) throw memberError;
+    if (timelineError) throw timelineError;
+    memberRows = members || [];
+    timelineRows = timelines || [];
+  }
+  const [{ data: friends, error: friendError }, { data: profile, error: profileError }] = await Promise.all([
+    client.rpc("collab_list_friends"),
+    client.rpc("collab_get_my_profile"),
+  ]);
+  if (friendError) throw friendError;
+  if (profileError) throw profileError;
+  const { data: workspaceInvites, error: workspaceInviteError } = await client.rpc("collab_list_my_workspace_invites");
+  if (workspaceInviteError) {
+    console.warn("Workspace invite requests are unavailable until the latest collaboration migration is deployed.");
+  }
+  collaboration.workspaces = (workspaces || []).map((workspace) => {
+    const timeline = timelineRows.find((item) => item.workspace_id === workspace.id);
+    return {
+      ...workspace,
+      timeline: normalizeCollaborationTimeline(timeline?.data_json),
+      timelineUpdatedAt: timeline?.updated_at || "",
+      members: memberRows.filter((member) => member.workspace_id === workspace.id),
+    };
+  });
+  collaboration.friends = Array.isArray(friends) ? friends : [];
+  collaboration.workspaceInvites = workspaceInviteError ? [] : (Array.isArray(workspaceInvites) ? workspaceInvites : []);
+  const ownProfile = Array.isArray(profile) ? profile[0] : profile;
+  collaboration.profile = {
+    displayName: String(ownProfile?.display_name || "").trim(),
+    email: String(ownProfile?.email || getCurrentUser()?.email || "").trim(),
+  };
+  if (!collaboration.workspaces.some((workspace) => workspace.id === collaboration.activeWorkspaceId)) {
+    collaboration.activeWorkspaceId = collaboration.workspaces[0]?.id || "";
+  }
+  const personalTimelineChanged = collaboration.workspaces
+    .reduce((changed, workspace) => synchronizeCollaborationWorkspaceToPersonal(workspace.id) || changed, false);
+  const automaticDailySync = collaboration.workspaces
+    .reduce((result, workspace) => {
+      const synced = synchronizeOwnCollaborationDailyTasks(workspace.id);
+      result.personalChanged ||= synced.personalChanged;
+      result.gameChanged ||= synced.gameChanged;
+      return result;
+    }, { personalChanged: false, gameChanged: false });
+  const gameTimelineChanged = collaboration.workspaces
+    .reduce((changed, workspace) => refreshSyncedCollaborationGameTasks(workspace.id) || changed, false);
+  finishCollaborationPersonalSync(personalTimelineChanged || automaticDailySync.personalChanged || gameTimelineChanged || automaticDailySync.gameChanged);
+  renderCollaborationTimeline();
+  renderCollaborationDialog();
+}
+
+function subscribeToCollaborationTimeline() {
+  if (!supabaseClient || collaborationSubscription) return;
+  collaborationSubscription = supabaseClient
+    .channel(`collaboration-timeline-${getCurrentUser()?.id || "anonymous"}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "collab_workspace_timeline" }, () => {
+      void refreshCollaborationData().catch((error) => console.warn("Failed to refresh collaboration timeline.", error));
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "collab_workspace_messages" }, (payload) => {
+      const workspaceId = String(payload.new?.workspace_id || payload.old?.workspace_id || "");
+      if (!workspaceId) return;
+      const senderId = String(payload.new?.user_id || "");
+      const isMine = senderId && senderId === getCurrentUser()?.id;
+      const isOpen = workspaceId === activeWorkspaceChatId && dom.workspaceChatDialog?.open;
+      if (isOpen) {
+        markWorkspaceChatRead(workspaceId);
+        void refreshWorkspaceChatMessages(workspaceId);
+      } else if (!isMine && payload.eventType !== "DELETE") {
+        incrementWorkspaceChatUnread(workspaceId);
+      }
+    })
+    .subscribe();
+}
+
+async function persistCollaborationTimeline(workspaceId, timeline) {
+  const client = await ensureSupabaseClientForAuth();
+  const user = getCurrentUser();
+  if (!client || !user) {
+    openAccountCenter();
+    setAccountMessage("请先登录账号。", "error");
+    return false;
+  }
+  try {
+    const nextTimeline = normalizeCollaborationTimeline(timeline);
+    const authorId = collaboration.profile?.displayName || user.email || user.id;
+    const now = new Date().toISOString();
+    const latestEntry = nextTimeline.history[0];
+    if (latestEntry?.authorId === authorId) {
+      latestEntry.authorName = collaboration.profile?.displayName || user.email || "协作成员";
+      latestEntry.at = now;
+    } else {
+      nextTimeline.history = [{
+        id: makeId("collab_history"),
+        authorName: collaboration.profile?.displayName || user.email || "协作成员",
+        authorId,
+        at: now,
+      }, ...nextTimeline.history].slice(0, 5);
+    }
+    const { data, error } = await client
+      .rpc("collab_update_workspace_timeline", {
+        target_workspace_id: workspaceId,
+        next_timeline: nextTimeline,
+      });
+    if (error) throw error;
+    const workspace = getCollaborationWorkspace(workspaceId);
+    if (workspace) {
+      workspace.timeline = normalizeCollaborationTimeline(data.data_json);
+      workspace.timelineUpdatedAt = data.updated_at || "";
+    }
+    const personalChanged = synchronizeCollaborationWorkspaceToPersonal(workspaceId);
+    const automaticDailySync = synchronizeOwnCollaborationDailyTasks(workspaceId);
+    const gameChanged = refreshSyncedCollaborationGameTasks(workspaceId);
+    finishCollaborationPersonalSync(personalChanged || automaticDailySync.personalChanged || gameChanged || automaticDailySync.gameChanged);
+    renderCollaborationTimeline();
+    return true;
+  } catch (error) {
+    const message = collaborationErrorMessage(error);
+    setCollaborationMessage(message, "error");
+    alert(message);
+    return false;
+  }
+}
+
+async function createCommercialWorkspaceFromProject(payload) {
+  const client = await ensureSupabaseClientForAuth();
+  const user = getCurrentUser();
+  if (!client || !user) {
+    pendingCommercialProject = payload;
+    openAccountCenter();
+    setAccountMessage("开启商业模式需要先登录。", "muted");
+    return false;
+  }
+  try {
+    const initialTimeline = normalizeCollaborationTimeline({
+      projects: [{
+        id: makeId("collab_project"),
+        ...payload,
+        completedDate: payload.completed ? state.selectedDate || todayISO() : "",
+        tasks: [],
+      }],
+    });
+    const { data: workspace, error: workspaceError } = await client
+      .rpc("collab_create_workspace", {
+        workspace_title: payload.title,
+        initial_timeline: initialTimeline,
+      })
+      .single();
+    if (workspaceError) throw workspaceError;
+    pendingCommercialProject = null;
+    if (dom.projectDialog?.open) dom.projectDialog.close();
+    await refreshCollaborationData();
+    collaboration.activeWorkspaceId = workspace.id;
+    renderCollaborationTimeline();
+    openWorkspaceInviteDialog(workspace.id);
+    setCollaborationMessage("商业协作时间轴已创建，可以添加好友一起编辑。", "success");
+    closeAccountCenter();
+    window.location.hash = "collaborationSection";
+    return true;
+  } catch (error) {
+    const message = collaborationErrorMessage(error);
+    setAccountMessage(message, "error");
+    setCollaborationMessage(message, "error");
+    alert(message);
+    return false;
+  }
+}
+
+async function deleteCollaborationWorkspace(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  if (!canManageCollaborationWorkspace(workspaceId)) {
+    alert("只有该协作时间轴的创建者可以删除它。");
+    return;
+  }
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !getCurrentUser()) return;
+  try {
+    const { error } = await client
+      .from("collab_workspaces")
+      .delete()
+      .eq("id", workspaceId);
+    if (error) throw error;
+    if (collaboration.activeWorkspaceId === workspaceId) {
+      collaboration.activeWorkspaceId = "";
+    }
+    collaborationWorkspaceMenuOpen = false;
+    await refreshCollaborationData();
+    setCollaborationMessage("协作时间轴已删除。", "success");
+  } catch (error) {
+    const message = collaborationErrorMessage(error);
+    setCollaborationMessage(message, "error");
+    alert(message);
+  }
+}
+
+async function completePendingCommercialProject() {
+  if (!pendingCommercialProject || !getCurrentUser()) return;
+  const payload = pendingCommercialProject;
+  pendingCommercialProject = null;
+  const created = await createCommercialWorkspaceFromProject(payload);
+  if (!created) pendingCommercialProject = payload;
+}
+
+async function saveCollaborationProject(workspaceId, projectId, payload) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  const completedDate = state.selectedDate || todayISO();
+  const project = timeline.projects.find((item) => item.id === projectId);
+  if (project) {
+    const wasCompleted = Boolean(project.completed);
+    Object.assign(project, payload);
+    project.completedDate = payload.completed
+      ? (wasCompleted && isValidISODate(project.completedDate) ? project.completedDate : completedDate)
+      : "";
+  } else {
+    timeline.projects.push({ id: makeId("collab_project"), ...payload, completedDate: payload.completed ? completedDate : "", tasks: [] });
+  }
+  if (await persistCollaborationTimeline(workspaceId, timeline) && dom.projectDialog?.open) dom.projectDialog.close();
+}
+
+async function deleteCollaborationProject(workspaceId, projectId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  timeline.projects = timeline.projects.filter((project) => project.id !== projectId);
+  if (await persistCollaborationTimeline(workspaceId, timeline) && dom.projectDialog?.open) dom.projectDialog.close();
+}
+
+async function saveCollaborationTask(workspaceId, taskId, targetProjectId, payload, splitDraft = null) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const existingTask = taskId ? findCollabTask(workspaceId, taskId)?.task : null;
+  if (existingTask && !canEditCollaborationTask(workspaceId, existingTask)) {
+    setCollaborationMessage("你没有权限编辑此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  if (existingTask?.dailyOnly && !canPlanCollaborationDailyTask(existingTask)) {
+    setCollaborationMessage("只有被安排的成员可以修改每日协作任务。", "error");
+    return;
+  }
+  if (existingTask?.dailyOnly && payload.dailyOnly && payload.assigneeId !== getCurrentUser()?.id) {
+    setCollaborationMessage("协作每日任务必须保留给当前负责人。", "error");
+    return;
+  }
+  const isTaskSplit = splitDraft?.kind === "split-days" || splitDraft?.kind === "split-time";
+  const splitSource = !taskId && isTaskSplit
+    ? findCollabTask(workspaceId, splitDraft.sourceTaskId)?.task
+    : null;
+  if (!taskId && isTaskSplit && !splitSource) return;
+  if (splitSource && !canEditCollaborationTask(workspaceId, splitSource)) {
+    setCollaborationMessage("你没有权限拆分此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  const targetProject = timeline.projects.find((project) => project.id === targetProjectId);
+  if (!targetProject) return;
+  if (taskId) {
+    timeline.projects.forEach((project) => {
+      project.tasks = project.tasks.filter((task) => task.id !== taskId);
+    });
+    targetProject.tasks.push({ id: taskId, ...payload });
+    const groupSourceTaskId = existingTask?.sourceTaskId || taskId;
+    timeline.projects.forEach((project) => {
+      project.tasks.forEach((task) => {
+        const isLinkedTask = task.id === groupSourceTaskId || task.sourceTaskId === groupSourceTaskId;
+        const isLegacyGroupedTask = !existingTask?.sourceTaskId
+          && !task.sourceTaskId
+          && task.id !== taskId
+          && task.title === payload.title
+          && task.assigneeId === payload.assigneeId;
+        if (isLinkedTask || isLegacyGroupedTask) {
+          task.color = payload.color;
+          if (isLegacyGroupedTask) task.sourceTaskId = groupSourceTaskId;
+        }
+      });
+    });
+  } else {
+    targetProject.tasks.push({ id: makeId("collab_task"), ...payload });
+    if (splitDraft?.kind === "split-days" || splitDraft?.kind === "split-time") {
+      const sourceTask = timeline.projects
+        .flatMap((project) => project.tasks)
+        .find((task) => task.id === splitDraft.sourceTaskId);
+      if (!sourceTask) return;
+      if (splitDraft.kind === "split-days") sourceTask.spanDays = splitDraft.firstSpan;
+      if (splitDraft.kind === "split-time") sourceTask.duration = splitDraft.firstMinutes / 60;
+    }
+  }
+  state.selectedDate = payload.date;
+  if (await persistCollaborationTimeline(workspaceId, timeline) && dom.taskDialog?.open) dom.taskDialog.close();
+}
+
+async function deleteCollaborationTask(workspaceId, taskId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const task = findCollabTask(workspaceId, taskId)?.task;
+  if (task && !canEditCollaborationTask(workspaceId, task)) {
+    setCollaborationMessage("你没有权限删除此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  if (task?.dailyOnly && !canPlanCollaborationDailyTask(task)) {
+    setCollaborationMessage("只有被安排的成员可以删除每日协作任务。", "error");
+    return;
+  }
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  timeline.projects.forEach((project) => {
+    project.tasks = project.tasks.filter((task) => task.id !== taskId && task.sourceTaskId !== taskId);
+  });
+  if (await persistCollaborationTimeline(workspaceId, timeline) && dom.taskDialog?.open) dom.taskDialog.close();
+}
+
+function openCollaborationHistory(workspaceId, title) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !dom.collaborationHistoryList) return;
+  const history = getCollaborationTimeline(workspace).history || [];
+  if (dom.collaborationHistoryTitle) dom.collaborationHistoryTitle.textContent = title || workspace.title;
+  dom.collaborationHistoryList.innerHTML = history.length
+    ? history.map((entry) => `<article class="collaboration-history-item"><strong>${escapeHtml(entry.authorName)}</strong><small>${new Date(entry.at).toLocaleString()}</small></article>`).join("")
+    : `<div class="collaboration-empty">还没有修改记录。</div>`;
+  if (typeof dom.collaborationHistoryDialog?.showModal === "function") dom.collaborationHistoryDialog.showModal();
+  else dom.collaborationHistoryDialog?.setAttribute("open", "");
+}
+
+function renderCollaborationEditHistory(container, workspaceId) {
+  if (!container) return;
+  const workspace = getCollaborationWorkspace(workspaceId);
+  const rawHistory = workspace ? getCollaborationTimeline(workspace).history || [] : [];
+  const history = rawHistory.reduce((entries, entry) => {
+    const authorId = entry.authorId || entry.authorName || "协作成员";
+    if (entries.at(-1)?.authorId === authorId) return entries;
+    entries.push({ ...entry, authorId });
+    return entries;
+  }, []).slice(0, 5);
+  container.innerHTML = history.length
+    ? history.map((entry) => `<article class="collaboration-history-item"><strong>${escapeHtml(entry.authorId || entry.authorName || "协作成员")}</strong><small>${new Date(entry.at).toLocaleString()}</small></article>`).join("")
+    : `<div class="collaboration-empty">暂无修改记录。</div>`;
+}
+
+function closeCollaborationHistory() {
+  if (dom.collaborationHistoryDialog?.open) dom.collaborationHistoryDialog.close();
+  else dom.collaborationHistoryDialog?.removeAttribute("open");
+}
+
+function renderWorkspaceChatMessages() {
+  if (!dom.workspaceChatMessages) return;
+  const currentUserId = getCurrentUser()?.id;
+  dom.workspaceChatMessages.innerHTML = workspaceChatMessages.length
+    ? workspaceChatMessages.map((message, index) => {
+      const senderName = String(message.sender_name || "协作成员").trim() || "协作成员";
+      const isMine = message.user_id === currentUserId;
+      const previousMessage = workspaceChatMessages[index - 1];
+      const timestamp = new Date(message.created_at);
+      const previousTimestamp = previousMessage ? new Date(previousMessage.created_at) : null;
+      const beginsConversation = !previousTimestamp || timestamp.getTime() - previousTimestamp.getTime() > 30 * 60 * 1000;
+      return `
+        ${beginsConversation ? `<time class="workspace-chat-time-divider">${timestamp.toLocaleString()}</time>` : ""}
+        <article class="workspace-chat-message ${isMine ? "mine" : ""}">
+          <span class="workspace-chat-avatar" aria-hidden="true">${escapeHtml(isMine ? "我" : senderName.slice(0, 1))}</span>
+          <div class="workspace-chat-bubble">
+            ${isMine ? "" : `<strong>${escapeHtml(senderName)}</strong>`}
+            <p>${escapeHtml(message.content)}</p>
+          </div>
+        </article>
+      `;
+    }).join("")
+    : `<div class="collaboration-empty">还没有消息，和当前协作成员打个招呼吧。</div>`;
+  dom.workspaceChatMessages.scrollTop = dom.workspaceChatMessages.scrollHeight;
+}
+
+function loadWorkspaceChatUnread() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(WORKSPACE_CHAT_UNREAD_KEY) || "{}");
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
+    return Object.fromEntries(Object.entries(stored)
+      .map(([workspaceId, count]) => [workspaceId, clamp(Number(count) || 0, 0, 9999)])
+      .filter(([, count]) => count > 0));
+  } catch {
+    return {};
+  }
+}
+
+function saveWorkspaceChatUnread() {
+  localStorage.setItem(WORKSPACE_CHAT_UNREAD_KEY, JSON.stringify(workspaceChatUnread));
+}
+
+function renderWorkspaceChatUnreadBadge(workspaceId = getActiveCollaborationWorkspace()?.id || "") {
+  if (!dom.workspaceChatUnreadBadge) return;
+  const count = Math.max(0, Number(workspaceChatUnread[workspaceId]) || 0);
+  dom.workspaceChatUnreadBadge.hidden = count === 0;
+  dom.workspaceChatUnreadBadge.textContent = count > 99 ? "99+" : String(count);
+}
+
+function incrementWorkspaceChatUnread(workspaceId) {
+  workspaceChatUnread[workspaceId] = Math.min(9999, (Number(workspaceChatUnread[workspaceId]) || 0) + 1);
+  saveWorkspaceChatUnread();
+  renderWorkspaceChatUnreadBadge();
+}
+
+function markWorkspaceChatRead(workspaceId) {
+  if (!workspaceChatUnread[workspaceId]) return;
+  delete workspaceChatUnread[workspaceId];
+  saveWorkspaceChatUnread();
+  renderWorkspaceChatUnreadBadge(workspaceId);
+}
+
+async function refreshWorkspaceChatMessages(workspaceId = activeWorkspaceChatId) {
+  if (!workspaceId) return;
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  try {
+    const { data, error } = await client
+      .from("collab_workspace_messages")
+      .select("id, workspace_id, user_id, sender_name, content, created_at")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    workspaceChatMessages = (data || []).reverse();
+    renderWorkspaceChatMessages();
+  } catch (error) {
+    if (dom.workspaceChatMessages) {
+      dom.workspaceChatMessages.innerHTML = `<div class="collaboration-empty">${escapeHtml(collaborationErrorMessage(error))}</div>`;
+    }
+  }
+}
+
+function openWorkspaceChat(workspaceId = getActiveCollaborationWorkspace()?.id) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !getCurrentUser()) return;
+  activeWorkspaceChatId = workspace.id;
+  markWorkspaceChatRead(workspace.id);
+  workspaceChatMessages = [];
+  if (dom.workspaceChatTitle) dom.workspaceChatTitle.textContent = `${workspace.title} 聊天室`;
+  if (dom.workspaceChatMeta) dom.workspaceChatMeta.textContent = `仅“${workspace.title}”的 ${workspace.members?.length || 1} 位成员可见。`;
+  renderWorkspaceChatMessages();
+  if (typeof dom.workspaceChatDialog?.showModal === "function") dom.workspaceChatDialog.showModal();
+  else dom.workspaceChatDialog?.setAttribute("open", "");
+  void refreshWorkspaceChatMessages(workspace.id);
+}
+
+function closeWorkspaceChat() {
+  activeWorkspaceChatId = "";
+  if (dom.workspaceChatDialog?.open) dom.workspaceChatDialog.close();
+  else dom.workspaceChatDialog?.removeAttribute("open");
+}
+
+async function handleWorkspaceChatSubmit(event) {
+  event.preventDefault();
+  const content = String(dom.workspaceChatInput?.value || "").trim();
+  if (!content || !activeWorkspaceChatId) return;
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  try {
+    const { error } = await client.rpc("collab_send_workspace_message", {
+      target_workspace_id: activeWorkspaceChatId,
+      message_text: content,
+    });
+    if (error) throw error;
+    dom.workspaceChatInput.value = "";
+    await refreshWorkspaceChatMessages(activeWorkspaceChatId);
+  } catch (error) {
+    if (dom.workspaceChatMeta) dom.workspaceChatMeta.textContent = collaborationErrorMessage(error);
+  }
+}
+
+function openWorkspaceInviteDialog(workspaceId = getActiveCollaborationWorkspace()?.id) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !dom.workspaceInviteList) return;
+  workspaceInviteSearchOpen = false;
+  if (dom.workspaceInviteSearchInput) dom.workspaceInviteSearchInput.value = "";
+  dom.workspaceInviteForm.dataset.workspaceId = workspace.id;
+  dom.workspaceInviteList.innerHTML = "";
+  renderWorkspaceInviteList(workspace);
+  if (typeof dom.workspaceInviteDialog?.showModal === "function") dom.workspaceInviteDialog.showModal();
+  else dom.workspaceInviteDialog?.setAttribute("open", "");
+  void refreshWorkspaceInviteApprovals(workspace.id);
+}
+
+function renderWorkspaceInviteApprovals(workspaceId) {
+  if (!dom.workspaceInviteApprovalList) return;
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !canManageCollaborationWorkspace(workspaceId)) {
+    dom.workspaceInviteApprovalList.innerHTML = "";
+    return;
+  }
+  dom.workspaceInviteApprovalList.innerHTML = workspaceInviteApprovals.length
+    ? `<section class="workspace-member-section"><h3>待审核邀请</h3>${workspaceInviteApprovals.map((invite) => `<article class="workspace-invite-approval-item"><div><strong>${escapeHtml(invite.target_name || invite.target_email || "好友")}</strong><small>${escapeHtml(invite.requested_by_name || "成员")} 请求邀请</small></div><div><button class="secondary-button" type="button" data-action="approve-workspace-invite-request" data-request-id="${invite.request_id}">同意</button><button class="ghost-button" type="button" data-action="reject-workspace-invite-request" data-request-id="${invite.request_id}">拒绝</button></div></article>`).join("")}</section>`
+    : "";
+}
+
+async function refreshWorkspaceInviteApprovals(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !canManageCollaborationWorkspace(workspaceId)) return;
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  try {
+    const { data, error } = await client.rpc("collab_list_workspace_invite_approvals", {
+      target_workspace_id: workspaceId,
+    });
+    workspaceInviteApprovals = error ? [] : (Array.isArray(data) ? data : []);
+    renderWorkspaceInviteApprovals(workspaceId);
+  } catch (error) {
+    workspaceInviteApprovals = [];
+    renderWorkspaceInviteApprovals(workspaceId);
+  }
+}
+
+async function resolveWorkspaceInviteRequest(requestId, approve) {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !requestId) return;
+  try {
+    const { error } = await client.rpc("collab_resolve_workspace_invite", {
+      target_request_id: requestId,
+      approve,
+    });
+    if (error) throw error;
+    const workspaceId = dom.workspaceInviteForm?.dataset.workspaceId;
+    await refreshWorkspaceInviteApprovals(workspaceId);
+    setCollaborationMessage(approve ? "已同意邀请，等待好友确认。" : "已拒绝邀请申请。", "success");
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+function renderWorkspaceInviteList(workspace) {
+  if (!workspace || !dom.workspaceInviteList) return;
+  const selectedFriendIds = new Set(Array.from(
+    dom.workspaceInviteList.querySelectorAll("input[name='friend']:checked:not(:disabled)")
+  ).map((input) => input.value));
+  const isOwner = workspace.owner_id === getCurrentUser()?.id;
+  const currentUserId = getCurrentUser()?.id;
+  const members = new Set((workspace.members || []).map((member) => member.user_id));
+  const friends = collaboration.friends.filter((friend) => friend.friendship_status === "accepted");
+  const friendsById = new Map(friends.map((friend) => [friend.friend_id, friend]));
+  const memberItems = (workspace.members || []).map((member) => {
+    const friend = friendsById.get(member.user_id);
+    const isSelf = member.user_id === currentUserId;
+    const name = isSelf
+      ? (collaboration.profile?.displayName || collaboration.profile?.email || "我")
+      : (friend?.friend_display_name || friend?.friend_email || "协作成员");
+    const role = member.role === "owner" ? "管理员" : "成员";
+    const canManageThisMember = isOwner && member.role !== "owner";
+    return `<article class="workspace-member-item"><span class="workspace-member-name ${canManageThisMember ? "is-manageable" : ""}" data-workspace-id="${workspace.id}" data-user-id="${member.user_id}" data-member-name="${escapeHtml(name)}" data-member-role="${member.role}">${escapeHtml(name)}</span><small>${role}</small></article>`;
+  }).join("") || `<div class="collaboration-empty">当前没有可显示的成员。</div>`;
+  const searchTerm = String(dom.workspaceInviteSearchInput?.value || "").trim().toLocaleLowerCase();
+  const matchingFriends = friends.filter((friend) => {
+    const identity = `${friend.friend_display_name || ""} ${friend.friend_email || ""}`.toLocaleLowerCase();
+    return !searchTerm || identity.includes(searchTerm);
+  });
+  const inviteItems = matchingFriends.length
+    ? matchingFriends.map((friend) => `<label class="workspace-invite-item"><input type="checkbox" name="friend" value="${friend.friend_id}" ${members.has(friend.friend_id) ? "checked disabled" : selectedFriendIds.has(friend.friend_id) ? "checked" : ""} /><span>${escapeHtml(friend.friend_display_name || friend.friend_email)}<small>${members.has(friend.friend_id) ? "已加入" : escapeHtml(friend.friend_email)}</small></span></label>`).join("")
+    : `<div class="collaboration-empty">${friends.length ? "没有匹配的好友。" : "还没有已添加的好友。"}</div>`;
+  const inviteSection = workspaceInviteSearchOpen
+    ? `<section class="workspace-member-section"><h3>可邀请好友</h3>${inviteItems}</section>`
+    : "";
+  const memberCount = (workspace.members || []).length;
+  dom.workspaceInviteList.innerHTML = `<section class="workspace-member-section"><h3>当前成员 <span class="workspace-member-count">${memberCount}</span></h3>${memberItems}</section>${inviteSection}`;
+}
+
+function closeWorkspaceInviteDialog() {
+  if (dom.workspaceInviteDialog?.open) dom.workspaceInviteDialog.close();
+  else dom.workspaceInviteDialog?.removeAttribute("open");
+}
+
+async function handleWorkspaceInviteSubmit(event) {
+  event.preventDefault();
+  const workspaceId = dom.workspaceInviteForm?.dataset.workspaceId;
+  const friendIds = Array.from(dom.workspaceInviteList?.querySelectorAll("input[name='friend']:checked:not(:disabled)") || []).map((input) => input.value);
+  if (!workspaceId || !friendIds.length) return closeWorkspaceInviteDialog();
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  try {
+    const { error } = await Promise.all(friendIds.map((friendId) => client.rpc("collab_request_workspace_member", {
+      target_workspace_id: workspaceId,
+      target_user_id: friendId,
+    }))).then((results) => ({ error: results.find((result) => result.error)?.error }));
+    if (error) throw error;
+    closeWorkspaceInviteDialog();
+    await refreshCollaborationData();
+    const isOwner = getCollaborationWorkspace(workspaceId)?.owner_id === getCurrentUser()?.id;
+    setCollaborationMessage(isOwner ? "协作邀请已发送，等待对方确认。" : "邀请申请已提交，等待管理员同意。", "success");
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+async function removeWorkspaceMember(workspaceId, userId) {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !workspaceId || !userId) return;
+  try {
+    const { error } = await client.rpc("collab_remove_workspace_member", { target_workspace_id: workspaceId, target_user_id: userId });
+    if (error) throw error;
+    await refreshCollaborationData();
+    openWorkspaceInviteDialog(workspaceId);
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+function openWorkspaceMemberActions(workspaceId, userId, memberName) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  const member = workspace?.members?.find((item) => item.user_id === userId);
+  if (!workspace || !member || member.role === "owner" || !canManageCollaborationWorkspace(workspaceId)) return;
+  workspaceMemberAction = { workspaceId, userId, memberName: memberName || "该成员" };
+  if (dom.workspaceMemberActionTitle) dom.workspaceMemberActionTitle.textContent = memberName || "成员操作";
+  if (dom.workspaceMemberActionMeta) dom.workspaceMemberActionMeta.textContent = "选择要对这位成员执行的操作。";
+  if (typeof dom.workspaceMemberActionDialog?.showModal === "function") dom.workspaceMemberActionDialog.showModal();
+  else dom.workspaceMemberActionDialog?.setAttribute("open", "");
+}
+
+function closeWorkspaceMemberActions() {
+  workspaceMemberAction = null;
+  if (dom.workspaceMemberActionDialog?.open) dom.workspaceMemberActionDialog.close();
+  else dom.workspaceMemberActionDialog?.removeAttribute("open");
+}
+
+async function transferWorkspaceOwnership(workspaceId, userId) {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !workspaceId || !userId) return;
+  try {
+    const { error } = await client.rpc("collab_transfer_workspace_ownership", {
+      target_workspace_id: workspaceId,
+      next_owner_id: userId,
+    });
+    if (error) throw error;
+    closeWorkspaceMemberActions();
+    await refreshCollaborationData();
+    setCollaborationMessage("管理员头衔和权限已移交。", "success");
+    alert("管理员头衔和权限已移交。");
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+function openCollaborationDialog() {
+  if (!getCurrentUser()) {
+    openAccountCenter();
+    setAccountMessage("登录后可添加好友并启用多人协作。", "muted");
+    return;
+  }
+  renderCollaborationDialog();
+  if (typeof dom.collaborationDialog?.showModal === "function") {
+    if (!dom.collaborationDialog.open) dom.collaborationDialog.showModal();
+  } else {
+    dom.collaborationDialog?.setAttribute("open", "");
+  }
+  void refreshCollaborationData()
+    .catch((error) => setCollaborationMessage(collaborationErrorMessage(error), "error"))
+    .finally(() => renderCollaborationDialog());
+}
+
+function closeCollaborationDialog() {
+  if (dom.collaborationDialog?.open) dom.collaborationDialog.close();
+  else dom.collaborationDialog?.removeAttribute("open");
+}
+
+function renderCollaborationDialog() {
+  if (!dom.collaborationFriendList) return;
+  if (dom.collaborationDisplayNameInput) {
+    dom.collaborationDisplayNameInput.value = collaboration.profile?.displayName || "";
+  }
+  const accepted = collaboration.friends.filter((friend) => friend.friendship_status === "accepted");
+  if (dom.collaborationFriendCount) dom.collaborationFriendCount.textContent = String(accepted.length);
+  if (dom.workspaceInviteRequestList) {
+    dom.workspaceInviteRequestList.innerHTML = collaboration.workspaceInvites?.length
+      ? collaboration.workspaceInvites.map((invite) => `<article class="collaboration-friend-item"><div><strong>${escapeHtml(invite.workspace_title || "协作时间轴")}</strong><small>${escapeHtml(invite.invited_by_name || invite.invited_by_email || "协作成员")} 邀请你加入</small></div><div><button class="secondary-button" type="button" data-action="accept-workspace-invite" data-invite-id="${invite.request_id}">接受</button><button class="ghost-button" type="button" data-action="reject-workspace-invite" data-invite-id="${invite.request_id}">拒绝</button></div></article>`).join("")
+      : `<div class="collaboration-empty">暂无协作邀请。</div>`;
+  }
+  if (!collaboration.friends.length) {
+    dom.collaborationFriendList.innerHTML = `<div class="collaboration-empty">还没有好友，输入对方登录账号使用的邮箱发送邀请。</div>`;
+    return;
+  }
+  dom.collaborationFriendList.innerHTML = collaboration.friends.map((friend) => {
+    const isIncoming = friend.friendship_status === "pending" && friend.request_direction === "received";
+    const status = friend.friendship_status === "accepted" ? "已是好友" : isIncoming ? "等待你确认" : friend.friendship_status === "rejected" ? "已拒绝" : "邀请已发送";
+    const alias = String(state.collaborationFriendAliases?.[friend.friendship_id] || "").trim();
+    const actions = isIncoming
+      ? `<div><button class="secondary-button" type="button" data-action="accept-collaboration-friend" data-friendship-id="${friend.friendship_id}">接受</button><button class="ghost-button" type="button" data-action="reject-collaboration-friend" data-friendship-id="${friend.friendship_id}">拒绝</button></div>`
+      : friend.friendship_status === "accepted"
+        ? `<div><button class="ghost-button" type="button" data-action="edit-collaboration-friend-alias" data-friendship-id="${friend.friendship_id}" data-friend-email="${escapeHtml(friend.friend_email)}">备注</button></div>`
+        : "";
+    const publicName = String(friend.friend_display_name || "").trim();
+    const name = alias || publicName || friend.friend_email;
+    const identity = publicName && alias
+      ? `${escapeHtml(publicName)} · ${escapeHtml(friend.friend_email)}`
+      : (publicName ? escapeHtml(friend.friend_email) : "");
+    const email = identity ? `<small class="collaboration-friend-email">${identity}</small>` : "";
+    return `<article class="collaboration-friend-item"><div><strong>${escapeHtml(name)}</strong>${email}<small>${status}</small></div>${actions}</article>`;
+  }).join("");
+}
+
+async function respondToWorkspaceInvite(requestId, accept) {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !requestId) return;
+  try {
+    const { error } = await client.rpc("collab_respond_workspace_invite", {
+      target_request_id: requestId,
+      accept_invitation: accept,
+    });
+    if (error) throw error;
+    await refreshCollaborationData();
+    renderCollaborationDialog();
+    setCollaborationMessage(accept ? "已加入协作时间轴。" : "已拒绝协作邀请。", "success");
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+async function handleCollaborationProfileSubmit(event) {
+  event.preventDefault();
+  const displayName = String(dom.collaborationDisplayNameInput?.value || "").trim();
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !getCurrentUser()) return;
+  setCollaborationMessage("正在保存协作名称...", "muted");
+  try {
+    const { data, error } = await client.rpc("collab_set_display_name", { new_display_name: displayName });
+    if (error) throw error;
+    collaboration.profile.displayName = String(data || "").trim();
+    setCollaborationMessage(collaboration.profile.displayName ? "协作名称已更新，好友将看到新名称。" : "协作名称已清除，好友将看到你的邮箱。", "success");
+    await refreshCollaborationData();
+    renderCollaborationDialog();
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+function editCollaborationFriendAlias(friendshipId, friendEmail) {
+  if (!friendshipId) return;
+  const currentAlias = String(state.collaborationFriendAliases?.[friendshipId] || "");
+  const alias = window.prompt(`给 ${friendEmail} 设置备注名（留空可清除）：`, currentAlias);
+  if (alias === null) return;
+  state.collaborationFriendAliases ||= {};
+  const normalized = String(alias).trim().slice(0, 40);
+  if (normalized) state.collaborationFriendAliases[friendshipId] = normalized;
+  else delete state.collaborationFriendAliases[friendshipId];
+  saveState();
+  renderCollaborationDialog();
+}
+
+async function handleCollaborationFriendSubmit(event) {
+  event.preventDefault();
+  const email = String(dom.collaborationFriendEmailInput?.value || "").trim();
+  if (!email) return;
+  const client = await ensureSupabaseClientForAuth();
+  if (!client || !getCurrentUser()) {
+    openAccountCenter();
+    setAccountMessage("请先登录账号。", "error");
+    return;
+  }
+  setCollaborationMessage("正在发送好友邀请...", "muted");
+  try {
+    const { data, error } = await client.rpc("collab_send_friend_request", { target_email: email });
+    if (error) throw error;
+    const direction = data?.[0]?.request_direction;
+    setCollaborationMessage(direction === "friends" ? "你们已经是好友。" : direction === "received" ? "对方已向你发出邀请，请在列表中接受。" : "好友邀请已发送。", "success");
+    if (dom.collaborationFriendEmailInput) dom.collaborationFriendEmailInput.value = "";
+    await refreshCollaborationData();
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
+}
+
+async function respondToCollaborationFriend(friendshipId, accept) {
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  try {
+    const { error } = await client.rpc("collab_respond_friend_request", {
+      target_friendship_id: friendshipId,
+      accept_request: accept,
+    });
+    if (error) throw error;
+    setCollaborationMessage(accept ? "已添加好友，双方的商业时间轴现在可以共同编辑。" : "已拒绝好友邀请。", "success");
+    await refreshCollaborationData();
+  } catch (error) {
+    setCollaborationMessage(collaborationErrorMessage(error), "error");
+  }
 }
 
 function renderDayBoard() {
@@ -1395,8 +3301,8 @@ function renderTaskList() {
   }).join("");
 }
 
-function renderTaskProjectOptions() {
-  dom.taskProjectInput.innerHTML = state.projects.map((project) => {
+function renderTaskProjectOptions(projects = state.projects) {
+  dom.taskProjectInput.innerHTML = projects.map((project) => {
     return `<option value="${project.id}">${escapeHtml(project.title)}</option>`;
   }).join("");
 }
@@ -2454,19 +4360,25 @@ async function initSupabaseClient() {
   renderAccountCenter();
   const recoveryLinkOpened = isPasswordRecoveryLink();
   if (!isSupabaseConfigured()) {
+    authSessionResolved = true;
     setAccountMessage("请先填入 Supabase Project URL 和 anon public key，未登录时仍可继续使用本地模式。", "muted");
     updateAuthUI(null);
+    renderCollaborationTimeline();
+    applyAppView();
     return null;
   }
   const supabaseSdk = await ensureSupabaseSdkLoaded();
   if (!supabaseSdk?.createClient) {
+    authSessionResolved = true;
     setAccountMessage("Supabase SDK 没有加载成功，请检查网络或 CDN。", "error");
     updateAuthUI(null);
+    renderCollaborationTimeline();
+    applyAppView();
     return null;
   }
   try {
     supabaseClient ||= supabaseSdk.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-    setAccountMessage("Supabase 已连接。当前未登录，可以注册或登录。", "muted");
+    setAccountMessage("正在读取账号登录状态...", "muted");
     const { data, error } = await withTimeout(
       supabaseClient.auth.getSession(),
       8000,
@@ -2474,15 +4386,26 @@ async function initSupabaseClient() {
     );
     if (error) throw error;
     currentAuthUser = data?.session?.user || null;
+    authSessionResolved = true;
     passwordRecoveryMode = Boolean(currentAuthUser && recoveryLinkOpened);
     if (passwordRecoveryMode) clearPasswordRecoveryCallback();
     updateAuthUI(currentAuthUser);
     if (passwordRecoveryMode) {
       openAccountCenter();
       setAccountMessage("请输入至少 6 位的新密码，然后点击“设置新密码”。", "muted");
+    } else {
+      setAccountMessage(
+        currentAuthUser?.email
+          ? `当前已登录：${currentAuthUser.email}。这个会话不需要等待注册确认邮件。`
+          : "Supabase 已连接。当前未登录，可以注册或登录。",
+        currentAuthUser?.email ? "success" : "muted"
+      );
     }
+    renderCollaborationTimeline();
+    applyAppView();
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentAuthUser = session?.user || null;
+      authSessionResolved = true;
       if (event === "PASSWORD_RECOVERY") {
         passwordRecoveryMode = true;
         clearPasswordRecoveryCallback();
@@ -2496,16 +4419,24 @@ async function initSupabaseClient() {
       }
       if (currentAuthUser) {
         void getCloudBackupStatus({ silent: true });
+        void startCollaborationSession();
       } else {
         cloudBackupStatus = null;
         updateCloudBackupStatusUI();
+        resetCollaborationSession();
       }
     });
-    if (currentAuthUser) void getCloudBackupStatus({ silent: true });
+    if (currentAuthUser) {
+      void getCloudBackupStatus({ silent: true });
+      void startCollaborationSession();
+    }
     return supabaseClient;
   } catch (error) {
+    authSessionResolved = true;
     setAccountMessage(authErrorMessage(error), "error");
     updateAuthUI(null);
+    renderCollaborationTimeline();
+    applyAppView();
     return null;
   }
 }
@@ -2521,7 +4452,8 @@ function clearPasswordRecoveryCallback() {
   query.delete("code");
   query.delete("type");
   const search = query.toString();
-  window.history.replaceState(null, document.title, `${window.location.pathname}${search ? `?${search}` : ""}#timelineSection`);
+  const url = `${window.location.pathname}${search ? `?${search}` : ""}#timelineSection`;
+  window.history.replaceState(null, document.title, url);
 }
 
 function getCurrentUser() {
@@ -2609,6 +4541,11 @@ function accountCredentials() {
   };
 }
 
+function isExistingAccountSignUpResponse(data) {
+  const identities = data?.user?.identities;
+  return !data?.session && Array.isArray(identities) && identities.length === 0;
+}
+
 async function signUpWithEmail() {
   const client = await ensureSupabaseClientForAuth();
   if (!client) return;
@@ -2617,6 +4554,17 @@ async function signUpWithEmail() {
   setAccountBusy(true);
   setAccountMessage("正在注册账号...", "muted");
   try {
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (sessionData?.session?.user) {
+      currentAuthUser = sessionData.session.user;
+      updateAuthUI(currentAuthUser);
+      setAccountMessage(
+        `当前已登录：${currentAuthUser.email || "该账号"}。若要注册另一个邮箱，请先退出登录。`,
+        "muted"
+      );
+      return;
+    }
     const { data, error } = await client.auth.signUp({
       email,
       password,
@@ -2625,9 +4573,20 @@ async function signUpWithEmail() {
       },
     });
     if (error) throw error;
-    currentAuthUser = data?.user || currentAuthUser;
+    if (isExistingAccountSignUpResponse(data)) {
+      currentAuthUser = null;
+      updateAuthUI(null);
+      setAccountMessage(
+        "这个邮箱已经注册。重复注册不会修改原密码，也不保证再次发送确认邮件。请点击“找回密码”设置新密码；若登录提示邮箱未确认，再使用“重发确认邮件”。",
+        "muted"
+      );
+      dom.accountRecoveryButton?.focus();
+      return;
+    }
+    currentAuthUser = data?.session?.user || null;
     updateAuthUI(currentAuthUser);
-    setAccountMessage(data?.session ? "注册成功，已登录。" : "注册成功，请按 Supabase 邮箱设置完成确认后再登录。", "success");
+    if (data?.session && !(await startCollaborationSession())) return;
+    setAccountMessage(data?.session ? "注册成功，已登录。" : "注册成功，请查收确认邮件；确认后回到这里登录。", "success");
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
   } finally {
@@ -2647,6 +4606,7 @@ async function signInWithEmail() {
     if (error) throw error;
     currentAuthUser = data?.user || null;
     updateAuthUI(currentAuthUser);
+    if (!(await startCollaborationSession())) return;
     setAccountMessage("登录成功。你已进入云端账号模式，可以上传或恢复云端备份。", "success");
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
@@ -2655,22 +4615,54 @@ async function signInWithEmail() {
   }
 }
 
-async function sendAccountRecoveryEmail() {
+async function resendAccountConfirmation() {
+  if (isAccountEmailCooldownActive()) {
+    showAccountEmailCooldownMessage();
+    return;
+  }
   const client = await ensureSupabaseClientForAuth();
   if (!client) return;
   const { email } = accountCredentials();
-  if (!email || !email.includes("@")) {
-    setAccountMessage("请输入有效邮箱。", "error");
-    dom.accountEmailInput?.focus();
+  if (!validateAccountEmail(email)) return;
+  setAccountBusy(true);
+  setAccountMessage("正在发送确认邮件...", "muted");
+  try {
+    const { error } = await client.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: AUTH_REDIRECT_URL },
+    });
+    if (error) throw error;
+    startAccountEmailCooldown();
+    setAccountMessage("已请求重发确认邮件。请检查收件箱、垃圾箱和广告邮件；60 秒后才能再次请求。", "success");
+  } catch (error) {
+    if (isAccountEmailRateLimitError(error)) startAccountEmailCooldown();
+    setAccountMessage(authErrorMessage(error), "error");
+  } finally {
+    setAccountBusy(false);
+  }
+}
+
+async function sendAccountRecoveryEmail() {
+  if (isAccountEmailCooldownActive()) {
+    showAccountEmailCooldownMessage();
     return;
   }
+  const client = await ensureSupabaseClientForAuth();
+  if (!client) return;
+  const { email } = accountCredentials();
+  if (!validateAccountEmail(email)) return;
   setAccountBusy(true);
   setAccountMessage("正在发送找回邮件...", "muted");
   try {
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT_URL });
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: AUTH_REDIRECT_URL,
+    });
     if (error) throw error;
-    setAccountMessage("已发送找回邮件。请使用最新一封邮件设置新密码。", "success");
+    startAccountEmailCooldown();
+    setAccountMessage("已请求发送找回邮件。请检查收件箱、垃圾箱和广告邮件；60 秒后才能再次请求。", "success");
   } catch (error) {
+    if (isAccountEmailRateLimitError(error)) startAccountEmailCooldown();
     setAccountMessage(authErrorMessage(error), "error");
   } finally {
     setAccountBusy(false);
@@ -2694,7 +4686,7 @@ async function updateRecoveredAccountPassword() {
     passwordRecoveryMode = false;
     currentAuthUser = data?.user || currentAuthUser;
     updateAuthUI(currentAuthUser);
-    setAccountMessage("新密码已设置，可以继续使用云端账号。", "success");
+    setAccountMessage("新密码已设置，可以继续使用协作功能。", "success");
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
   } finally {
@@ -2713,6 +4705,7 @@ async function signOutAccount() {
     currentAuthUser = null;
     passwordRecoveryMode = false;
     updateAuthUI(null);
+    resetCollaborationSession();
     setAccountMessage("已退出登录。现在继续使用本地模式。", "success");
   } catch (error) {
     setAccountMessage(authErrorMessage(error), "error");
@@ -2731,11 +4724,7 @@ async function ensureSupabaseClientForAuth() {
 }
 
 function validateAccountCredentials(email, password) {
-  if (!email || !email.includes("@")) {
-    setAccountMessage("请输入有效邮箱。", "error");
-    dom.accountEmailInput?.focus();
-    return false;
-  }
+  if (!validateAccountEmail(email)) return false;
   if (!password || password.length < 6) {
     setAccountMessage("密码至少需要 6 位。", "error");
     dom.accountPasswordInput?.focus();
@@ -2744,9 +4733,73 @@ function validateAccountCredentials(email, password) {
   return true;
 }
 
+function validateAccountEmail(email) {
+  if (email && email.includes("@")) return true;
+  setAccountMessage("请输入有效邮箱。", "error");
+  dom.accountEmailInput?.focus();
+  return false;
+}
+
 function renderAccountCenter() {
   updateAuthUI(currentAuthUser);
   renderCloudBackupPanel();
+  renderAIPluginCenter();
+}
+
+function renderAIPluginCenter() {
+  if (!dom.aiPluginList) return;
+  dom.aiPluginList.innerHTML = AI_PLUGIN_DEFINITIONS.map((plugin) => `
+    <article class="ai-plugin-item is-${escapeHtml(plugin.status)}">
+      <div>
+        <strong>${escapeHtml(plugin.name)}</strong>
+        <small>${escapeHtml(plugin.ability)}</small>
+      </div>
+      <span>${escapeHtml(plugin.statusLabel)}</span>
+    </article>
+  `).join("");
+}
+
+async function callAIPlugin(taskType, payload = {}) {
+  if (!supabaseClient) {
+    await initSupabaseClient();
+  }
+  if (!supabaseClient) {
+    throw new Error("Supabase 尚未初始化");
+  }
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) throw sessionError;
+  const session = sessionData?.session;
+  if (!session) {
+    throw new Error("请先登录账号");
+  }
+  const { data, error } = await supabaseClient.functions.invoke("ai-plugin-proxy", {
+    body: { taskType, payload },
+  });
+  if (error) {
+    console.error("AI 插槽调用失败：", error);
+    throw error;
+  }
+  if (data?.ok === false && data?.error) {
+    throw new Error(data.error);
+  }
+  return data;
+}
+
+function aiPluginErrorMessage(error) {
+  const message = String(error?.message || error?.error_description || error || "");
+  if (message.includes("请先登录账号") || message.toLowerCase().includes("jwt")) {
+    return "请先登录账号后再使用 AI 插槽。";
+  }
+  if (message.includes("FunctionsFetchError") || message.includes("not found") || message.includes("404")) {
+    return "AI 插槽后端尚未部署。";
+  }
+  if (message.includes("OPENAI_API_KEY") || message.includes("AI key")) {
+    return "AI key 尚未配置，请先在 Supabase Edge Function Secrets 中设置 OPENAI_API_KEY。";
+  }
+  if (message.includes("AI 返回格式不正确")) {
+    return "AI 返回格式不正确，请重新生成。";
+  }
+  return "AI 生成失败，请稍后再试。";
 }
 
 function updateAuthUI(user = currentAuthUser) {
@@ -2765,16 +4818,26 @@ function updateAuthUI(user = currentAuthUser) {
   }
   if (dom.accountModeText) {
     dom.accountModeText.textContent = email
-      ? "你已登录，之后可以将本地数据同步到云端。"
+      ? "你已登录，之后可以将本地数据同步到云端。若要使用另一个邮箱，请先退出登录。"
       : "你正在使用本地模式。登录后可以开启云端备份。";
   }
   if (dom.accountCurrentEmail) dom.accountCurrentEmail.textContent = email || "未登录";
   if (dom.accountCloudText) dom.accountCloudText.textContent = email ? "云端备份：可用" : "云端功能：未开启";
+  if (dom.accountEmailInput) {
+    dom.accountEmailInput.disabled = Boolean(email);
+    dom.accountEmailInput.placeholder = email ? "请先退出登录后切换账号" : "you@example.com";
+  }
+  if (dom.accountPasswordInput) {
+    dom.accountPasswordInput.disabled = Boolean(email);
+    dom.accountPasswordInput.placeholder = email ? "请先退出登录后再输入密码" : "至少 6 位密码";
+  }
   if (dom.accountSignOutButton) dom.accountSignOutButton.hidden = !email;
   if (dom.accountSignInButton) dom.accountSignInButton.hidden = Boolean(email);
   if (dom.accountSignUpButton) dom.accountSignUpButton.hidden = Boolean(email);
+  if (dom.accountResendConfirmationButton) dom.accountResendConfirmationButton.hidden = Boolean(email);
   if (dom.accountRecoveryButton) dom.accountRecoveryButton.hidden = Boolean(email);
   if (dom.accountUpdatePasswordButton) dom.accountUpdatePasswordButton.hidden = !passwordRecoveryMode || !email;
+  refreshAccountActionButtonState();
   updateCloudBackupStatusUI();
 }
 
@@ -2785,15 +4848,58 @@ function setAccountMessage(message, type = "muted") {
 }
 
 function setAccountBusy(isBusy) {
+  accountActionBusy = isBusy;
+  refreshAccountActionButtonState();
+}
+
+function isAccountEmailCooldownActive() {
+  return accountEmailCooldownUntil > Date.now();
+}
+
+function accountEmailCooldownSeconds() {
+  return Math.max(0, Math.ceil((accountEmailCooldownUntil - Date.now()) / 1000));
+}
+
+function refreshAccountActionButtonState() {
+  const emailCooldownSeconds = accountEmailCooldownSeconds();
+  const emailCooldownActive = emailCooldownSeconds > 0;
   [
     dom.accountSignUpButton,
     dom.accountSignInButton,
-    dom.accountRecoveryButton,
     dom.accountUpdatePasswordButton,
     dom.accountSignOutButton,
   ].forEach((button) => {
-    if (button) button.disabled = isBusy;
+    if (button) button.disabled = accountActionBusy;
   });
+  if (dom.accountResendConfirmationButton) {
+    dom.accountResendConfirmationButton.disabled = accountActionBusy || emailCooldownActive;
+    dom.accountResendConfirmationButton.textContent = emailCooldownActive
+      ? `重发确认 (${emailCooldownSeconds}s)`
+      : "重发确认邮件";
+  }
+  if (dom.accountRecoveryButton) {
+    dom.accountRecoveryButton.disabled = accountActionBusy || emailCooldownActive;
+    dom.accountRecoveryButton.textContent = emailCooldownActive
+      ? `找回密码 (${emailCooldownSeconds}s)`
+      : "找回密码";
+  }
+}
+
+function startAccountEmailCooldown() {
+  accountEmailCooldownUntil = Date.now() + 60 * 1000;
+  if (accountEmailCooldownTimer) window.clearInterval(accountEmailCooldownTimer);
+  refreshAccountActionButtonState();
+  accountEmailCooldownTimer = window.setInterval(() => {
+    refreshAccountActionButtonState();
+    if (!isAccountEmailCooldownActive()) {
+      window.clearInterval(accountEmailCooldownTimer);
+      accountEmailCooldownTimer = null;
+    }
+  }, 1000);
+}
+
+function showAccountEmailCooldownMessage() {
+  setAccountMessage(`邮件请求过于频繁，请等待 ${accountEmailCooldownSeconds()} 秒后再试。`, "muted");
 }
 
 function setCloudBackupBusy(isBusy) {
@@ -3092,12 +5198,20 @@ function formatCloudBackupTime(value) {
 
 function authErrorMessage(error) {
   const message = String(error?.message || error || "账号请求失败。");
-  if (message.includes("Invalid login credentials")) return "邮箱或密码不正确。";
-  if (message.includes("Email not confirmed")) return "邮箱还没有确认，请先查看邮箱里的确认邮件。";
-  if (message.includes("User already registered")) return "这个邮箱已经注册过了，可以直接登录。";
+  if (message.includes("Invalid login credentials")) return "邮箱或密码不正确。这个邮箱若已注册，请点击“找回密码”；重复注册不会覆盖原密码。";
+  if (message.includes("Email not confirmed")) return "邮箱还没有确认，请点击“重发确认邮件”，并检查垃圾箱和广告邮件。";
+  if (message.includes("User already registered")) return "这个邮箱已经注册过了。重复注册不会修改密码，请点击“找回密码”。";
   if (message.includes("Password should be")) return "密码强度不够，请至少使用 6 位密码。";
+  if (/redirect.*not allowed|redirect_to.*allow/i.test(message)) return "认证回调地址未获允许，请刷新页面后重试。";
+  if (isAccountEmailRateLimitError(error)) return "邮件发送过于频繁，请等待 60 秒后再试。";
+  if (/signup.*disabled/i.test(message)) return "当前项目未开启邮箱注册。";
+  if (/expired.*link|link.*expired/i.test(message)) return "确认链接已过期，请使用“重发确认邮件”。";
   if (message.includes("Failed to fetch")) return "网络连接失败，请稍后再试。";
   return message;
+}
+
+function isAccountEmailRateLimitError(error) {
+  return /email rate limit|email.*rate.*exceed/i.test(String(error?.message || error || ""));
 }
 
 function showJournalShelf() {
@@ -4318,6 +6432,18 @@ function handleDocumentClick(event) {
   }
 
   const action = button.dataset.action;
+  if (action === "sync-collab-project") {
+    syncCollaborationContextToPersonal("project");
+    return;
+  }
+  if (action === "sync-collab-task") {
+    syncCollaborationContextToPersonal("task");
+    return;
+  }
+  if (action === "complete-context-task") {
+    void completeContextTask();
+    return;
+  }
   if (action === "copy-block") {
     copyContextBlock();
     return;
@@ -4467,6 +6593,10 @@ function handleDocumentClick(event) {
     void signInWithEmail();
     return;
   }
+  if (action === "account-resend-confirmation") {
+    void resendAccountConfirmation();
+    return;
+  }
   if (action === "account-send-recovery") {
     void sendAccountRecoveryEmail();
     return;
@@ -4477,6 +6607,211 @@ function handleDocumentClick(event) {
   }
   if (action === "account-sign-out") {
     void signOutAccount();
+    return;
+  }
+  if (action === "retry-collaboration") {
+    void startCollaborationSession();
+    return;
+  }
+  if (action === "open-collaboration-dialog") {
+    openCollaborationDialog();
+    return;
+  }
+  if (action === "show-collaboration-calendar") {
+    dom.collaborationTimeline.hidden = true;
+    dom.collaborationCalendar.hidden = false;
+    if (dom.collaborationViewToggle) {
+      dom.collaborationViewToggle.dataset.action = "show-collaboration-timeline";
+      dom.collaborationViewToggle.textContent = "时间轴";
+    }
+    return;
+  }
+  if (action === "show-collaboration-timeline") {
+    dom.collaborationCalendar.hidden = true;
+    dom.collaborationTimeline.hidden = false;
+    if (dom.collaborationViewToggle) {
+      dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
+      dom.collaborationViewToggle.textContent = "日历";
+    }
+    return;
+  }
+  if (action === "change-collaboration-calendar-month") {
+    const [year, month] = collaborationCalendarMonth.split("-").map(Number);
+    const next = new Date(year, month - 1 + Number(button.dataset.offset || 0), 1);
+    collaborationCalendarMonth = toISO(next).slice(0, 7);
+    renderCollaborationCalendar(getActiveCollaborationWorkspace(), getCollaborationProjects(getActiveCollaborationWorkspace()));
+    return;
+  }
+  if (action === "select-collab-calendar-date") {
+    state.selectedDate = button.dataset.date || state.selectedDate;
+    dom.collaborationCalendar.hidden = true;
+    dom.collaborationTimeline.hidden = false;
+    if (dom.collaborationViewToggle) {
+      dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
+      dom.collaborationViewToggle.textContent = "日历";
+    }
+    saveState();
+    renderCollaborationTimeline();
+    return;
+  }
+  if (action === "close-collaboration-dialog") {
+    closeCollaborationDialog();
+    return;
+  }
+  if (action === "close-collaboration-history") {
+    closeCollaborationHistory();
+    return;
+  }
+  if (action === "open-collab-history") {
+    openCollaborationHistory(button.dataset.workspaceId, button.dataset.historyTitle || "协作时间轴");
+    return;
+  }
+  if (action === "toggle-collaboration-edit-history") {
+    const panel = document.querySelector(`#${button.dataset.historyPanel}`);
+    if (!panel) return;
+    const willOpen = panel.hidden;
+    panel.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    button.classList.toggle("is-open", willOpen);
+    return;
+  }
+  if (action === "accept-collaboration-friend") {
+    void respondToCollaborationFriend(button.dataset.friendshipId, true);
+    return;
+  }
+  if (action === "reject-collaboration-friend") {
+    void respondToCollaborationFriend(button.dataset.friendshipId, false);
+    return;
+  }
+  if (action === "accept-workspace-invite") {
+    void respondToWorkspaceInvite(button.dataset.inviteId, true);
+    return;
+  }
+  if (action === "reject-workspace-invite") {
+    void respondToWorkspaceInvite(button.dataset.inviteId, false);
+    return;
+  }
+  if (action === "approve-workspace-invite-request") {
+    void resolveWorkspaceInviteRequest(button.dataset.requestId, true);
+    return;
+  }
+  if (action === "reject-workspace-invite-request") {
+    void resolveWorkspaceInviteRequest(button.dataset.requestId, false);
+    return;
+  }
+  if (action === "edit-collaboration-friend-alias") {
+    editCollaborationFriendAlias(button.dataset.friendshipId, button.dataset.friendEmail || "这位好友");
+    return;
+  }
+  if (action === "select-collab-workspace") {
+    collaboration.activeWorkspaceId = button.dataset.workspaceId || "";
+    collaborationWorkspaceMenuOpen = false;
+    collaborationCreateMenuOpen = false;
+    renderCollaborationTimeline();
+    return;
+  }
+  if (action === "toggle-collab-workspace-menu") {
+    collaborationWorkspaceMenuOpen = !collaborationWorkspaceMenuOpen;
+    collaborationCreateMenuOpen = false;
+    renderCollaborationTimeline();
+    if (collaborationWorkspaceMenuOpen) {
+      void refreshCollaborationData().catch((error) => {
+        console.warn("Failed to refresh collaboration workspace list.", error);
+      });
+    }
+    return;
+  }
+  if (action === "toggle-collab-create-menu") {
+    collaborationCreateMenuOpen = !collaborationCreateMenuOpen;
+    collaborationWorkspaceMenuOpen = false;
+    if (dom.collaborationCreateMenu) dom.collaborationCreateMenu.hidden = !collaborationCreateMenuOpen;
+    if (dom.collaborationCreateFab) {
+      dom.collaborationCreateFab.setAttribute("aria-expanded", String(collaborationCreateMenuOpen));
+      dom.collaborationCreateFab.classList.toggle("is-open", collaborationCreateMenuOpen);
+    }
+    return;
+  }
+  if (action === "toggle-collaboration-day-plan") {
+    collaborationDayPlanExpanded = !collaborationDayPlanExpanded;
+    renderCollaborationDaySchedule(getActiveCollaborationWorkspace());
+    return;
+  }
+  if (action === "add-collab-project") {
+    closeCollaborationCreateMenu();
+    if (!window.confirm("要新建一条协作时间轴吗？创建后可以邀请不同的好友加入。")) return;
+    openProjectDialog("", { commercial: true });
+    return;
+  }
+  if (action === "add-collab-big-project") {
+    closeCollaborationCreateMenu();
+    const workspaceId = getActiveCollaborationWorkspace()?.id;
+    if (!workspaceId) return;
+    openProjectDialog("", { scope: "collab", workspaceId });
+    return;
+  }
+  if (action === "add-collab-small-task") {
+    closeCollaborationCreateMenu();
+    const workspaceId = getActiveCollaborationWorkspace()?.id;
+    if (!workspaceId) return;
+    openTaskDialog("", "", { scope: "collab", workspaceId });
+    return;
+  }
+  if (action === "open-workspace-invite") {
+    openWorkspaceInviteDialog();
+    return;
+  }
+  if (action === "open-workspace-chat") {
+    openWorkspaceChat();
+    return;
+  }
+  if (action === "close-workspace-invite") {
+    closeWorkspaceInviteDialog();
+    return;
+  }
+  if (action === "close-workspace-chat") {
+    closeWorkspaceChat();
+    return;
+  }
+  if (action === "close-workspace-member-actions") {
+    closeWorkspaceMemberActions();
+    return;
+  }
+  if (action === "confirm-remove-workspace-member") {
+    const target = workspaceMemberAction;
+    if (!target) return;
+    if (!window.confirm(`确定删除“${target.memberName}”吗？对方将无法继续查看或编辑这条协作时间轴。`)) return;
+    closeWorkspaceMemberActions();
+    void removeWorkspaceMember(target.workspaceId, target.userId);
+    return;
+  }
+  if (action === "confirm-transfer-workspace-owner") {
+    const target = workspaceMemberAction;
+    if (!target) return;
+    if (!window.confirm(`确定将管理员头衔和全部管理权限移交给“${target.memberName}”吗？你将保留为普通成员。`)) return;
+    void transferWorkspaceOwnership(target.workspaceId, target.userId);
+    return;
+  }
+  if (action === "remove-workspace-member") {
+    if (!window.confirm("确定移除这位成员吗？对方将无法继续查看这条协作时间轴。")) return;
+    void removeWorkspaceMember(button.dataset.workspaceId, button.dataset.userId);
+    return;
+  }
+  if (action === "edit-collab-project") {
+    if (!findCollabProject(button.dataset.workspaceId, button.dataset.projectId)?.completed) openProjectDialog(button.dataset.projectId, { scope: "collab", workspaceId: button.dataset.workspaceId });
+    return;
+  }
+  if (action === "add-task-to-collab-project") {
+    openTaskDialog("", button.dataset.projectId, { scope: "collab", workspaceId: button.dataset.workspaceId });
+    return;
+  }
+  if (action === "edit-collab-task") {
+    if (findCollabTask(button.dataset.workspaceId, button.dataset.taskId)?.task.status !== "done") {
+      openTaskDialog(button.dataset.taskId, "", {
+        scope: "collab",
+        workspaceId: button.dataset.workspaceId,
+        dailyPlan: button.dataset.dailyPlanTask === "true",
+      });
+    }
     return;
   }
   if (action === "cloud-upload-local") {
@@ -4583,15 +6918,32 @@ function handleDocumentClick(event) {
     return;
   }
   if (action === "open-create-menu") {
-    if (getActiveViewId() === "todaySection") {
-      closeCreateMenu();
-      openTaskDialog();
-      return;
-    }
     toggleCreateMenu();
     return;
   }
+  if (action === "open-voice-task") {
+    closeCreateMenu();
+    openVoiceTaskDialog();
+    return;
+  }
+  if (action === "close-voice-task") {
+    closeVoiceTaskDialog();
+    return;
+  }
+  if (action === "toggle-voice-task-listening") {
+    toggleVoiceTaskListening();
+    return;
+  }
+  if (action === "analyze-voice-task") {
+    analyzeVoiceTaskTranscript();
+    return;
+  }
+  if (action === "save-voice-task") {
+    saveVoiceTaskToScheduleAndGame();
+    return;
+  }
   closeCreateMenu();
+  closeCollaborationCreateMenu();
   if (!button.closest("#blockActionMenu")) closeBlockActionMenu();
   if (!button.closest("#journalActionMenu")) closeJournalActionMenu();
 
@@ -4616,18 +6968,21 @@ function handleDocumentClick(event) {
   if (action === "next-range") moveRange(state.settings.rangeDays);
   if (action === "go-today") goToday();
   if (action === "add-project") openProjectDialog();
-  if (action === "edit-project") openProjectDialog(button.dataset.projectId);
-  if (action === "delete-project") deleteCurrentProject();
+  if (action === "edit-project" && !findProject(button.dataset.projectId)?.completed) openProjectDialog(button.dataset.projectId);
+  if (action === "delete-project") void deleteCurrentProject();
   if (action === "add-task" || action === "add-task-selected") openTaskDialog();
   if (action === "add-task-to-project") openTaskDialog(null, button.dataset.projectId);
-  if (action === "edit-task") openTaskDialog(button.dataset.taskId);
-  if (action === "delete-task") deleteCurrentTask();
+  if (action === "edit-task" && findTask(button.dataset.taskId)?.task.status !== "done") openTaskDialog(button.dataset.taskId);
+  if (action === "delete-task") void deleteCurrentTask();
   if (action === "request-task-notification-permission") void requestTaskNotificationPermission();
   if (action === "start-reminded-task") startActiveTaskReminder();
   if (action === "snooze-reminded-task") snoozeActiveTaskReminder();
   if (action === "dismiss-reminded-task") dismissActiveTaskReminder();
   if (action === "cycle-task-status") cycleTaskStatus(button.dataset.taskId);
-  if (action === "close-dialog") document.querySelector(`#${button.dataset.dialog}`)?.close();
+  if (action === "close-dialog") {
+    if (button.dataset.dialog === "taskDialog") pendingTaskDraft = null;
+    document.querySelector(`#${button.dataset.dialog}`)?.close();
+  }
   if (action === "export-data") exportData();
   if (action === "import-data") dom.importInput.click();
   if (action === "save-custom-date") saveCustomDate();
@@ -4661,6 +7016,296 @@ function closeCreateMenu() {
     button.setAttribute("aria-expanded", "false");
     button.classList.remove("is-open");
   });
+}
+
+function closeCollaborationCreateMenu() {
+  collaborationCreateMenuOpen = false;
+  if (dom.collaborationCreateMenu) dom.collaborationCreateMenu.hidden = true;
+  if (dom.collaborationCreateFab) {
+    dom.collaborationCreateFab.setAttribute("aria-expanded", "false");
+    dom.collaborationCreateFab.classList.remove("is-open");
+  }
+}
+
+function openVoiceTaskDialog() {
+  voiceTaskFinalTranscript = "";
+  const defaultDate = state?.selectedDate || todayISO();
+  if (dom.voiceTaskTranscriptInput) dom.voiceTaskTranscriptInput.value = "";
+  if (dom.voiceTaskTitleInput) dom.voiceTaskTitleInput.value = "";
+  if (dom.voiceTaskDateInput) dom.voiceTaskDateInput.value = defaultDate;
+  if (dom.voiceTaskTimeInput) dom.voiceTaskTimeInput.value = nextVoiceTaskTime();
+  if (dom.voiceTaskDurationInput) dom.voiceTaskDurationInput.value = "1";
+  setVoiceTaskStatus(localizedPair("点一下麦克风开始说话，也可以直接输入文字。", "Tap the microphone to speak, or type below."));
+  if (typeof dom.voiceTaskDialog?.showModal === "function") {
+    if (!dom.voiceTaskDialog.open) dom.voiceTaskDialog.showModal();
+  } else {
+    dom.voiceTaskDialog?.setAttribute("open", "");
+  }
+  window.setTimeout(() => startVoiceTaskListening(), 80);
+}
+
+function closeVoiceTaskDialog() {
+  stopVoiceTaskListening();
+  if (typeof dom.voiceTaskDialog?.close === "function") dom.voiceTaskDialog.close();
+  else dom.voiceTaskDialog?.removeAttribute("open");
+}
+
+function setVoiceTaskStatus(message) {
+  if (dom.voiceTaskStatus) dom.voiceTaskStatus.textContent = message || "";
+}
+
+function updateVoiceTaskListeningUI() {
+  dom.voiceTaskMicButton?.classList.toggle("is-listening", voiceTaskListening);
+  dom.voiceTaskMicButton?.setAttribute("aria-pressed", String(voiceTaskListening));
+  const label = dom.voiceTaskMicButton?.querySelector("strong");
+  if (label) label.textContent = text(voiceTaskListening ? "voiceTaskListening" : "voiceTaskListen");
+}
+
+function toggleVoiceTaskListening() {
+  if (voiceTaskListening) stopVoiceTaskListening();
+  else startVoiceTaskListening();
+}
+
+function startVoiceTaskListening() {
+  const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionClass) {
+    setVoiceTaskStatus(localizedPair("这个浏览器暂不支持语音识别，请在下方输入任务文字。", "Speech recognition is unavailable here. Type the task below."));
+    dom.voiceTaskTranscriptInput?.focus();
+    return;
+  }
+  stopVoiceTaskListening();
+  voiceTaskFinalTranscript = String(dom.voiceTaskTranscriptInput?.value || "").trim();
+  const recognition = new SpeechRecognitionClass();
+  recognition.lang = currentLanguage() === "en" ? "en-US" : "zh-CN";
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+  recognition.onstart = () => {
+    voiceTaskListening = true;
+    updateVoiceTaskListeningUI();
+    setVoiceTaskStatus(localizedPair("正在听，请说出任务、时间和时长。", "Listening. Say the task, time, and duration."));
+  };
+  recognition.onresult = (event) => {
+    let interim = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const part = String(event.results[index]?.[0]?.transcript || "").trim();
+      if (event.results[index].isFinal) voiceTaskFinalTranscript = `${voiceTaskFinalTranscript} ${part}`.trim();
+      else interim = `${interim} ${part}`.trim();
+    }
+    if (dom.voiceTaskTranscriptInput) dom.voiceTaskTranscriptInput.value = `${voiceTaskFinalTranscript} ${interim}`.trim();
+  };
+  recognition.onerror = (event) => {
+    const denied = ["not-allowed", "service-not-allowed"].includes(event.error);
+    setVoiceTaskStatus(denied
+      ? localizedPair("麦克风权限没有开启，请允许权限或直接输入文字。", "Microphone permission is off. Allow it or type below.")
+      : localizedPair("没有听清，请再试一次或直接修改文字。", "I couldn't hear that clearly. Try again or edit the text."));
+  };
+  recognition.onend = () => {
+    voiceTaskListening = false;
+    voiceTaskRecognition = null;
+    updateVoiceTaskListeningUI();
+    if (String(dom.voiceTaskTranscriptInput?.value || "").trim()) analyzeVoiceTaskTranscript();
+  };
+  voiceTaskRecognition = recognition;
+  try {
+    recognition.start();
+  } catch {
+    setVoiceTaskStatus(localizedPair("麦克风暂时无法启动，请稍后再试。", "The microphone could not start. Please try again."));
+  }
+}
+
+function stopVoiceTaskListening() {
+  if (voiceTaskRecognition) {
+    try { voiceTaskRecognition.stop(); } catch { /* Recognition may already be stopping. */ }
+  }
+  voiceTaskRecognition = null;
+  voiceTaskListening = false;
+  updateVoiceTaskListeningUI();
+}
+
+function nextVoiceTaskTime() {
+  const now = new Date();
+  const minutes = Math.ceil((now.getHours() * 60 + now.getMinutes() + 5) / 15) * 15;
+  return minutesToTime(Math.min(minutes, 23 * 60 + 45));
+}
+
+function chineseNumberValue(value) {
+  const textValue = String(value || "");
+  if (/^\d+(?:\.\d+)?$/.test(textValue)) return Number(textValue);
+  const digits = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  if (textValue === "十") return 10;
+  if (textValue.includes("十")) {
+    const [tens, ones] = textValue.split("十");
+    return (tens ? digits[tens] || 0 : 1) * 10 + (ones ? digits[ones] || 0 : 0);
+  }
+  return digits[textValue] ?? Number.NaN;
+}
+
+function parseVoiceTaskDate(source) {
+  const lower = source.toLowerCase();
+  if (/后天|day after tomorrow/.test(lower)) return addDays(todayISO(), 2);
+  if (/明天|tomorrow/.test(lower)) return addDays(todayISO(), 1);
+  const isoMatch = source.match(/(20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})日?/);
+  if (isoMatch) {
+    const date = `${isoMatch[1]}-${String(isoMatch[2]).padStart(2, "0")}-${String(isoMatch[3]).padStart(2, "0")}`;
+    if (isValidISODate(date)) return date;
+  }
+  return todayISO();
+}
+
+function parseVoiceTaskTime(source) {
+  const lower = source.toLowerCase();
+  const digital = lower.match(/(?:^|\s)(\d{1,2})[:：](\d{2})(?:\s*(am|pm))?/i);
+  if (digital) {
+    let hour = Number(digital[1]);
+    const minute = Number(digital[2]);
+    if (digital[3]?.toLowerCase() === "pm" && hour < 12) hour += 12;
+    if (digital[3]?.toLowerCase() === "am" && hour === 12) hour = 0;
+    if (hour < 24 && minute < 60) return minutesToTime(hour * 60 + minute);
+  }
+  const english = lower.match(/\b(\d{1,2})(?:\s*(?::(\d{2}))?\s*)(am|pm)\b/);
+  if (english) {
+    let hour = Number(english[1]);
+    const minute = Number(english[2] || 0);
+    if (english[3] === "pm" && hour < 12) hour += 12;
+    if (english[3] === "am" && hour === 12) hour = 0;
+    return minutesToTime(hour * 60 + minute);
+  }
+  const chinese = source.match(/(上午|早上|清晨|中午|下午|傍晚|晚上)?\s*([零一二两三四五六七八九十\d]{1,3})\s*点(?:\s*(半|一刻|三刻|[零一二两三四五六七八九十\d]{1,3})\s*分?)?/);
+  if (chinese) {
+    let hour = chineseNumberValue(chinese[2]);
+    let minute = chinese[3] === "半" ? 30 : chinese[3] === "一刻" ? 15 : chinese[3] === "三刻" ? 45 : chineseNumberValue(chinese[3] || "零");
+    if (["下午", "傍晚", "晚上"].includes(chinese[1]) && hour < 12) hour += 12;
+    if (chinese[1] === "中午" && hour < 11) hour += 12;
+    if (Number.isFinite(hour) && Number.isFinite(minute) && hour < 24 && minute < 60) return minutesToTime(hour * 60 + minute);
+  }
+  return nextVoiceTaskTime();
+}
+
+function parseVoiceTaskDuration(source) {
+  const lower = source.toLowerCase();
+  if (/半(?:个)?小时|half (?:an )?hour/.test(lower)) return 0.5;
+  const chineseHours = source.match(/([零一二两三四五六七八九十\d]+)(?:个)?半小时/);
+  if (chineseHours) return chineseNumberValue(chineseHours[1]) >= 2 ? 2 : 2;
+  const hourMatch = lower.match(/([零一二两三四五六七八九十\d.]+)\s*(?:个)?(?:小时|hours?|hrs?)/);
+  if (hourMatch) {
+    const hours = chineseNumberValue(hourMatch[1]);
+    return hours <= 0.5 ? 0.5 : hours <= 1 ? 1 : 2;
+  }
+  const minuteMatch = lower.match(/(\d+)\s*(?:分钟|minutes?|mins?)/);
+  if (minuteMatch) return Number(minuteMatch[1]) <= 30 ? 0.5 : Number(minuteMatch[1]) <= 60 ? 1 : 2;
+  return 1;
+}
+
+function parseVoiceTaskTitle(source) {
+  let title = String(source || "").trim();
+  title = title
+    .replace(/(今天|明天|后天|today|tomorrow|day after tomorrow)/gi, " ")
+    .replace(/(上午|早上|清晨|中午|下午|傍晚|晚上)?\s*[零一二两三四五六七八九十\d]{1,3}\s*点(?:\s*(?:半|一刻|三刻|[零一二两三四五六七八九十\d]{1,3})\s*分?)?/g, " ")
+    .replace(/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/gi, " ")
+    .replace(/\b\d{1,2}:\d{2}\b/g, " ")
+    .replace(/[零一二两三四五六七八九十\d.]+\s*(?:个)?半?小时|半(?:个)?小时|\d+\s*(?:分钟|minutes?|mins?)|\d+(?:\.\d+)?\s*(?:hours?|hrs?)/gi, " ")
+    .replace(/^(我想|我要|请帮我|帮我|安排|提醒我|计划|i want to|please|schedule|remind me to)\s*/i, "")
+    .replace(/[，。,.!?！？]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return title.slice(0, 80) || localizedPair("新的语音任务", "New voice task");
+}
+
+function analyzeVoiceTaskTranscript() {
+  const transcript = String(dom.voiceTaskTranscriptInput?.value || "").trim();
+  if (!transcript) {
+    setVoiceTaskStatus(localizedPair("请先说出或输入一件要做的事。", "Speak or type a task first."));
+    dom.voiceTaskTranscriptInput?.focus();
+    return null;
+  }
+  const parsed = {
+    title: parseVoiceTaskTitle(transcript),
+    date: parseVoiceTaskDate(transcript),
+    time: parseVoiceTaskTime(transcript),
+    duration: parseVoiceTaskDuration(transcript),
+  };
+  if (dom.voiceTaskTitleInput) dom.voiceTaskTitleInput.value = parsed.title;
+  if (dom.voiceTaskDateInput) dom.voiceTaskDateInput.value = parsed.date;
+  if (dom.voiceTaskTimeInput) dom.voiceTaskTimeInput.value = parsed.time;
+  if (dom.voiceTaskDurationInput) dom.voiceTaskDurationInput.value = String(parsed.duration);
+  setVoiceTaskStatus(localizedPair("已识别，可以修改后加入任务。", "Recognized. Review the fields, then add the task."));
+  return parsed;
+}
+
+function ensureGameBattleProject() {
+  let project = findProject(GAME_BATTLE_PROJECT_ID) || state.projects.find((item) => item.source === GAME_BATTLE_PROJECT_SOURCE);
+  if (project) return project;
+  project = {
+    id: GAME_BATTLE_PROJECT_ID,
+    title: localizedPair("私人排期人生游戏挑战", "Life Game Challenge"),
+    start: todayISO(),
+    duration: 30,
+    color: "#20d47b",
+    goal: localizedPair("同步游戏主线任务与现实日程", "Sync game mainline tasks with the real schedule"),
+    completed: false,
+    completedDate: "",
+    source: GAME_BATTLE_PROJECT_SOURCE,
+    tasks: [],
+  };
+  state.projects.push(project);
+  return project;
+}
+
+function enqueueVoiceTaskForGame(task) {
+  let queue = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(VOICE_GAME_SYNC_KEY) || "[]");
+    queue = Array.isArray(stored) ? stored : [];
+  } catch { queue = []; }
+  queue.push(task);
+  localStorage.setItem(VOICE_GAME_SYNC_KEY, JSON.stringify(queue.slice(-30)));
+}
+
+function saveVoiceTaskToScheduleAndGame() {
+  if (!String(dom.voiceTaskTitleInput?.value || "").trim()) analyzeVoiceTaskTranscript();
+  const title = String(dom.voiceTaskTitleInput?.value || "").trim().slice(0, 80);
+  const date = String(dom.voiceTaskDateInput?.value || todayISO());
+  const startTime = String(dom.voiceTaskTimeInput?.value || nextVoiceTaskTime());
+  const duration = [0.5, 1, 2].includes(Number(dom.voiceTaskDurationInput?.value)) ? Number(dom.voiceTaskDurationInput.value) : 1;
+  if (!title || !isValidISODate(date) || !/^\d{2}:\d{2}$/.test(startTime)) {
+    setVoiceTaskStatus(localizedPair("请检查任务名称、日期和时间。", "Check the task name, date, and time."));
+    return;
+  }
+  rememberUndo();
+  const project = ensureGameBattleProject();
+  const gameTaskId = `voice-main-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const scheduleTask = {
+    id: `game-main-${date}-${gameTaskId}`,
+    title,
+    date,
+    spanDays: 1,
+    startTime,
+    duration,
+    status: "todo",
+    color: project.color,
+    reminder: normalizeTaskReminder({}),
+    detail: localizedPair("语音创建 · 已同步游戏主线", "Created by voice · Synced to game mainline"),
+    source: GAME_BATTLE_TASK_SOURCE,
+    sourceType: "main",
+    sourceTaskId: gameTaskId,
+    sourceDate: date,
+  };
+  project.tasks.push(scheduleTask);
+  enqueueVoiceTaskForGame({
+    id: gameTaskId,
+    title,
+    date,
+    startMinute: timeToMinutes(startTime),
+    durationMinutes: Math.round(duration * 60),
+    createdAt: new Date().toISOString(),
+  });
+  state.selectedDate = date;
+  saveAndRender();
+  scheduleTodayTaskReminders();
+  void scheduleNativeTaskReminder(scheduleTask, project.title);
+  closeVoiceTaskDialog();
+  window.location.hash = "todaySection";
 }
 
 function setSettingsPanel(open) {
@@ -4821,19 +7466,24 @@ function reorderDateMark(date, fromKey, toKey) {
   openDateMarkDialog(date);
 }
 
-function clampTimelineScroll() {
-  const maxScroll = Math.max(0, dom.timeline.scrollWidth - dom.timeline.clientWidth);
-  if (dom.timeline.scrollLeft > maxScroll) dom.timeline.scrollLeft = maxScroll;
+function clampTimelineScroll(timeline = dom.timeline) {
+  if (!timeline) return;
+  const maxScroll = Math.max(0, timeline.scrollWidth - timeline.clientWidth);
+  if (timeline.scrollLeft > maxScroll) timeline.scrollLeft = maxScroll;
 }
 
-function handleTimelineScroll() {
-  clampTimelineScroll();
-  const timelineRect = dom.timeline.getBoundingClientRect();
-  const scrollLeft = dom.timeline.scrollLeft;
+function handleTimelineScroll(event) {
+  const timeline = event?.currentTarget?.classList?.contains("timeline")
+    ? event.currentTarget
+    : dom.timeline;
+  if (!timeline) return;
+  clampTimelineScroll(timeline);
+  const timelineRect = timeline.getBoundingClientRect();
+  const scrollLeft = timeline.scrollLeft;
   const stubWidth = getStubWidth();
   const visibleLeft = timelineRect.left + Math.max(0, stubWidth - scrollLeft);
   const visibleRight = timelineRect.right;
-  dom.timeline.querySelectorAll(".project-bar, .timeline-task").forEach((bar) => {
+  timeline.querySelectorAll(".project-bar, .timeline-task").forEach((bar) => {
     const label = bar.querySelector(".floating-bar-label");
     if (!label) return;
     const barRect = bar.getBoundingClientRect();
@@ -4850,6 +7500,54 @@ function handleTimelineScroll() {
 
 function getStubWidth() {
   return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--stub-width")) || 210;
+}
+
+function prepareCollaborationWorkspaceLongPress(event) {
+  if (event.button !== 0) return;
+  const workspaceButton = event.target.closest(".collaboration-workspace-menu [data-action='select-collab-workspace']");
+  if (!workspaceButton) return;
+  cancelCollaborationWorkspaceLongPress();
+  collaborationWorkspacePressStart = { x: event.clientX, y: event.clientY };
+  collaborationWorkspacePressTimer = window.setTimeout(() => {
+    const workspace = getCollaborationWorkspace(workspaceButton.dataset.workspaceId || "");
+    if (!workspace) return;
+    suppressNextClick = true;
+    if (!canManageCollaborationWorkspace(workspace.id)) {
+      alert("只有该协作时间轴的创建者可以删除它。");
+      return;
+    }
+    if (window.confirm(`确认删除协作时间轴“${workspace.title}”吗？删除后将无法恢复。`)) {
+      void deleteCollaborationWorkspace(workspace.id);
+    }
+  }, 560);
+}
+
+function cancelCollaborationWorkspaceLongPress() {
+  if (collaborationWorkspacePressTimer) window.clearTimeout(collaborationWorkspacePressTimer);
+  collaborationWorkspacePressTimer = null;
+  collaborationWorkspacePressStart = null;
+}
+
+function prepareWorkspaceMemberLongPress(event) {
+  if (event.button !== 0) return;
+  const memberName = event.target.closest(".workspace-member-name.is-manageable");
+  if (!memberName) return;
+  cancelWorkspaceMemberLongPress();
+  workspaceMemberPressStart = { x: event.clientX, y: event.clientY };
+  workspaceMemberPressTimer = window.setTimeout(() => {
+    suppressNextClick = true;
+    openWorkspaceMemberActions(
+      memberName.dataset.workspaceId || "",
+      memberName.dataset.userId || "",
+      memberName.dataset.memberName || "该成员"
+    );
+  }, 560);
+}
+
+function cancelWorkspaceMemberLongPress() {
+  if (workspaceMemberPressTimer) window.clearTimeout(workspaceMemberPressTimer);
+  workspaceMemberPressTimer = null;
+  workspaceMemberPressStart = null;
 }
 
 function prepareLongPress(event, target) {
@@ -4875,34 +7573,90 @@ function cancelLongPress() {
 
 function buildBlockContext(event, block) {
   const rect = block.getBoundingClientRect();
+  const workspaceId = String(block.dataset.workspaceId || "");
+  const scope = workspaceId ? "collab" : "private";
   if (block.classList.contains("project-bar")) {
-    const project = findProject(block.dataset.projectId);
+    const project = scope === "collab"
+      ? findCollabProject(workspaceId, block.dataset.projectId)
+      : findProject(block.dataset.projectId);
     if (!project) return null;
     const splitDays = clamp(Math.round((event.clientX - rect.left) / DAY_WIDTH), 1, Math.max(1, project.duration - 1));
-    return { kind: "project", projectId: project.id, splitDays };
+    return { scope, workspaceId, kind: "project", projectId: project.id, splitDays };
   }
   if (block.classList.contains("timeline-task")) {
-    const found = findTask(block.dataset.taskId);
+    const found = scope === "collab"
+      ? findCollabTask(workspaceId, block.dataset.taskId)
+      : findTask(block.dataset.taskId);
     if (!found) return null;
     const spanDays = Math.max(1, Number(found.task.spanDays) || 1);
     const splitDays = clamp(Math.round((event.clientX - rect.left) / DAY_WIDTH), 1, Math.max(1, spanDays - 1));
-    return { kind: "timeline-task", taskId: found.task.id, splitDays };
+    return { scope, workspaceId, kind: "timeline-task", projectId: found.project.id, taskId: found.task.id, splitDays };
   }
   if (block.classList.contains("day-task-block")) {
-    const found = findTask(block.dataset.taskId);
+    const found = scope === "collab"
+      ? findCollabTask(workspaceId, block.dataset.taskId)
+      : findTask(block.dataset.taskId);
     if (!found) return null;
     const durationMinutes = Math.round(Number(found.task.duration || 1) * 60);
     const splitMinutes = clamp(roundTo(((event.clientX - rect.left) / Math.max(1, rect.width)) * durationMinutes, 15), 15, Math.max(15, durationMinutes - 15));
-    return { kind: "day-task", taskId: found.task.id, splitMinutes };
+    return { scope, workspaceId, kind: "day-task", projectId: found.project.id, taskId: found.task.id, splitMinutes };
   }
   return null;
 }
 
 function showBlockActionMenu(x, y) {
   if (!dom.blockActionMenu) return;
-  dom.blockActionTitle.textContent = text("blockActionTitle");
+  const isCollaborationBlock = contextTarget?.scope === "collab";
+  dom.blockActionTitle.textContent = isCollaborationBlock
+    ? localizedPair("同步到个人时间轴", "Sync to Personal Timeline")
+    : text("blockActionTitle");
+  const projectSyncButton = dom.blockActionMenu.querySelector("[data-action='sync-collab-project']");
+  const taskSyncButton = dom.blockActionMenu.querySelector("[data-action='sync-collab-task']");
+  const hasProjectSync = isCollaborationBlock && contextTarget?.projectId
+    ? Boolean(getCollaborationSyncState().projectLinks[collaborationProjectSyncKey(contextTarget.workspaceId, contextTarget.projectId)])
+    : false;
+  const contextTask = isCollaborationBlock && ["timeline-task", "day-task"].includes(contextTarget?.kind)
+    ? findCollabTask(contextTarget.workspaceId, contextTarget.taskId)?.task
+    : null;
+  const canSyncDailyTask = contextTarget?.kind === "day-task"
+    && (!contextTask?.assigneeId || canPlanCollaborationDailyTask(contextTask));
+  if (projectSyncButton) projectSyncButton.hidden = !isCollaborationBlock || contextTarget?.kind === "day-task";
+  if (taskSyncButton) {
+    taskSyncButton.hidden = !isCollaborationBlock
+      || !["timeline-task", "day-task"].includes(contextTarget?.kind)
+      || (contextTarget?.kind !== "day-task" && hasProjectSync)
+      || (contextTarget?.kind === "day-task" && !canSyncDailyTask);
+    taskSyncButton.textContent = contextTarget?.kind === "day-task"
+      ? (contextTask?.assigneeId ? "同步到个人与游戏每日计划" : "同步到个人计划")
+      : text("syncTaskToPersonal");
+  }
+  const completeButton = dom.blockActionMenu.querySelector("[data-action='complete-context-task']");
+  const task = ["timeline-task", "day-task"].includes(contextTarget?.kind)
+    ? (contextTarget.scope === "collab" ? findCollabTask(contextTarget.workspaceId, contextTarget.taskId)?.task : findTask(contextTarget.taskId)?.task)
+    : null;
+  const project = contextTarget?.kind === "project"
+    ? (contextTarget.scope === "collab" ? findCollabProject(contextTarget.workspaceId, contextTarget.projectId) : findProject(contextTarget.projectId))
+    : null;
+  if (completeButton) {
+    const isDone = task ? task.status === "done" : Boolean(project?.completed);
+    const canUndo = contextTarget?.scope !== "collab" || canManageCollaborationWorkspace(contextTarget.workspaceId);
+    const canEditTask = !task || contextTarget?.scope !== "collab"
+      || (contextTarget?.kind === "day-task" ? canPlanCollaborationDailyTask(task) : canEditCollaborationTask(contextTarget.workspaceId, task));
+    completeButton.hidden = (!task && !project) || !canEditTask || (isDone && !canUndo);
+    completeButton.textContent = isDone ? (project ? "取消完成项目" : "取消完成任务") : (project ? "完成项目" : "完成任务");
+  }
   const pasteButton = dom.blockActionMenu.querySelector("[data-action='paste-block']");
-  if (pasteButton) pasteButton.disabled = !copiedBlock;
+  const dailyTaskLockedForViewer = contextTarget?.scope === "collab"
+    && contextTarget?.kind === "day-task"
+    && !canPlanCollaborationDailyTask(contextTask);
+  const copyButton = dom.blockActionMenu.querySelector("[data-action='copy-block']");
+  const splitButton = dom.blockActionMenu.querySelector("[data-action='split-block']");
+  if (copyButton) copyButton.hidden = dailyTaskLockedForViewer;
+  if (splitButton) splitButton.hidden = dailyTaskLockedForViewer;
+  if (pasteButton) {
+    pasteButton.disabled = !copiedBlock || dailyTaskLockedForViewer;
+    pasteButton.hidden = dailyTaskLockedForViewer;
+  }
   dom.blockActionMenu.hidden = false;
   const width = dom.blockActionMenu.offsetWidth || 190;
   const height = dom.blockActionMenu.offsetHeight || 160;
@@ -4915,19 +7669,88 @@ function closeBlockActionMenu() {
   dom.blockActionMenu.hidden = true;
 }
 
+async function completeContextTask() {
+  if (!contextTarget || !["project", "timeline-task", "day-task"].includes(contextTarget.kind)) return;
+  if (contextTarget.kind === "project") {
+    if (contextTarget.scope === "collab") {
+      const workspace = getCollaborationWorkspace(contextTarget.workspaceId);
+      const original = findCollabProject(contextTarget.workspaceId, contextTarget.projectId);
+      if (!workspace || !original || (original.completed && !canManageCollaborationWorkspace(contextTarget.workspaceId))) return;
+      const timeline = cloneCollaborationTimeline(workspace.timeline);
+      const project = timeline.projects.find((item) => item.id === contextTarget.projectId);
+      if (!project) return;
+      project.completed = !project.completed;
+      project.completedDate = project.completed ? todayISO() : "";
+      project.tasks.forEach((task) => { task.status = project.completed ? "done" : "todo"; });
+      closeBlockActionMenu();
+      if (await persistCollaborationTimeline(contextTarget.workspaceId, timeline) && project.completed) playTaskFireworks();
+      return;
+    }
+    const project = findProject(contextTarget.projectId);
+    if (!project) return;
+    rememberUndo();
+    project.completed = !project.completed;
+    project.completedDate = project.completed ? todayISO() : "";
+    project.tasks.forEach((task) => { task.status = project.completed ? "done" : "todo"; });
+    closeBlockActionMenu();
+    saveAndRender();
+    if (project.completed) playTaskFireworks();
+    return;
+  }
+  if (contextTarget.scope === "collab") {
+    const workspace = getCollaborationWorkspace(contextTarget.workspaceId);
+    const found = findCollabTask(contextTarget.workspaceId, contextTarget.taskId);
+    const canComplete = contextTarget.kind === "day-task"
+      ? canPlanCollaborationDailyTask(found?.task)
+      : canEditCollaborationTask(contextTarget.workspaceId, found?.task);
+    if (!workspace || !found || !canComplete || (found.task.status === "done" && !canManageCollaborationWorkspace(contextTarget.workspaceId))) return;
+    const timeline = cloneCollaborationTimeline(workspace.timeline);
+    const task = timeline.projects.flatMap((project) => project.tasks).find((item) => item.id === contextTarget.taskId);
+    if (!task) return;
+    task.status = task.status === "done" ? "todo" : "done";
+    closeBlockActionMenu();
+    if (await persistCollaborationTimeline(contextTarget.workspaceId, timeline) && task.status === "done") playTaskFireworks();
+    return;
+  }
+  const found = findTask(contextTarget.taskId);
+  if (!found) return;
+  rememberUndo();
+  found.task.status = found.task.status === "done" ? "todo" : "done";
+  if (found.task.status === "done" && found.task.gameMainTaskId) {
+    completeCollaborationGameTask(found.task.gameMainTaskId, found.task.gameMainTaskDate || found.task.date);
+  }
+  closeBlockActionMenu();
+  saveAndRender();
+  scheduleNativeReminderSync();
+  if (found.task.status === "done") playTaskFireworks();
+}
+
+function playTaskFireworks() {
+  const burst = document.createElement("div");
+  burst.className = "task-fireworks";
+  burst.innerHTML = Array.from({ length: 14 }, (_, index) => `<i style="--firework-index:${index}"></i>`).join("");
+  document.body.appendChild(burst);
+  window.setTimeout(() => burst.remove(), 900);
+}
+
 function copyContextBlock() {
   if (!contextTarget) return;
   if (contextTarget.kind === "project") {
-    const project = findProject(contextTarget.projectId);
+    const project = contextTarget.scope === "collab"
+      ? findCollabProject(contextTarget.workspaceId, contextTarget.projectId)
+      : findProject(contextTarget.projectId);
     if (project) {
       copiedBlock = { kind: "project", title: project.title, goal: project.goal, duration: project.duration, color: project.color };
     }
   } else {
-    const found = findTask(contextTarget.taskId);
+    const found = contextTarget.scope === "collab"
+      ? findCollabTask(contextTarget.workspaceId, contextTarget.taskId)
+      : findTask(contextTarget.taskId);
     if (found) {
       copiedBlock = {
         kind: "task",
         projectId: found.project.id,
+        sourceTaskId: contextTarget.scope === "collab" ? (found.task.sourceTaskId || found.task.id) : "",
         task: { ...found.task },
       };
     }
@@ -4937,6 +7760,19 @@ function copyContextBlock() {
 
 function splitContextBlock() {
   if (!contextTarget) return;
+  if (contextTarget.scope === "collab") {
+    if (contextTarget.kind === "project") {
+      void splitCollaborationProjectBlock(contextTarget.workspaceId, contextTarget.projectId, contextTarget.splitDays);
+    }
+    if (contextTarget.kind === "timeline-task") {
+      void splitCollaborationTaskByDays(contextTarget.workspaceId, contextTarget.taskId, contextTarget.splitDays);
+    }
+    if (contextTarget.kind === "day-task") {
+      void splitCollaborationTaskByTime(contextTarget.workspaceId, contextTarget.taskId, contextTarget.splitMinutes);
+    }
+    closeBlockActionMenu();
+    return;
+  }
   if (contextTarget.kind === "project") splitProjectBlock(contextTarget.projectId, contextTarget.splitDays);
   if (contextTarget.kind === "timeline-task") splitTaskByDays(contextTarget.taskId, contextTarget.splitDays);
   if (contextTarget.kind === "day-task") splitTaskByTime(contextTarget.taskId, contextTarget.splitMinutes);
@@ -4945,8 +7781,14 @@ function splitContextBlock() {
 
 function pasteCopiedBlock() {
   if (!copiedBlock) return;
-  rememberUndo();
+  if (contextTarget?.scope === "collab") {
+    void pasteCopiedBlockToCollaboration(contextTarget.workspaceId);
+    closeBlockActionMenu();
+    closeCreateMenu();
+    return;
+  }
   if (copiedBlock.kind === "project") {
+    rememberUndo();
     state.projects.push({
       id: makeId("project"),
       title: copiedBlock.title,
@@ -4960,8 +7802,21 @@ function pasteCopiedBlock() {
   if (copiedBlock.kind === "task") {
     const project = findProject(copiedBlock.projectId) || state.projects[0];
     if (!project) return;
-    const task = { ...copiedBlock.task, id: makeId("task"), date: state.selectedDate };
-    project.tasks.push(task);
+    if (contextTarget?.kind === "day-task") {
+      createPrivateDailyOnlyTask(project.id, { ...copiedBlock.task, date: state.selectedDate });
+      closeBlockActionMenu();
+      closeCreateMenu();
+      return;
+    }
+    openTaskDraft(
+      { ...copiedBlock.task, date: state.selectedDate },
+      project.id,
+      {},
+      { kind: "paste", originalTitle: copiedBlock.task.title }
+    );
+    closeBlockActionMenu();
+    closeCreateMenu();
+    return;
   }
   closeBlockActionMenu();
   closeCreateMenu();
@@ -4993,17 +7848,17 @@ function splitTaskByDays(taskId, splitDays) {
   if (!found) return;
   const spanDays = Math.max(1, Number(found.task.spanDays) || 1);
   if (spanDays < 2) return;
-  rememberUndo();
   const firstSpan = clamp(splitDays, 1, spanDays - 1);
-  const clone = {
+  openTaskDraft({
     ...found.task,
-    id: makeId("task"),
     date: addDays(found.task.date, firstSpan),
     spanDays: spanDays - firstSpan,
-  };
-  found.task.spanDays = firstSpan;
-  found.project.tasks.push(clone);
-  saveAndRender();
+  }, found.project.id, {}, {
+    kind: "split-days",
+    originalTitle: found.task.title,
+    sourceTaskId: taskId,
+    firstSpan,
+  });
 }
 
 function splitTaskByTime(taskId, splitMinutes) {
@@ -5011,21 +7866,197 @@ function splitTaskByTime(taskId, splitMinutes) {
   if (!found) return;
   const durationMinutes = Math.round(Number(found.task.duration || 1) * 60);
   if (durationMinutes < 30) return;
-  rememberUndo();
   const firstMinutes = clamp(splitMinutes, 15, durationMinutes - 15);
-  const clone = {
+  createPrivateDailyOnlyTask(found.project.id, {
     ...found.task,
-    id: makeId("task"),
     startTime: minutesToTime(timeToMinutes(found.task.startTime) + firstMinutes),
     duration: (durationMinutes - firstMinutes) / 60,
+  }, {
+    sourceTaskId: found.task.sourceTaskId || taskId,
+    firstMinutes,
+    gameSyncSourceTaskId: found.task.sourceTaskId || taskId,
+  });
+}
+
+async function splitCollaborationProjectBlock(workspaceId, projectId, splitDays) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  const projectIndex = timeline.projects.findIndex((project) => project.id === projectId);
+  const project = timeline.projects[projectIndex];
+  if (!project || project.duration < 2) return;
+  const firstDuration = clamp(splitDays, 1, project.duration - 1);
+  const secondDuration = project.duration - firstDuration;
+  const clone = {
+    id: makeId("collab_project"),
+    title: project.title,
+    goal: project.goal,
+    start: addDays(project.start, firstDuration),
+    duration: secondDuration,
+    color: project.color,
+    completed: false,
+    completedDate: "",
+    tasks: [],
   };
-  found.task.duration = firstMinutes / 60;
-  found.project.tasks.push(clone);
+  project.duration = firstDuration;
+  timeline.projects.splice(projectIndex + 1, 0, clone);
+  await persistCollaborationTimeline(workspaceId, timeline);
+}
+
+async function splitCollaborationTaskByDays(workspaceId, taskId, splitDays) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace) return;
+  const found = findCollabTask(workspaceId, taskId);
+  const project = found?.project;
+  const task = found?.task;
+  const spanDays = Math.max(1, Number(task?.spanDays) || 1);
+  if (!project || !task || spanDays < 2) return;
+  if (!canEditCollaborationTask(workspaceId, task)) {
+    setCollaborationMessage("你没有权限拆分此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  const firstSpan = clamp(splitDays, 1, spanDays - 1);
+  openTaskDraft({
+    ...task,
+    date: addDays(task.date, firstSpan),
+    spanDays: spanDays - firstSpan,
+  }, project.id, { scope: "collab", workspaceId }, {
+    kind: "split-days",
+    originalTitle: task.title,
+    sourceTaskId: task.sourceTaskId || taskId,
+  });
+  pendingTaskDraft.firstSpan = firstSpan;
+}
+
+async function splitCollaborationTaskByTime(workspaceId, taskId, splitMinutes) {
+  const found = findCollabTask(workspaceId, taskId);
+  if (!found) return;
+  if (!canEditCollaborationTask(workspaceId, found.task)) {
+    setCollaborationMessage("你没有权限拆分此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  const durationMinutes = Math.round(Number(found.task.duration || 1) * 60);
+  if (durationMinutes < 30) return;
+  const firstMinutes = clamp(splitMinutes, 15, durationMinutes - 15);
+  await createCollaborationDailyOnlyTask(workspaceId, found.project.id, {
+    ...found.task,
+    startTime: minutesToTime(timeToMinutes(found.task.startTime) + firstMinutes),
+    duration: (durationMinutes - firstMinutes) / 60,
+  }, {
+    sourceTaskId: found.task.sourceTaskId || taskId,
+    firstMinutes,
+    gameSyncSourceTaskId: found.task.sourceTaskId || taskId,
+  });
+}
+
+async function pasteCopiedBlockToCollaboration(workspaceId) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  if (!workspace || !copiedBlock) return;
+  if (copiedBlock.kind === "project") {
+    const timeline = cloneCollaborationTimeline(workspace.timeline);
+    timeline.projects.push({
+      id: makeId("collab_project"),
+      title: copiedBlock.title,
+      goal: copiedBlock.goal,
+      start: state.selectedDate,
+      duration: copiedBlock.duration,
+      color: copiedBlock.color,
+      completed: false,
+      completedDate: "",
+      tasks: [],
+    });
+    await persistCollaborationTimeline(workspaceId, timeline);
+    return;
+  }
+  if (copiedBlock.kind === "task") {
+    const project = getCollaborationProjects(workspace).find((item) => item.id === copiedBlock.projectId)
+      || getCollaborationProjects(workspace)[0];
+    if (!project) return;
+    if (contextTarget?.kind === "day-task") {
+      await createCollaborationDailyOnlyTask(workspaceId, project.id, {
+        ...copiedBlock.task,
+        date: state.selectedDate,
+      }, { gameSyncSourceTaskId: copiedBlock.sourceTaskId });
+      return;
+    }
+    openTaskDraft(
+      { ...copiedBlock.task, date: state.selectedDate },
+      project.id,
+      { scope: "collab", workspaceId },
+      { kind: "paste", originalTitle: copiedBlock.task.title }
+    );
+    return;
+  }
+}
+
+function openTaskDraft(task, projectId, context, draft) {
+  pendingTaskDraft = draft;
+  openTaskDialog("", projectId, { ...context, draft: { ...task } });
+}
+
+function createPrivateDailyOnlyTask(projectId, task, split = null) {
+  const project = findProject(projectId);
+  const source = split?.sourceTaskId ? findTask(split.sourceTaskId)?.task : null;
+  if (!project || (split && !source)) return;
+  rememberUndo();
+  project.tasks.push({
+    ...task,
+    id: makeId("task"),
+    status: "todo",
+    dailyOnly: true,
+  });
+  if (split?.firstMinutes) source.duration = split.firstMinutes / 60;
   saveAndRender();
+}
+
+async function createCollaborationDailyOnlyTask(workspaceId, projectId, task, split = null) {
+  const workspace = getCollaborationWorkspace(workspaceId);
+  const source = split?.sourceTaskId ? findCollabTask(workspaceId, split.sourceTaskId)?.task : null;
+  if (!workspace || (split && !source)) return;
+  if (!canPlanCollaborationDailyTask(task)) {
+    setCollaborationMessage("协作每日任务只能安排给当前成员本人。", "error");
+    return;
+  }
+  if (source && !canEditCollaborationTask(workspaceId, source)) {
+    setCollaborationMessage("你没有权限拆分此任务。仅负责人可以修改。", "error");
+    return;
+  }
+  const timeline = cloneCollaborationTimeline(workspace.timeline);
+  const project = timeline.projects.find((item) => item.id === projectId);
+  if (!project) return;
+  const newTaskId = makeId("collab_task");
+  const gameSource = split?.gameSyncSourceTaskId
+    ? getLinkedPersonalCollaborationTask(workspaceId, projectId, split.gameSyncSourceTaskId)?.task
+    : null;
+  project.tasks.push({
+    ...task,
+    id: newTaskId,
+    status: "todo",
+    dailyOnly: true,
+    sourceTaskId: String(split?.sourceTaskId || split?.gameSyncSourceTaskId || ""),
+  });
+  if (split?.firstMinutes) {
+    const sourceTask = timeline.projects.flatMap((item) => item.tasks).find((item) => item.id === split.sourceTaskId);
+    if (!sourceTask) return;
+    sourceTask.duration = split.firstMinutes / 60;
+  }
+  const persisted = await persistCollaborationTimeline(workspaceId, timeline);
+  if (!persisted || !gameSource?.gameMainTaskId) return;
+  const created = findCollabTask(workspaceId, newTaskId);
+  if (!created) return;
+  synchronizeSingleCollaborationTask(workspaceId, created.project, created.task);
+  const personal = getLinkedPersonalCollaborationTask(workspaceId, created.project.id, created.task.id)?.task;
+  const gameTaskId = personal ? enqueueCollaborationTaskForGame(workspaceId, created.task) : "";
+  if (!personal || !gameTaskId) return;
+  personal.gameMainTaskId = gameTaskId;
+  personal.gameMainTaskDate = created.task.date;
+  finishCollaborationPersonalSync(true);
 }
 
 function handlePointerDown(event) {
   const dragTarget = event.target.closest("[data-drag-type]");
+  const block = event.target.closest(".project-bar, .timeline-task, .day-task-block");
+  if (!dragTarget && block) prepareLongPress(event, block);
   if (!dragTarget) return;
   prepareLongPress(event, dragTarget);
   startDrag(event, dragTarget);
@@ -5043,32 +8074,77 @@ function goToday() {
   saveAndRender();
 }
 
-function openProjectDialog(projectId = "") {
-  const project = projectId ? findProject(projectId) : null;
-  dom.projectDialogTitle.textContent = project ? text("projectDialogEdit") : text("projectDialogNew");
+function openProjectDialog(projectId = "", context = {}) {
+  projectDialogContext = {
+    scope: context.scope === "collab" ? "collab" : "private",
+    workspaceId: context.workspaceId || "",
+  };
+  const isCollaborationProject = projectDialogContext.scope === "collab";
+  const isCommercialCreation = !isCollaborationProject && Boolean(context.commercial) && !projectId;
+  const project = projectId
+    ? (isCollaborationProject ? findCollabProject(projectDialogContext.workspaceId, projectId) : findProject(projectId))
+    : null;
+  dom.projectDialogTitle.textContent = project
+    ? (isCollaborationProject ? "编辑协作项目" : text("projectDialogEdit"))
+    : (isCollaborationProject ? "新建协作项目" : isCommercialCreation ? "新建商业协作项目" : text("projectDialogNew"));
   dom.projectIdInput.value = project?.id || "";
   dom.projectTitleInput.value = project?.title || "";
   dom.projectStartInput.value = project?.start || state.selectedDate;
   dom.projectDurationInput.value = project?.duration || 30;
   dom.projectColorInput.value = project?.color || nextColor();
   dom.projectGoalInput.value = project?.goal || "";
-  if (dom.projectCompleteInput) dom.projectCompleteInput.checked = Boolean(project?.completed);
+  if (dom.projectCommercialInput) {
+    dom.projectCommercialInput.checked = isCommercialCreation;
+    dom.projectCommercialInput.closest(".project-commercial-field").hidden = isCollaborationProject || Boolean(project);
+  }
   dom.deleteProjectButton.hidden = !project;
+  if (dom.projectCollaborationHistory) {
+    dom.projectCollaborationHistory.hidden = !isCollaborationProject || !project;
+    if (isCollaborationProject && project) {
+      renderCollaborationEditHistory(dom.projectCollaborationHistoryList, projectDialogContext.workspaceId);
+      dom.projectCollaborationHistoryList.hidden = true;
+      dom.projectCollaborationHistory.querySelector(".collaboration-history-toggle")?.setAttribute("aria-expanded", "false");
+      dom.projectCollaborationHistory.querySelector(".collaboration-history-toggle")?.classList.remove("is-open");
+    }
+  }
   dom.projectDialog.showModal();
 }
 
-function handleProjectSubmit(event) {
+async function handleProjectSubmit(event) {
   event.preventDefault();
   const id = dom.projectIdInput.value;
+  const existingProject = id
+    ? (projectDialogContext.scope === "collab"
+      ? findCollabProject(projectDialogContext.workspaceId, id)
+      : findProject(id))
+    : null;
   const payload = {
     title: dom.projectTitleInput.value.trim(),
     start: dom.projectStartInput.value,
     duration: Math.max(1, Number(dom.projectDurationInput.value) || 1),
     color: dom.projectColorInput.value,
     goal: dom.projectGoalInput.value.trim(),
-    completed: Boolean(dom.projectCompleteInput?.checked),
+    completed: Boolean(existingProject?.completed),
   };
   if (!payload.title) return;
+
+  if (projectDialogContext.scope === "collab") {
+    await saveCollaborationProject(projectDialogContext.workspaceId, id, payload);
+    return;
+  }
+
+  if (dom.projectCommercialInput?.checked) {
+    if (!getCurrentUser()) {
+      pendingCommercialProject = payload;
+      dom.projectDialog.close();
+      openAccountCenter();
+      setAccountMessage("开启商业模式需要先登录。登录完成后会创建多人协作时间轴。", "muted");
+      window.setTimeout(() => dom.accountEmailInput?.focus(), 80);
+      return;
+    }
+    await createCommercialWorkspaceFromProject(payload);
+    return;
+  }
 
   rememberUndo();
   const completedDate = state.selectedDate || todayISO();
@@ -5093,45 +8169,94 @@ function handleProjectSubmit(event) {
   saveAndRender();
 }
 
-function deleteCurrentProject() {
+async function deleteCurrentProject() {
   const id = dom.projectIdInput.value;
   if (!id) return;
   if (!window.confirm(text("confirmDeleteProject"))) return;
+  if (projectDialogContext.scope === "collab") {
+    await deleteCollaborationProject(projectDialogContext.workspaceId, id);
+    return;
+  }
   rememberUndo();
   state.projects = state.projects.filter((project) => project.id !== id);
   dom.projectDialog.close();
   saveAndRender();
 }
 
-function openTaskDialog(taskId = "", projectId = "") {
-  const found = taskId ? findTask(taskId) : null;
-  if (!state.projects.length) {
-    openProjectDialog();
+function openTaskDialog(taskId = "", projectId = "", context = {}) {
+  if (!context.draft) pendingTaskDraft = null;
+  taskDialogContext = {
+    scope: context.scope === "collab" ? "collab" : "private",
+    workspaceId: context.workspaceId || "",
+  };
+  const isCollaborationTask = taskDialogContext.scope === "collab";
+  const workspace = isCollaborationTask ? getCollaborationWorkspace(taskDialogContext.workspaceId) : null;
+  const projects = isCollaborationTask ? getCollaborationProjects(workspace) : state.projects;
+  const found = taskId
+    ? (isCollaborationTask ? findCollabTask(taskDialogContext.workspaceId, taskId) : findTask(taskId))
+    : null;
+  if (!projects.length) {
+    openProjectDialog("", isCollaborationTask ? { scope: "collab", workspaceId: taskDialogContext.workspaceId } : {});
     return;
   }
-  const project = found?.project || findProject(projectId) || state.projects[0];
+  const project = found?.project || projects.find((item) => item.id === projectId) || projects[0];
   const task = found?.task;
+  const draftTask = !task ? context.draft || null : null;
+  const formTask = task || draftTask;
   const isTodayAdd = !task && getActiveViewId() === "todaySection";
-  dom.taskDialogTitle.textContent = task ? text("taskDialogEdit") : text(isTodayAdd ? "taskDialogTodayNew" : "taskDialogNew");
-  renderTaskProjectOptions();
+  const readOnly = isCollaborationTask && task && (
+    !canEditCollaborationTask(taskDialogContext.workspaceId, task)
+    || (context.dailyPlan && !canPlanCollaborationDailyTask(task))
+  );
+  dom.taskDialogTitle.textContent = task
+    ? (isCollaborationTask ? (readOnly ? "协作任务详情" : "编辑协作任务") : text("taskDialogEdit"))
+    : (draftTask ? "修改名称后新建任务" : (isCollaborationTask ? "新建协作任务" : text(isTodayAdd ? "taskDialogTodayNew" : "taskDialogNew")));
+  renderTaskProjectOptions(projects);
   dom.taskIdInput.value = task?.id || "";
-  dom.taskTitleInput.value = task?.title || "";
+  dom.taskTitleInput.value = formTask?.title || "";
   dom.taskProjectInput.value = project.id;
-  dom.taskDateInput.value = task?.date || state.selectedDate;
-  dom.taskSpanInput.value = task?.spanDays || 1;
-  dom.taskStartInput.value = task?.startTime || "09:00";
-  dom.taskDurationInput.value = task?.duration || 1;
-  dom.taskStatusInput.value = task?.status || "todo";
-  dom.taskColorInput.value = task?.color || project.color || nextColor();
-  dom.taskDetailInput.value = task?.detail || "";
+  dom.taskDateInput.value = formTask?.date || state.selectedDate;
+  dom.taskSpanInput.value = formTask?.spanDays || 1;
+  dom.taskStartInput.value = formTask?.startTime || "09:00";
+  dom.taskDurationInput.value = formTask?.duration || 1;
+  dom.taskColorInput.value = formTask?.color || project.color || nextColor();
+  dom.taskDetailInput.value = formTask?.detail || "";
+  if (dom.taskAssigneeField && dom.taskAssigneeInput) {
+    dom.taskAssigneeField.hidden = !isCollaborationTask;
+    if (isCollaborationTask) {
+      const members = getCollaborationMemberOptions(workspace);
+      dom.taskAssigneeInput.innerHTML = `<option value="">未分配</option>${members.map((member) => `<option value="${member.id}" data-member-name="${escapeHtml(member.name)}">${escapeHtml(member.name)}</option>`).join("")}`;
+      dom.taskAssigneeInput.value = formTask?.assigneeId || "";
+    }
+  }
   dom.deleteTaskButton.hidden = !task;
+  if (dom.taskPermissionNotice) dom.taskPermissionNotice.hidden = !readOnly;
+  dom.taskDialog.querySelectorAll("input, select, textarea").forEach((field) => { if (field !== dom.taskIdInput) field.disabled = Boolean(readOnly); });
+  dom.taskDialog.querySelector("button[type='submit']").hidden = Boolean(readOnly);
+  if (readOnly) dom.deleteTaskButton.hidden = true;
+  if (dom.taskCollaborationHistory) {
+    dom.taskCollaborationHistory.hidden = !isCollaborationTask || !task;
+    if (isCollaborationTask && task) {
+      renderCollaborationEditHistory(dom.taskCollaborationHistoryList, taskDialogContext.workspaceId);
+      dom.taskCollaborationHistoryList.hidden = true;
+      dom.taskCollaborationHistory.querySelector(".collaboration-history-toggle")?.setAttribute("aria-expanded", "false");
+      dom.taskCollaborationHistory.querySelector(".collaboration-history-toggle")?.classList.remove("is-open");
+    }
+  }
   dom.taskDialog.showModal();
 }
 
-function handleTaskSubmit(event) {
+async function handleTaskSubmit(event) {
   event.preventDefault();
   const id = dom.taskIdInput.value;
-  const targetProject = findProject(dom.taskProjectInput.value);
+  const isCollaborationTask = taskDialogContext.scope === "collab";
+  const found = id
+    ? (isCollaborationTask ? findCollabTask(taskDialogContext.workspaceId, id) : findTask(id))
+    : null;
+  const projects = isCollaborationTask
+    ? getCollaborationProjects(getCollaborationWorkspace(taskDialogContext.workspaceId))
+    : state.projects;
+  const targetProject = projects.find((project) => project.id === dom.taskProjectInput.value);
   if (!targetProject) return;
   const payload = {
     title: dom.taskTitleInput.value.trim(),
@@ -5139,13 +8264,41 @@ function handleTaskSubmit(event) {
     spanDays: clamp(Number(dom.taskSpanInput.value) || 1, 1, 365),
     startTime: dom.taskStartInput.value,
     duration: Math.max(0.25, Number(dom.taskDurationInput.value) || 1),
-    status: dom.taskStatusInput.value,
+    status: found?.task?.status || "todo",
     color: dom.taskColorInput.value,
-    reminder: normalizeTaskReminder(id ? findTask(id)?.task?.reminder : {}),
+    reminder: normalizeTaskReminder(found?.task?.reminder || {}),
     detail: dom.taskDetailInput.value.trim(),
+    dailyOnly: Boolean(found?.task?.dailyOnly && dom.taskTitleInput.value.trim() === found.task.title),
+    sourceTaskId: found?.task?.dailyOnly && dom.taskTitleInput.value.trim() === found.task.title
+      ? String(found.task.sourceTaskId || "")
+      : "",
   };
+  if (isCollaborationTask) {
+    const selectedMember = dom.taskAssigneeInput?.selectedOptions?.[0];
+    payload.assigneeId = String(dom.taskAssigneeInput?.value || "");
+    payload.assigneeName = payload.assigneeId ? String(selectedMember?.dataset.memberName || selectedMember?.textContent || "协作成员").trim() : "";
+  }
   if (!payload.title) return;
 
+  const draft = !id ? pendingTaskDraft : null;
+  if (draft && payload.title === String(draft.originalTitle || "").trim()) {
+    pendingTaskDraft = null;
+    dom.taskDialog.close();
+    if (isCollaborationTask) setCollaborationMessage("任务名称未修改，未创建新的小任务。", "success");
+    else alert("任务名称未修改，未创建新的小任务。");
+    return;
+  }
+
+  if (isCollaborationTask) {
+    await saveCollaborationTask(taskDialogContext.workspaceId, id, targetProject.id, payload, draft);
+    pendingTaskDraft = null;
+    return;
+  }
+
+  const splitSource = !id && (draft?.kind === "split-days" || draft?.kind === "split-time")
+    ? findTask(draft.sourceTaskId)?.task
+    : null;
+  if (!id && draft && !splitSource && draft.kind !== "paste") return;
   rememberUndo();
   let savedTask = null;
   if (id) {
@@ -5158,7 +8311,12 @@ function handleTaskSubmit(event) {
   } else {
     savedTask = { id: makeId("task"), ...payload };
     targetProject.tasks.push(savedTask);
+    if (draft?.kind === "split-days" || draft?.kind === "split-time") {
+      if (draft.kind === "split-days") splitSource.spanDays = draft.firstSpan;
+      if (draft.kind === "split-time") splitSource.duration = draft.firstMinutes / 60;
+    }
   }
+  pendingTaskDraft = null;
   dom.taskDialog.close();
   saveAndRender();
   if (savedTask) {
@@ -5249,11 +8407,17 @@ function renderDailyReminderEntry() {
     .replace("{sound}", soundText);
 }
 
-function deleteCurrentTask() {
+async function deleteCurrentTask() {
   const id = dom.taskIdInput.value;
-  const found = findTask(id);
+  const found = taskDialogContext.scope === "collab"
+    ? findCollabTask(taskDialogContext.workspaceId, id)
+    : findTask(id);
   if (!found) return;
   if (!window.confirm(text("confirmDeleteTask"))) return;
+  if (taskDialogContext.scope === "collab") {
+    await deleteCollaborationTask(taskDialogContext.workspaceId, id);
+    return;
+  }
   rememberUndo();
   found.project.tasks = found.project.tasks.filter((task) => task.id !== id);
   dom.taskDialog.close();
@@ -5277,29 +8441,47 @@ function startDrag(event, target) {
   const dragType = target.dataset.dragType;
   const projectId = target.dataset.projectId;
   const taskId = target.dataset.taskId;
-  const project = projectId ? findProject(projectId) : null;
-  const foundTask = taskId ? findTask(taskId) : null;
+  const workspaceId = String(target.dataset.workspaceId || "");
+  const workspace = workspaceId ? getCollaborationWorkspace(workspaceId) : null;
+  if (workspaceId && !workspace) return;
+  const scope = workspaceId ? "collab" : "private";
+  const project = projectId
+    ? (scope === "collab" ? findCollabProject(workspaceId, projectId) : findProject(projectId))
+    : null;
+  const foundTask = taskId
+    ? (scope === "collab" ? findCollabTask(workspaceId, taskId) : findTask(taskId))
+    : null;
+  if (project?.completed || foundTask?.task?.status === "done") return;
+  if (foundTask?.task && scope === "collab" && !canEditCollaborationTask(workspaceId, foundTask.task)) return;
+  if (foundTask?.task && scope === "collab" && target.closest(".day-task-block") && !canPlanCollaborationDailyTask(foundTask.task)) return;
+  const baseDragState = {
+    scope,
+    workspaceId,
+    collaborationSnapshot: scope === "collab" ? cloneCollaborationTimeline(workspace.timeline) : null,
+  };
 
   if (dragType?.startsWith("project") && project) {
     dragState = {
+      ...baseDragState,
       type: dragType,
       startX: event.clientX,
       projectId,
       startDate: project.start,
       duration: project.duration,
-      undoSnapshot: JSON.stringify(state),
+      undoSnapshot: scope === "private" ? JSON.stringify(state) : "",
       moved: false,
     };
   }
 
   if ((dragType === "task-date" || dragType === "task-left" || dragType === "task-right") && foundTask) {
     dragState = {
+      ...baseDragState,
       type: dragType,
       startX: event.clientX,
       taskId,
       date: foundTask.task.date,
       spanDays: Math.max(1, Number(foundTask.task.spanDays) || 1),
-      undoSnapshot: JSON.stringify(state),
+      undoSnapshot: scope === "private" ? JSON.stringify(state) : "",
       moved: false,
     };
   }
@@ -5308,12 +8490,13 @@ function startDrag(event, target) {
     const start = timeToMinutes(foundTask.task.startTime);
     const block = target.closest(".day-task-block");
     dragState = {
+      ...baseDragState,
       type: dragType,
       startX: event.clientX,
       taskId,
       startMinutes: start,
       durationMinutes: foundTask.task.duration * 60,
-      undoSnapshot: JSON.stringify(state),
+      undoSnapshot: scope === "private" ? JSON.stringify(state) : "",
       block,
       captureTarget: target,
       pointerId: event.pointerId,
@@ -5334,14 +8517,50 @@ function startDrag(event, target) {
   }
 }
 
+function getDragProject(drag) {
+  if (!drag?.projectId) return null;
+  return drag.scope === "collab"
+    ? findCollabProject(drag.workspaceId, drag.projectId)
+    : findProject(drag.projectId);
+}
+
+function getDragTask(drag) {
+  if (!drag?.taskId) return null;
+  return drag.scope === "collab"
+    ? findCollabTask(drag.workspaceId, drag.taskId)
+    : findTask(drag.taskId);
+}
+
+function renderDraggedTimeline(drag, refreshPrivateTaskViews = false) {
+  if (drag.scope === "collab") {
+    renderCollaborationTimeline();
+    return;
+  }
+  renderTimeline();
+  if (refreshPrivateTaskViews) {
+    renderSummary();
+    renderDayBoard();
+  }
+}
+
 function handlePointerMove(event) {
+  if (workspaceMemberPressStart
+    && (Math.abs(event.clientX - workspaceMemberPressStart.x) > 8
+      || Math.abs(event.clientY - workspaceMemberPressStart.y) > 8)) {
+    cancelWorkspaceMemberLongPress();
+  }
+  if (collaborationWorkspacePressStart
+    && (Math.abs(event.clientX - collaborationWorkspacePressStart.x) > 8
+      || Math.abs(event.clientY - collaborationWorkspacePressStart.y) > 8)) {
+    cancelCollaborationWorkspaceLongPress();
+  }
   if (longPressStart && (Math.abs(event.clientX - longPressStart.x) > 8 || Math.abs(event.clientY - longPressStart.y) > 8)) {
     cancelLongPress();
   }
   if (!dragState) return;
 
   if (dragState.type === "project") {
-    const project = findProject(dragState.projectId);
+    const project = getDragProject(dragState);
     if (!project) return;
     const deltaDays = Math.round((event.clientX - dragState.startX) / DAY_WIDTH);
     if (!deltaDays) return;
@@ -5349,11 +8568,11 @@ function handlePointerMove(event) {
     const newOffset = clamp(diffDays(state.settings.rangeStart, dragState.startDate) + deltaDays, 0, Math.max(0, maxStart));
     project.start = addDays(state.settings.rangeStart, newOffset);
     dragState.moved = true;
-    renderTimeline();
+    renderDraggedTimeline(dragState);
   }
 
   if (dragState.type === "project-left" || dragState.type === "project-right") {
-    const project = findProject(dragState.projectId);
+    const project = getDragProject(dragState);
     if (!project) return;
     const deltaDays = Math.round((event.clientX - dragState.startX) / DAY_WIDTH);
     if (!deltaDays) return;
@@ -5368,26 +8587,24 @@ function handlePointerMove(event) {
       project.duration = newDuration;
     }
     dragState.moved = true;
-    renderTimeline();
+    renderDraggedTimeline(dragState);
   }
 
   if (dragState.type === "task-date") {
-    const found = findTask(dragState.taskId);
+    const found = getDragTask(dragState);
     if (!found) return;
     const deltaDays = Math.round((event.clientX - dragState.startX) / DAY_WIDTH);
     if (!deltaDays) return;
     const maxStart = Math.max(0, state.settings.rangeDays - dragState.spanDays);
     const newOffset = clamp(diffDays(state.settings.rangeStart, dragState.date) + deltaDays, 0, maxStart);
     found.task.date = addDays(state.settings.rangeStart, newOffset);
-    state.selectedDate = found.task.date;
+    if (dragState.scope === "private") state.selectedDate = found.task.date;
     dragState.moved = true;
-    renderTimeline();
-    renderSummary();
-    renderDayBoard();
+    renderDraggedTimeline(dragState, true);
   }
 
   if (dragState.type === "task-left" || dragState.type === "task-right") {
-    const found = findTask(dragState.taskId);
+    const found = getDragTask(dragState);
     if (!found) return;
     const deltaDays = Math.round((event.clientX - dragState.startX) / DAY_WIDTH);
     if (!deltaDays) return;
@@ -5397,19 +8614,17 @@ function handlePointerMove(event) {
       const endOffset = startOffset + dragState.spanDays;
       found.task.date = addDays(state.settings.rangeStart, newOffset);
       found.task.spanDays = Math.max(1, endOffset - newOffset);
-      state.selectedDate = found.task.date;
+      if (dragState.scope === "private") state.selectedDate = found.task.date;
     } else {
       const maxSpan = Math.max(1, state.settings.rangeDays - diffDays(state.settings.rangeStart, found.task.date));
       found.task.spanDays = clamp(dragState.spanDays + deltaDays, 1, maxSpan);
     }
     dragState.moved = true;
-    renderTimeline();
-    renderSummary();
-    renderDayBoard();
+    renderDraggedTimeline(dragState, true);
   }
 
   if (dragState.type === "task-time" || dragState.type === "task-start" || dragState.type === "task-duration") {
-    const found = findTask(dragState.taskId);
+    const found = getDragTask(dragState);
     if (!found) return;
     const deltaMinutes = roundTo((event.clientX - dragState.startX) / DAY_HOUR_WIDTH * 60, 15);
     if (!deltaMinutes) return;
@@ -5435,11 +8650,12 @@ function handlePointerMove(event) {
 function stopDrag() {
   cancelLongPress();
   if (!dragState) return;
-  const wasMoved = dragState.moved;
-  const undoSnapshot = dragState.undoSnapshot;
-  if (dragState.captureTarget?.releasePointerCapture && dragState.pointerId !== undefined) {
+  const completedDrag = dragState;
+  const wasMoved = completedDrag.moved;
+  const undoSnapshot = completedDrag.undoSnapshot;
+  if (completedDrag.captureTarget?.releasePointerCapture && completedDrag.pointerId !== undefined) {
     try {
-      dragState.captureTarget.releasePointerCapture(dragState.pointerId);
+      completedDrag.captureTarget.releasePointerCapture(completedDrag.pointerId);
     } catch (error) {
       // Ignore capture release errors from elements that were redrawn during drag.
     }
@@ -5447,6 +8663,17 @@ function stopDrag() {
   dragState = null;
   if (wasMoved) {
     suppressNextClick = true;
+    if (completedDrag.scope === "collab") {
+      const workspace = getCollaborationWorkspace(completedDrag.workspaceId);
+      const nextTimeline = workspace ? cloneCollaborationTimeline(workspace.timeline) : null;
+      if (!workspace || !nextTimeline) return;
+      void persistCollaborationTimeline(completedDrag.workspaceId, nextTimeline).then((saved) => {
+        if (saved) return;
+        workspace.timeline = completedDrag.collaborationSnapshot;
+        renderCollaborationTimeline();
+      });
+      return;
+    }
     pushUndoSnapshot(undoSnapshot);
     saveAndRender();
     scheduleNativeReminderSync();
@@ -5829,6 +9056,7 @@ function applyStaticTranslations() {
   if (dom.journalTagsInput) dom.journalTagsInput.placeholder = localizedPair("工作, 健康, 灵感", "work, health, idea");
   if (dom.journalBodyInput) dom.journalBodyInput.placeholder = localizedPair("写下今天想留下的事", "Write what you want to remember");
   if (dom.journalSearchInput) dom.journalSearchInput.placeholder = localizedPair("搜索标题、正文或标签", "Search title, body, or tags");
+  if (dom.voiceTaskTranscriptInput) dom.voiceTaskTranscriptInput.placeholder = text("voiceTaskHint");
   dom.scoreRing.setAttribute("aria-label", text("dailyScore"));
   dom.dateStrip.setAttribute("aria-label", text("dateList"));
   dom.timeline.setAttribute("aria-label", text("projectTimeline"));

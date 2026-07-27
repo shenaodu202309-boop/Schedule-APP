@@ -4,12 +4,26 @@ const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
 const LIFE_COMPANY_STORAGE_KEY = "life-game-company-v1";
 const RELATIONSHIP_CARDS_KEY = "life-game-relationship-cards-v1";
 const COMIC_DIARY_KEY = "life-game-comic-diary-v1";
+const OOTD_STORAGE_KEY = "life-game-ootd-v1";
 const DAILY_REMINDER_STORAGE_KEY = "private-schedule-daily-reminder-v1";
+const VOICE_TASK_SYNC_KEY = "private-schedule-voice-game-sync-v1";
+const COLLABORATION_GAME_SYNC_KEY = "private-schedule-collaboration-game-sync-v1";
+const COLLABORATION_GAME_COMPLETION_KEY = "private-schedule-collaboration-game-completion-v1";
+const COLLABORATION_GAME_UPDATE_KEY = "private-schedule-collaboration-game-update-v1";
 const SUPABASE_CONFIG = {
   url: "https://hduussoaxnpqrzmwbqtj.supabase.co",
   anonKey: "sb_publishable_kkFeRKdaf2ReNHaJSJIZDg_SkG8wPgL",
 };
 const AUTH_REDIRECT_URL = "https://shenaodu202309-boop.github.io/Schedule-APP/";
+const AI_PLUGIN_TYPES = {
+  OOTD_STYLE_CARD: "ootd-style-card",
+  SKILL_MARKET_DAILY_SCAN: "skill-market-daily-scan",
+  SKILL_STOCK_SUGGESTION: "skill-stock-suggestion",
+  SKILL_STOCK_EXPLAIN: "skill-stock-explain",
+  RELATIONSHIP_ANALYSIS: "relationship-analysis",
+  TASK_PLANNING: "task-planning",
+  INVOICE_SUMMARY: "invoice-summary",
+};
 const BATTLE_PROJECT_ID = "project-graduation-game-main-battle";
 const BATTLE_PROJECT_SOURCE = "graduation-game-v2-main-battle";
 const BATTLE_TASK_SOURCE = "graduation-game-v2-planned-task";
@@ -254,27 +268,6 @@ const GAME_I18N = {
   merit: { zh: "功德", en: "Merit" },
   calendarChecklist: { zh: "日历清单", en: "Calendar Checklist" },
   dailyChecklist: { zh: "当天清单", en: "Daily Checklist" },
-  comicDiary: { zh: "漫画日记", en: "Comic Diary" },
-  comicDiarySub: { zh: "把今天变成一页小漫画", en: "Turn today into a one-page comic" },
-  selectCharacter: { zh: "选择角色", en: "Choose Character" },
-  comicPanelCount: { zh: "漫画格数", en: "Panels" },
-  fourPanels: { zh: "4 格", en: "4 panels" },
-  sixPanels: { zh: "6 格", en: "6 panels" },
-  moodStyle: { zh: "情绪风格", en: "Mood Style" },
-  moodCute: { zh: "可爱", en: "Cute" },
-  moodFunny: { zh: "搞笑", en: "Funny" },
-  moodSad: { zh: "低落", en: "Sad" },
-  moodHealing: { zh: "治愈", en: "Healing" },
-  moodAngry: { zh: "生气", en: "Angry" },
-  moodStrange: { zh: "奇怪", en: "Strange" },
-  todayStory: { zh: "今天发生的事情", en: "What happened today" },
-  generateComic: { zh: "生成漫画", en: "Generate Comic" },
-  editText: { zh: "编辑文字", en: "Edit Text" },
-  clear: { zh: "清空", en: "Clear" },
-  saveToDiary: { zh: "保存到日记本", en: "Save to Diary" },
-  regenerate: { zh: "重新生成", en: "Regenerate" },
-  exportPng: { zh: "导出 PNG", en: "Export PNG" },
-  saveAndClose: { zh: "保存并关闭", en: "Save and Close" },
   allTodayTasksRemind: { zh: "当天规划任务都提醒", en: "Remind me for today's planned tasks" },
   reminderSharedSummary: { zh: "这里和日程 App 使用同一套设置。开启后，今天的日程任务和游戏同步任务都会提醒。", en: "This uses the same settings as the schedule app. When on, today's schedule tasks and synced game tasks will remind you." },
   todayReminder: { zh: "今日提醒", en: "Today's Reminder" },
@@ -312,33 +305,32 @@ const GAME_I18N = {
   noLedger: { zh: "本月还没有现实记账。这里只做手动记录，不连接真实银行卡。", en: "No real-life ledger records this month. This is manual only and does not connect to real bank cards." },
   invoiceCount: { zh: "{count} 张", en: "{count} saved" },
   noInvoices: { zh: "还没有保存过发票。回到首页按发票机，就可以把选中日期打印成发票。", en: "No saved invoices yet. Use the printer on the home page to print the selected date." },
-};
-
-const COMIC_EXPRESSION_MAP = {
-  cute: "excited",
-  funny: "celebrate",
-  sad: "sad",
-  healing: "calm",
-  angry: "sad",
-  strange: "crying",
-};
-
-const COMIC_MOOD_LABELS = {
-  cute: "可爱",
-  funny: "搞笑",
-  sad: "低落",
-  healing: "治愈",
-  angry: "生气",
-  strange: "奇怪",
-};
-
-const COMIC_BACKGROUND_MAP = {
-  room: "房间",
-  desk: "书桌",
-  night: "夜晚",
-  sparkle: "星星",
-  street: "街道",
-  default: "默认背景",
+  ootdToday: { zh: "今日穿搭", en: "Today's Outfit" },
+  ootdCaptureToday: { zh: "拍摄今日穿搭", en: "Capture Today's Outfit" },
+  ootdAiTitle: { zh: "今日穿搭 AI", en: "Outfit AI" },
+  ootdSafetyCopy: { zh: "评分只分析服装配色、层次、完整度和场景适配，不评价身材或长相。", en: "Scores only cover color, layering, completeness, and occasion fit, never your body or appearance." },
+  ootdAddPhoto: { zh: "添加一张全身或半身穿搭照", en: "Add a full-body or half-body outfit photo" },
+  ootdPhotoHint: { zh: "尽量保证光线清楚、衣服没有被大面积遮挡。", en: "Use clear lighting and keep most of the outfit visible." },
+  ootdCapture: { zh: "拍摄穿搭", en: "Take Photo" },
+  ootdChoosePhoto: { zh: "从相册选择", en: "Choose Photo" },
+  ootdOccasion: { zh: "今天的场景", en: "Today's Occasion" },
+  ootdOccasionDaily: { zh: "日常出门", en: "Everyday" },
+  ootdOccasionWork: { zh: "上班 / 上学", en: "Work / School" },
+  ootdOccasionDate: { zh: "约会 / 聚会", en: "Date / Social" },
+  ootdOccasionSport: { zh: "运动 / 户外", en: "Sport / Outdoors" },
+  ootdOccasionFormal: { zh: "正式场合", en: "Formal" },
+  ootdCartoonStyle: { zh: "卡通画风", en: "Cartoon Style" },
+  ootdStyleClean: { zh: "清爽日常卡通", en: "Clean Everyday Cartoon" },
+  ootdStyleHanddrawn: { zh: "手绘彩铅", en: "Colored Pencil" },
+  ootdStyleComic: { zh: "生活漫画", en: "Life Comic" },
+  ootdConsent: { zh: "我同意将这张照片发送给 AI 完成本次分析；原照片不会保存到 App。", en: "I agree to send this photo to AI for this analysis. The original photo is not saved in the app." },
+  ootdAnalyze: { zh: "AI 评分并生成卡通形象", en: "Score & Create Cartoon" },
+  ootdScoreTitle: { zh: "今日穿搭评分", en: "Today's Outfit Score" },
+  ootdStrengths: { zh: "穿搭亮点", en: "What Works" },
+  ootdSuggestions: { zh: "下次可以试试", en: "Try Next Time" },
+  ootdDelete: { zh: "删除当天记录", en: "Delete Today" },
+  ootdExport: { zh: "导出图片", en: "Export Image" },
+  ootdSave: { zh: "保存当天卡片", en: "Save Today's Card" },
 };
 
 const ledgerCategories = [
@@ -452,7 +444,9 @@ let pendingFinancePasswordAction = "";
 let diaryViewDate = parseDate(selectedDate);
 let diarySelectedDate = selectedDate;
 let currentInvoiceDraft = null;
-let currentComicDiaryDraft = null;
+let currentOotdPhotoDataUrl = "";
+let currentOotdResult = null;
+let ootdAnalysisRunning = false;
 let invoiceAnimationTimer = null;
 let invoiceBookInteraction = null;
 let invoiceBookLongPressTimer = null;
@@ -467,6 +461,9 @@ function bootApp() {
   cacheDom();
   state = loadState();
   currentGameLanguage = getSharedLanguage();
+  consumeVoiceScheduleTasks();
+  consumeCollaborationScheduleTasks();
+  consumeCollaborationGameCompletions();
   ensureDay(selectedDate);
   ensureWeek(selectedDate);
   bindEvents();
@@ -521,7 +518,6 @@ function cacheDom() {
     "accountSignUpButton",
     "accountSignInButton",
     "accountSignOutButton",
-    "reportCharacterSprite",
     "financeActiveBadge",
     "virtualCardBalance",
     "virtualCardAsset",
@@ -597,18 +593,28 @@ function cacheDom() {
     "invoiceMaterialButton",
     "invoiceBillTypeButton",
     "invoiceDiyImageInput",
-    "reportInput",
-    "diarySelectedDateLabel",
-    "diaryMonthLabel",
-    "diaryCalendarGrid",
-    "diaryChecklist",
-    "comicDiaryPanel",
-    "comicCharacterSelect",
-    "comicPanelCountInput",
-    "comicMoodStyleInput",
-    "comicSourceInput",
-    "comicDiaryPreview",
-    "comicDiarySavedList",
+    "ootdEntryStatus",
+    "ootdEntryPreview",
+    "ootdDialog",
+    "ootdDateLabel",
+    "ootdPhotoPreview",
+    "ootdPhotoPlaceholder",
+    "ootdCameraInput",
+    "ootdGalleryInput",
+    "ootdCaptureButton",
+    "ootdGalleryButton",
+    "ootdOccasionInput",
+    "ootdCartoonStyleInput",
+    "ootdConsentInput",
+    "ootdAnalyzeButton",
+    "ootdStatus",
+    "ootdResult",
+    "ootdOverallScore",
+    "ootdScoreGrid",
+    "ootdStrengths",
+    "ootdSuggestions",
+    "ootdCartoonImage",
+    "ootdSummary",
     "ledgerForm",
     "ledgerCategoryInput",
     "ledgerAmountInput",
@@ -630,7 +636,6 @@ function cacheDom() {
     "blessingDialog",
     "blessingWoodenFish",
     "blessingMeritValue",
-    "diaryDialog",
     "balanceAdjustDialog",
     "balanceAdjustCurrent",
     "balanceAdjustInput",
@@ -804,21 +809,14 @@ function bindEvents() {
     if (action === "save-balance-adjust") saveBalanceAdjust();
     if (action === "close-finance-password") closeFinancePasswordDialog();
     if (action === "submit-finance-password") submitFinancePassword();
-    if (action === "open-diary") openDiaryDialog();
-    if (action === "close-diary") closeDiaryDialog();
-    if (action === "select-diary-date") selectDiaryDate(button.dataset.date);
-    if (action === "diary-prev-month") shiftDiaryMonth(-1);
-    if (action === "diary-next-month") shiftDiaryMonth(1);
-    if (action === "add-diary-check-item") addDiaryCheckItem();
-    if (action === "toggle-diary-check-item") toggleDiaryCheckItem(button.dataset.id);
-    if (action === "delete-diary-check-item") deleteDiaryCheckItem(button.dataset.id);
-    if (action === "open-comic-diary") toggleComicDiaryPanel();
-    if (action === "generate-comic-diary") generateComicDiary();
-    if (action === "focus-comic-text") dom.comicSourceInput?.focus();
-    if (action === "clear-comic-diary") clearComicDiaryDraft();
-    if (action === "save-comic-diary") saveComicDiary();
-    if (action === "export-comic-diary-png") exportComicDiaryAsPng();
-    if (action === "load-comic-diary") loadComicDiaryDraft(button.dataset.id);
+    if (action === "open-ootd") openOotdDialog();
+    if (action === "close-ootd") closeOotdDialog();
+    if (action === "capture-ootd") dom.ootdCameraInput?.click();
+    if (action === "choose-ootd-photo") dom.ootdGalleryInput?.click();
+    if (action === "analyze-ootd") void analyzeCurrentOotd();
+    if (action === "save-ootd-card") void saveCurrentOotdCard();
+    if (action === "export-ootd-cartoon") exportCurrentOotdCartoon();
+    if (action === "delete-ootd-card") deleteTodayOotdCard();
     if (action === "settle-day") settleDay();
     if (action === "save-card-edit") saveCardEdit();
     if (action === "close-card-edit") closeCardEdit();
@@ -869,17 +867,6 @@ function bindEvents() {
     });
   });
 
-  dom.reportInput?.addEventListener("input", () => {
-    const day = ensureDay(diarySelectedDate || selectedDate);
-    day.report = dom.reportInput.value;
-    saveState();
-    dom.saveStatus.textContent = gameText("savedAutomatically");
-  });
-  dom.diaryChecklist?.addEventListener("input", (event) => {
-    const input = event.target.closest("[data-diary-check-text]");
-    if (!input) return;
-    updateDiaryCheckItem(input.dataset.id, input.value);
-  });
   dom.financePasswordInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -906,6 +893,8 @@ function bindEvents() {
   dom.invoicePrintWeekInput?.addEventListener("change", updateInvoicePrintTarget);
   dom.invoicePrintMonthInput?.addEventListener("change", updateInvoicePrintTarget);
   dom.invoiceDiyImageInput?.addEventListener("change", importInvoiceDiyImage);
+  dom.ootdCameraInput?.addEventListener("change", handleOotdPhotoSelection);
+  dom.ootdGalleryInput?.addEventListener("change", handleOotdPhotoSelection);
   dom.gameDailyReminderSoundInput?.addEventListener("change", previewGameDailyReminderSound);
   dom.onboardingForm?.addEventListener("submit", completeOnboarding);
   dom.onboardingCompanyTypeInput?.addEventListener("change", updateOnboardingDefaults);
@@ -1442,6 +1431,60 @@ function renderAccountCenter() {
   updateAuthUI(currentAuthUser);
 }
 
+async function callAIPlugin(taskType, payload = {}) {
+  if (!supabaseClient) {
+    await initSupabaseClient();
+  }
+  if (!supabaseClient) {
+    throw new Error("Supabase 尚未初始化");
+  }
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) throw sessionError;
+  const session = sessionData?.session;
+  if (!session) {
+    throw new Error("请先登录账号");
+  }
+  const { data, error } = await supabaseClient.functions.invoke("ai-plugin-proxy", {
+    body: { taskType, payload },
+  });
+  if (error) {
+    console.error("AI 插槽调用失败：", error);
+    const response = error.context;
+    if (response && typeof response.clone === "function") {
+      let body = null;
+      try {
+        body = await response.clone().json();
+      } catch {}
+      if (body?.error) throw new Error(String(body.error));
+    }
+    throw error;
+  }
+  if (data?.ok === false && data?.error) {
+    throw new Error(data.error);
+  }
+  return data;
+}
+
+function aiPluginErrorMessage(error) {
+  const message = String(error?.message || error?.error_description || error || "");
+  if (message.includes("请先登录账号") || message.toLowerCase().includes("jwt")) {
+    return "请先登录账号后再使用 AI 插槽。";
+  }
+  if (message.includes("FunctionsFetchError") || message.includes("not found") || message.includes("404")) {
+    return "AI 插槽后端尚未部署。";
+  }
+  if (message.includes("OPENAI_API_KEY") || message.includes("AI key")) {
+    return "AI key 尚未配置，请先在 Supabase Edge Function Secrets 中设置 OPENAI_API_KEY。";
+  }
+  if (message.includes("AI 返回格式不正确")) {
+    return "AI 返回格式不正确，请重新生成。";
+  }
+  if (message && !message.includes("[object Object]")) {
+    return message;
+  }
+  return "AI 生成失败，请稍后再试。";
+}
+
 function updateAuthUI(user = currentAuthUser) {
   currentAuthUser = user || null;
   const email = currentAuthUser?.email || "";
@@ -1874,7 +1917,9 @@ function taskCoinRewardForDuration(value) {
 }
 
 function normalizedMainTaskDuration(value) {
-  return Number(value) === 60 ? 60 : 120;
+  const duration = Number(value);
+  if (duration === 30 || duration === 60) return duration;
+  return Number.isFinite(duration) && duration > 0 ? clamp(Math.round(duration), 15, 24 * 60) : 120;
 }
 
 function normalizedSideTaskDuration(value) {
@@ -1890,6 +1935,18 @@ function normalizeCoinName(value) {
 }
 
 function handleSharedStorageChange(event) {
+  if (event.key === VOICE_TASK_SYNC_KEY) {
+    if (consumeVoiceScheduleTasks()) render();
+    return;
+  }
+  if (event.key === COLLABORATION_GAME_SYNC_KEY) {
+    if (consumeCollaborationScheduleTasks()) render();
+    return;
+  }
+  if (event.key === COLLABORATION_GAME_COMPLETION_KEY) {
+    if (consumeCollaborationGameCompletions()) render();
+    return;
+  }
   if (event.key === BASE_SCHEDULE_STORAGE_KEY) {
     const nextLanguage = getSharedLanguage();
     if (nextLanguage !== currentGameLanguage) {
@@ -1901,6 +1958,125 @@ function handleSharedStorageChange(event) {
   }
   if (![LIFE_COMPANY_STORAGE_KEY, SKILL_MARKET_STORAGE_KEY].includes(event.key)) return;
   render();
+}
+
+function consumeVoiceScheduleTasks() {
+  let entries = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(VOICE_TASK_SYNC_KEY) || "[]");
+    entries = Array.isArray(stored) ? stored : [];
+  } catch {
+    entries = [];
+  }
+  if (!entries.length) return false;
+  let changed = false;
+  entries.forEach((entry, index) => {
+    const rawId = String(entry?.id || "").replace(/[^\w-]/g, "");
+    const date = isDateKey(String(entry?.date || "")) ? String(entry.date) : selectedDate;
+    if (!rawId || (state.mainTasks || mainTasks).some((task) => task.id === rawId)) return;
+    const durationMinutes = normalizedMainTaskDuration(entry?.durationMinutes);
+    const task = {
+      id: rawId,
+      title: cleanEditableText(entry?.title, `语音主线 ${index + 1}`, 36),
+      icon: "声",
+      art: defaultTaskIconFor("main", (state.mainTasks || mainTasks).length + index),
+      xp: 15,
+      durationMinutes,
+      isLifeMaintenance: false,
+      scheduledDate: date,
+    };
+    state.mainTasks = normalizeMainTasks([...(state.mainTasks || mainTasks), task]);
+    mainTasks = state.mainTasks;
+    state.editable = normalizeEditableState(state.editable);
+    const day = ensureDay(date);
+    day.planned.main[task.id] = true;
+    const start = clamp(Math.round(Number(entry?.startMinute) || 0), 0, Math.max(0, 24 * 60 - durationMinutes));
+    const row = Object.keys(day.schedule.main || {}).length;
+    day.schedule.main[task.id] = { start, top: row * 58 };
+    day.settled = false;
+    changed = true;
+  });
+  localStorage.removeItem(VOICE_TASK_SYNC_KEY);
+  if (changed) saveState();
+  return changed;
+}
+
+function consumeCollaborationScheduleTasks() {
+  let entries = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_SYNC_KEY) || "[]");
+    entries = Array.isArray(stored) ? stored : [];
+  } catch {
+    entries = [];
+  }
+  if (!entries.length) return false;
+  let changed = false;
+  entries.forEach((entry, index) => {
+    const id = String(entry?.id || "").replace(/[^\w-]/g, "");
+    const date = isDateKey(String(entry?.date || "")) ? String(entry.date) : selectedDate;
+    if (!id) return;
+    const durationMinutes = normalizedMainTaskDuration(entry?.durationMinutes);
+    const task = {
+      id,
+      title: cleanEditableText(entry?.title, `协作主线 ${index + 1}`, 36),
+      icon: "协",
+      art: defaultTaskIconFor("main", (state.mainTasks || mainTasks).length + index),
+      xp: 15,
+      durationMinutes,
+      isLifeMaintenance: false,
+      scheduledDate: date,
+    };
+    const nextTasks = [...(state.mainTasks || mainTasks)];
+    const existingIndex = nextTasks.findIndex((item) => item.id === id);
+    if (existingIndex >= 0) nextTasks[existingIndex] = { ...nextTasks[existingIndex], ...task };
+    else nextTasks.push(task);
+    state.mainTasks = normalizeMainTasks(nextTasks);
+    mainTasks = state.mainTasks;
+    state.editable = normalizeEditableState(state.editable);
+    const day = ensureDay(date);
+    day.planned.main[id] = true;
+    const start = clamp(Math.round(Number(entry?.startMinute) || 0), 0, Math.max(0, 24 * 60 - durationMinutes));
+    const row = Object.keys(day.schedule.main || {}).length;
+    day.schedule.main[id] = { start, top: Number(day.schedule.main[id]?.top ?? row * 58) };
+    day.settled = false;
+    changed = true;
+  });
+  localStorage.removeItem(COLLABORATION_GAME_SYNC_KEY);
+  if (changed) saveState();
+  return changed;
+}
+
+function consumeCollaborationGameCompletions() {
+  let entries = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_COMPLETION_KEY) || "[]");
+    entries = Array.isArray(stored) ? stored : [];
+  } catch {
+    entries = [];
+  }
+  if (!entries.length) return false;
+  let changed = false;
+  entries.forEach((entry) => {
+    const id = String(entry?.id || "").replace(/[^\w-]/g, "");
+    const date = isDateKey(String(entry?.date || "")) ? String(entry.date) : "";
+    const task = (state.mainTasks || mainTasks).find((item) => item.id === id);
+    if (!id || !date || !task) return;
+    const day = ensureDay(date);
+    const wasDone = Boolean(day.main[id]);
+    day.planned.main[id] = true;
+    day.main[id] = true;
+    day.settled = false;
+    if (!wasDone) {
+      const previousDate = selectedDate;
+      selectedDate = date;
+      awardCompanyEconomyForCompletedTask("main", id, task);
+      selectedDate = previousDate;
+    }
+    changed = true;
+  });
+  localStorage.removeItem(COLLABORATION_GAME_COMPLETION_KEY);
+  if (changed) saveState();
+  return changed;
 }
 
 function getLifeCompanyMainTasks() {
@@ -1926,7 +2102,10 @@ function getLifeCompanyMainTasks() {
 }
 
 function getVisibleMainTasks() {
-  return [...mainTasks, ...getLifeCompanyMainTasks()];
+  return [
+    ...mainTasks.filter((task) => !task.scheduledDate || task.scheduledDate === selectedDate),
+    ...getLifeCompanyMainTasks(),
+  ];
 }
 
 function setLifeCompanyTaskDoneFromMainTask(id, done) {
@@ -2202,7 +2381,7 @@ function openCardEdit(card) {
   if (dom.editCardDurationField) dom.editCardDurationField.hidden = !(group === "main" || group === "side");
   if (group === "main" && dom.editCardDurationInput) {
     Array.from(dom.editCardDurationInput.options).forEach((option) => {
-      option.hidden = option.value === "30";
+      option.hidden = false;
     });
     dom.editCardDurationInput.value = String(normalizedMainTaskDuration(item.durationMinutes));
   }
@@ -2349,7 +2528,7 @@ function closeMainTaskDialog() {
 }
 
 function saveNewMainTask() {
-  const durationMinutes = Number(dom.mainTaskDurationInput.value) === 60 ? 60 : 120;
+  const durationMinutes = normalizedMainTaskDuration(dom.mainTaskDurationInput.value);
   const art = validTaskIconId(dom.mainTaskArtInput?.value, defaultTaskIconFor("main", mainTasks.length));
   const task = {
     id: makeId("main"),
@@ -2655,6 +2834,9 @@ function syncGameTaskToBaseSchedule(type, id, shouldExist = true) {
         baseTask.reminder = defaultSyncedGameTaskReminder();
       }
       project.tasks.push(baseTask);
+      if (type === "main") {
+        publishCollaborationGameTaskUpdate(id, edited.title, selectedDate, start, task.durationMinutes);
+      }
     }
 
     localStorage.setItem(BASE_SCHEDULE_STORAGE_KEY, JSON.stringify(baseState));
@@ -2663,6 +2845,28 @@ function syncGameTaskToBaseSchedule(type, id, shouldExist = true) {
     console.warn("Failed to sync game task.", error);
     return false;
   }
+}
+
+function publishCollaborationGameTaskUpdate(gameTaskId, title, date, startMinute, durationMinutes) {
+  if (!String(gameTaskId || "").startsWith("collab-main-")) return;
+  let queue = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(COLLABORATION_GAME_UPDATE_KEY) || "[]");
+    queue = Array.isArray(stored) ? stored : [];
+  } catch {
+    queue = [];
+  }
+  const update = {
+    gameTaskId,
+    title: cleanEditableText(title, "协作任务", 60),
+    date: isDateKey(date) ? date : selectedDate,
+    startTime: minutesToClock(startMinute),
+    durationMinutes: normalizedMainTaskDuration(durationMinutes),
+    updatedAt: new Date().toISOString(),
+  };
+  queue = queue.filter((item) => item?.gameTaskId !== gameTaskId);
+  queue.push(update);
+  localStorage.setItem(COLLABORATION_GAME_UPDATE_KEY, JSON.stringify(queue.slice(-30)));
 }
 
 function defaultSyncedGameTaskReminder() {
@@ -2750,11 +2954,6 @@ function applyGameTranslations() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = gameText(element.dataset.i18n);
   });
-  if (dom.comicSourceInput) {
-    dom.comicSourceInput.placeholder = currentGameLanguage === "en"
-      ? "Write what happened today. The app will split it into comic panels."
-      : "写一段今天发生的事，系统会把它拆成漫画分镜。";
-  }
   if (dom.ledgerNoteInput) {
     dom.ledgerNoteInput.placeholder = currentGameLanguage === "en"
       ? "e.g. lunch / scholarship / art supplies"
@@ -3017,7 +3216,7 @@ function normalizeMainTasks(tasks) {
       const id = rawId.replace(/[^\w-]/g, "-") || `main-${index + 1}`;
       if (seen.has(id)) return null;
       seen.add(id);
-      const durationMinutes = Number(task?.durationMinutes) === 60 ? 60 : 120;
+      const durationMinutes = normalizedMainTaskDuration(task?.durationMinutes);
       return {
         id,
         title: cleanEditableText(task?.title, `主线任务 ${index + 1}`, 36),
@@ -3026,6 +3225,7 @@ function normalizeMainTasks(tasks) {
         xp: Math.max(1, Math.round(Number(task?.xp) || 15)),
         durationMinutes,
         isLifeMaintenance: Boolean(task?.isLifeMaintenance || task?.taskType === "life-maintenance"),
+        scheduledDate: isDateKey(task?.scheduledDate) ? task.scheduledDate : "",
       };
     })
     .filter(Boolean);
@@ -3919,6 +4119,7 @@ function render() {
   renderInvoiceStyleControls();
   renderReport(day);
   renderFinanceCenter();
+  renderOotdEntry();
   renderInvoiceBook();
   renderLedger();
   renderTaskProgressDialog();
@@ -7733,6 +7934,358 @@ function playWoodenFishSound() {
   window.setTimeout(() => audioContext.close?.(), 360);
 }
 
+function todayOotdDate() {
+  return dateKey(new Date());
+}
+
+function ootdUiText(zh, en) {
+  return currentGameLanguage === "en" ? en : zh;
+}
+
+function ootdDateLabel(dayKey) {
+  const parsed = parseDate(dayKey);
+  if (currentGameLanguage === "en") {
+    const label = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", weekday: "short" }).format(parsed);
+    return dayKey === todayOotdDate() ? `${label} · Today` : label;
+  }
+  return diaryDateTitle(dayKey);
+}
+
+function openOotdDialog() {
+  const saved = loadOotdRecords().find((record) => record.date === todayOotdDate()) || null;
+  currentOotdResult = saved;
+  if (dom.ootdDateLabel) dom.ootdDateLabel.textContent = ootdDateLabel(todayOotdDate());
+  if (dom.ootdConsentInput) dom.ootdConsentInput.checked = false;
+  resetOotdPhotoPreview();
+  renderOotdResult(currentOotdResult);
+  setOotdStatus(saved ? ootdUiText("已载入今天保存的穿搭卡。", "Today's saved outfit card is loaded.") : "");
+  if (typeof dom.ootdDialog?.showModal === "function") {
+    if (!dom.ootdDialog.open) dom.ootdDialog.showModal();
+  } else {
+    dom.ootdDialog?.setAttribute("open", "");
+  }
+}
+
+function closeOotdDialog() {
+  currentOotdPhotoDataUrl = "";
+  if (dom.ootdConsentInput) dom.ootdConsentInput.checked = false;
+  if (dom.ootdCameraInput) dom.ootdCameraInput.value = "";
+  if (dom.ootdGalleryInput) dom.ootdGalleryInput.value = "";
+  resetOotdPhotoPreview();
+  if (typeof dom.ootdDialog?.close === "function") dom.ootdDialog.close();
+  else dom.ootdDialog?.removeAttribute("open");
+}
+
+function resetOotdPhotoPreview() {
+  if (dom.ootdPhotoPreview) {
+    dom.ootdPhotoPreview.hidden = true;
+    dom.ootdPhotoPreview.removeAttribute("src");
+  }
+  if (dom.ootdPhotoPlaceholder) dom.ootdPhotoPlaceholder.hidden = false;
+}
+
+async function handleOotdPhotoSelection(event) {
+  const input = event.currentTarget;
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!String(file.type || "").startsWith("image/")) {
+    setOotdStatus(ootdUiText("请选择图片文件。", "Please choose an image file."), "error");
+    return;
+  }
+  setOotdStatus(ootdUiText("正在准备照片...", "Preparing photo..."));
+  try {
+    currentOotdPhotoDataUrl = await compressOotdPhoto(file);
+    if (dom.ootdPhotoPreview) {
+      dom.ootdPhotoPreview.src = currentOotdPhotoDataUrl;
+      dom.ootdPhotoPreview.hidden = false;
+    }
+    if (dom.ootdPhotoPlaceholder) dom.ootdPhotoPlaceholder.hidden = true;
+    currentOotdResult = null;
+    renderOotdResult(null);
+    setOotdStatus(ootdUiText("照片已准备好，可以开始 AI 分析。", "Photo ready. You can start the AI analysis."));
+  } catch (error) {
+    currentOotdPhotoDataUrl = "";
+    resetOotdPhotoPreview();
+    setOotdStatus(error instanceof Error ? error.message : ootdUiText("照片读取失败，请换一张重试。", "The photo could not be read. Try another one."), "error");
+  } finally {
+    input.value = "";
+  }
+}
+
+function compressOotdPhoto(file) {
+  if (file.size > 18 * 1024 * 1024) return Promise.reject(new Error(ootdUiText("照片太大，请选择小于 18MB 的图片。", "This photo is too large. Choose one under 18 MB.")));
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  return new Promise((resolve, reject) => {
+    image.onload = () => {
+      try {
+        const maxEdge = 1280;
+        const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        URL.revokeObjectURL(objectUrl);
+        resolve(dataUrl);
+      } catch (error) {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(ootdUiText("照片处理失败，请换一张重试。", "The photo could not be processed. Try another one.")));
+      }
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error(ootdUiText("暂时无法读取这种图片格式，请改用 JPG、PNG 或 WebP。", "This image format cannot be read. Use JPG, PNG, or WebP.")));
+    };
+    image.src = objectUrl;
+  });
+}
+
+async function analyzeCurrentOotd() {
+  if (ootdAnalysisRunning) return;
+  if (!currentOotdPhotoDataUrl) {
+    setOotdStatus(ootdUiText("请先拍摄或选择一张穿搭照片。", "Take or choose an outfit photo first."), "error");
+    return;
+  }
+  if (!dom.ootdConsentInput?.checked) {
+    setOotdStatus(ootdUiText("请先勾选照片 AI 分析同意项。", "Please accept the photo analysis consent first."), "error");
+    dom.ootdConsentInput?.focus();
+    return;
+  }
+  ootdAnalysisRunning = true;
+  setOotdControlsDisabled(true);
+  renderOotdResult(null);
+  setOotdStatus(ootdUiText("AI 正在分析穿搭并绘制卡通形象，可能需要一会儿...", "AI is scoring the outfit and drawing your cartoon. This may take a moment..."));
+  try {
+    const data = await callAIPlugin(AI_PLUGIN_TYPES.OOTD_STYLE_CARD, {
+      imageDataUrl: currentOotdPhotoDataUrl,
+      date: todayOotdDate(),
+      occasion: dom.ootdOccasionInput?.value || "daily",
+      cartoonStyle: dom.ootdCartoonStyleInput?.value || "clean",
+      language: currentGameLanguage === "en" ? "en" : "zh-CN",
+    });
+    const normalized = normalizeOotdResult(data);
+    if (!normalized) throw new Error(data?.error || ootdUiText("AI 没有返回完整结果。", "AI did not return a complete result."));
+    currentOotdResult = normalized;
+    renderOotdResult(currentOotdResult);
+    setOotdStatus(
+      currentOotdResult.cartoonDataUrl
+        ? ootdUiText("今日穿搭卡已生成。", "Today's outfit card is ready.")
+        : ootdUiText("评分完成，但卡通形象生成失败，可以稍后重试。", "Scoring finished, but the cartoon could not be created. Try again later."),
+      currentOotdResult.cartoonDataUrl ? "success" : "error"
+    );
+  } catch (error) {
+    setOotdStatus(aiPluginErrorMessage(error), "error");
+  } finally {
+    ootdAnalysisRunning = false;
+    setOotdControlsDisabled(false);
+  }
+}
+
+function normalizeOotdResult(data) {
+  if (data?.ok !== true || data?.taskType !== AI_PLUGIN_TYPES.OOTD_STYLE_CARD) return null;
+  const result = data.result && typeof data.result === "object" ? data.result : {};
+  const analysis = result.analysis && typeof result.analysis === "object" ? result.analysis : {};
+  const cartoon = result.cartoon && typeof result.cartoon === "object" ? result.cartoon : {};
+  const imageBase64 = String(cartoon.imageBase64 || "");
+  const mimeType = ["image/webp", "image/jpeg", "image/png"].includes(String(cartoon.mimeType)) ? String(cartoon.mimeType) : "image/webp";
+  const dimensions = analysis.dimensions && typeof analysis.dimensions === "object" ? analysis.dimensions : {};
+  const cleanList = (value, limit) => Array.isArray(value)
+    ? value.map((item) => cleanEditableText(item, "", 90)).filter(Boolean).slice(0, limit)
+    : [];
+  return {
+    date: todayOotdDate(),
+    occasion: cleanEditableText(dom.ootdOccasionInput?.value, "daily", 20),
+    cartoonStyle: cleanEditableText(dom.ootdCartoonStyleInput?.value, "clean", 20),
+    overallScore: Math.round(clamp(Number(analysis.overallScore) || 0, 0, 100)),
+    dimensions: {
+      color: Math.round(clamp(Number(dimensions.color) || 0, 0, 100)),
+      balance: Math.round(clamp(Number(dimensions.balance) || 0, 0, 100)),
+      layering: Math.round(clamp(Number(dimensions.layering) || 0, 0, 100)),
+      occasion: Math.round(clamp(Number(dimensions.occasion) || 0, 0, 100)),
+    },
+    vibe: cleanEditableText(analysis.vibe, ootdUiText("今日风格", "Today's style"), 30),
+    summary: cleanEditableText(analysis.summary, ootdUiText("今天的穿搭很有自己的节奏。", "Today's outfit has a clear personal rhythm."), 160),
+    strengths: cleanList(analysis.strengths, 3),
+    suggestions: cleanList(analysis.suggestions, 2),
+    cartoonDataUrl: imageBase64 && /^[A-Za-z0-9+/=]+$/.test(imageBase64) ? `data:${mimeType};base64,${imageBase64}` : "",
+    generatedAt: cleanEditableText(result.generatedAt, new Date().toISOString(), 60),
+  };
+}
+
+function renderOotdResult(record) {
+  if (!dom.ootdResult) return;
+  const safe = record ? normalizeStoredOotdRecord(record) : null;
+  dom.ootdResult.hidden = !safe;
+  if (!safe) return;
+  if (dom.ootdOverallScore) dom.ootdOverallScore.textContent = String(safe.overallScore);
+  if (dom.ootdScoreGrid) {
+    const scoreItems = [
+      [ootdUiText("配色", "Color"), safe.dimensions.color],
+      [ootdUiText("比例平衡", "Balance"), safe.dimensions.balance],
+      [ootdUiText("层次", "Layering"), safe.dimensions.layering],
+      [ootdUiText("场景适配", "Occasion"), safe.dimensions.occasion],
+    ];
+    dom.ootdScoreGrid.innerHTML = scoreItems.map(([label, score]) => `<span><small>${escapeHtml(label)}</small><strong>${score}</strong><i style="--score:${score}%"></i></span>`).join("");
+  }
+  if (dom.ootdStrengths) dom.ootdStrengths.innerHTML = (safe.strengths.length ? safe.strengths : [ootdUiText("整体搭配有明确重点。", "The outfit has a clear focal point.")])
+    .map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  if (dom.ootdSuggestions) dom.ootdSuggestions.innerHTML = (safe.suggestions.length ? safe.suggestions : [ootdUiText("下次可以尝试一个不同材质的小配件。", "Try a small accessory in a different texture next time.")])
+    .map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  if (dom.ootdCartoonImage) {
+    dom.ootdCartoonImage.hidden = !safe.cartoonDataUrl;
+    if (safe.cartoonDataUrl) dom.ootdCartoonImage.src = safe.cartoonDataUrl;
+    else dom.ootdCartoonImage.removeAttribute("src");
+  }
+  if (dom.ootdSummary) dom.ootdSummary.textContent = `${safe.vibe} · ${safe.summary}`;
+}
+
+function setOotdControlsDisabled(disabled) {
+  [dom.ootdAnalyzeButton, dom.ootdCameraInput, dom.ootdGalleryInput, dom.ootdCaptureButton, dom.ootdGalleryButton, dom.ootdOccasionInput, dom.ootdCartoonStyleInput]
+    .forEach((control) => {
+      if (control) control.disabled = Boolean(disabled);
+    });
+}
+
+function setOotdStatus(message, state = "muted") {
+  if (!dom.ootdStatus) return;
+  dom.ootdStatus.textContent = message || "";
+  dom.ootdStatus.dataset.state = state;
+}
+
+async function saveCurrentOotdCard() {
+  if (!currentOotdResult) {
+    setOotdStatus(ootdUiText("请先完成 AI 评分。", "Complete the AI score first."), "error");
+    return;
+  }
+  try {
+    const compact = { ...normalizeStoredOotdRecord(currentOotdResult) };
+    if (compact.cartoonDataUrl) compact.cartoonDataUrl = await resizeOotdCartoonForStorage(compact.cartoonDataUrl);
+    const records = loadOotdRecords().filter((record) => record.date !== compact.date);
+    saveOotdRecords([compact, ...records].slice(0, 90));
+    currentOotdResult = compact;
+    renderOotdResult(currentOotdResult);
+    renderOotdEntry();
+    setOotdStatus(ootdUiText("今天的 OOTD 卡已保存。", "Today's outfit card is saved."), "success");
+  } catch (error) {
+    setOotdStatus(error instanceof Error ? error.message : ootdUiText("保存失败，请先导出图片后再试。", "Save failed. Export the image and try again."), "error");
+  }
+}
+
+function resizeOotdCartoonForStorage(dataUrl) {
+  const image = new Image();
+  return new Promise((resolve) => {
+    image.onload = () => {
+      const maxWidth = 720;
+      const scale = Math.min(1, maxWidth / image.naturalWidth);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/webp", 0.74));
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
+  });
+}
+
+function exportCurrentOotdCartoon() {
+  const dataUrl = currentOotdResult?.cartoonDataUrl;
+  if (!dataUrl) {
+    setOotdStatus(ootdUiText("还没有可以导出的卡通形象。", "There is no cartoon image to export yet."), "error");
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = `ootd-${currentOotdResult.date || todayOotdDate()}.webp`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setOotdStatus(ootdUiText("卡通形象已导出。", "Cartoon image exported."), "success");
+}
+
+function deleteTodayOotdCard() {
+  const date = todayOotdDate();
+  const saved = loadOotdRecords();
+  if (!saved.some((record) => record.date === date) && !currentOotdResult) return;
+  if (!window.confirm(ootdUiText("确定删除今天的 OOTD 记录吗？", "Delete today's OOTD record?"))) return;
+  saveOotdRecords(saved.filter((record) => record.date !== date));
+  currentOotdResult = null;
+  renderOotdResult(null);
+  renderOotdEntry();
+  setOotdStatus(ootdUiText("今天的 OOTD 记录已删除。", "Today's OOTD record was deleted."));
+}
+
+function renderOotdEntry() {
+  const record = loadOotdRecords().find((item) => item.date === todayOotdDate());
+  if (dom.ootdEntryStatus) {
+    dom.ootdEntryStatus.textContent = record
+      ? ootdUiText(`今日已记录 · ${record.overallScore} 分 · ${record.vibe}`, `Saved today · ${record.overallScore} · ${record.vibe}`)
+      : ootdUiText("拍下今天的穿搭，生成 AI 评分与卡通形象", "Capture today's outfit for an AI score and cartoon character");
+  }
+  if (dom.ootdEntryPreview) {
+    dom.ootdEntryPreview.hidden = !record?.cartoonDataUrl;
+    if (record?.cartoonDataUrl) dom.ootdEntryPreview.src = record.cartoonDataUrl;
+    else dom.ootdEntryPreview.removeAttribute("src");
+  }
+}
+
+function loadOotdRecords() {
+  try {
+    const raw = localStorage.getItem(OOTD_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeStoredOotdRecord).filter(Boolean) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveOotdRecords(records) {
+  const normalized = (Array.isArray(records) ? records : []).map(normalizeStoredOotdRecord).filter(Boolean);
+  for (let keepImages = Math.min(18, normalized.length); keepImages >= 0; keepImages -= 1) {
+    const compact = normalized.map((record, index) => index < keepImages ? record : { ...record, cartoonDataUrl: "" });
+    try {
+      localStorage.setItem(OOTD_STORAGE_KEY, JSON.stringify(compact));
+      return;
+    } catch (error) {
+      // Keep older scores and feedback while reducing embedded image storage.
+    }
+  }
+  throw new Error(ootdUiText("OOTD 存储空间不足，请先导出旧图片。", "OOTD storage is full. Export older images first."));
+}
+
+function normalizeStoredOotdRecord(record) {
+  if (!record || typeof record !== "object" || !isDateKey(record.date)) return null;
+  const dimensions = record.dimensions && typeof record.dimensions === "object" ? record.dimensions : {};
+  const cleanList = (value, limit) => Array.isArray(value)
+    ? value.map((item) => cleanEditableText(item, "", 90)).filter(Boolean).slice(0, limit)
+    : [];
+  const image = String(record.cartoonDataUrl || "");
+  return {
+    date: record.date,
+    occasion: cleanEditableText(record.occasion, "daily", 20),
+    cartoonStyle: cleanEditableText(record.cartoonStyle, "clean", 20),
+    overallScore: Math.round(clamp(Number(record.overallScore) || 0, 0, 100)),
+    dimensions: {
+      color: Math.round(clamp(Number(dimensions.color) || 0, 0, 100)),
+      balance: Math.round(clamp(Number(dimensions.balance) || 0, 0, 100)),
+      layering: Math.round(clamp(Number(dimensions.layering) || 0, 0, 100)),
+      occasion: Math.round(clamp(Number(dimensions.occasion) || 0, 0, 100)),
+    },
+    vibe: cleanEditableText(record.vibe, "今日风格", 30),
+    summary: cleanEditableText(record.summary, "今天的穿搭很有自己的节奏。", 160),
+    strengths: cleanList(record.strengths, 3),
+    suggestions: cleanList(record.suggestions, 2),
+    cartoonDataUrl: /^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(image) && image.length <= 5500000 ? image : "",
+    generatedAt: cleanEditableText(record.generatedAt, new Date().toISOString(), 60),
+  };
+}
+
 function openDiaryDialog() {
   diarySelectedDate = selectedDate;
   diaryViewDate = parseDate(diarySelectedDate);
@@ -7760,7 +8313,6 @@ function closeDiaryDialog() {
 function renderDiarySystem() {
   renderDiaryCalendar();
   renderDiaryDay();
-  renderComicDiaryForm();
 }
 
 function renderDiaryCalendar() {
@@ -7772,7 +8324,6 @@ function renderDiaryCalendar() {
   start.setDate(first.getDate() - first.getDay());
   if (dom.diaryMonthLabel) dom.diaryMonthLabel.textContent = `${year}年${month + 1}月`;
   const today = dateKey(new Date());
-  const comicDates = new Set(loadComicDiaries().map((comic) => comic.date));
   const weekHeads = ["日", "一", "二", "三", "四", "五", "六"]
     .map((label) => `<span class="diary-week-head">${label}</span>`)
     .join("");
@@ -7781,7 +8332,7 @@ function renderDiaryCalendar() {
     date.setDate(start.getDate() + index);
     const key = dateKey(date);
     const day = state.days?.[key];
-    const hasContent = Boolean(day?.report || day?.diaryChecklist?.length || comicDates.has(key));
+    const hasContent = Boolean(day?.report || day?.diaryChecklist?.length);
     return `
       <button class="${date.getMonth() === month ? "" : "is-muted"} ${key === diarySelectedDate ? "is-selected" : ""} ${key === today ? "is-today" : ""} ${hasContent ? "has-content" : ""}" type="button" data-action="select-diary-date" data-date="${key}">
         <span>${date.getDate()}</span>
@@ -7798,7 +8349,6 @@ function renderDiaryDay() {
     dom.reportInput.value = day.report;
   }
   renderDiaryChecklist();
-  renderComicDiarySavedList();
 }
 
 function renderDiaryChecklist() {
@@ -7878,529 +8428,6 @@ function deleteDiaryCheckItem(id) {
   day.diaryChecklist = day.diaryChecklist.filter((item) => item.id !== id);
   saveState();
   renderDiarySystem();
-}
-
-function openComicDiaryPanel() {
-  if (!dom.comicDiaryPanel) return;
-  dom.comicDiaryPanel.hidden = false;
-  renderComicDiaryForm();
-  renderComicDiarySavedList();
-  if (!dom.comicSourceInput?.value) {
-    const day = ensureDay(diarySelectedDate || selectedDate);
-    dom.comicSourceInput.value = day.report || "";
-  }
-  dom.comicSourceInput?.focus();
-}
-
-function closeComicDiaryPanel() {
-  if (dom.comicDiaryPanel) dom.comicDiaryPanel.hidden = true;
-}
-
-function toggleComicDiaryPanel() {
-  if (!dom.comicDiaryPanel) return;
-  if (dom.comicDiaryPanel.hidden) {
-    openComicDiaryPanel();
-  } else {
-    closeComicDiaryPanel();
-  }
-}
-
-function renderComicDiaryForm() {
-  renderCharacterSelectForComic();
-  if (dom.comicPanelCountInput && !["4", "6"].includes(dom.comicPanelCountInput.value)) {
-    dom.comicPanelCountInput.value = "4";
-  }
-  if (dom.comicMoodStyleInput && !COMIC_MOOD_LABELS[dom.comicMoodStyleInput.value]) {
-    dom.comicMoodStyleInput.value = "cute";
-  }
-  renderComicDiarySavedList();
-}
-
-function renderCharacterSelectForComic() {
-  if (!dom.comicCharacterSelect) return;
-  const comicCharacters = getComicCharacterOptions();
-  const current = dom.comicCharacterSelect.value || getSelectedCharacter()?.id || comicCharacters[0]?.id || "bunny";
-  dom.comicCharacterSelect.innerHTML = comicCharacters.map((character) => `
-    <option value="${escapeHtml(character.id)}">${escapeHtml(character.name)}</option>
-  `).join("");
-  dom.comicCharacterSelect.value = comicCharacters.some((character) => character.id === current)
-    ? current
-    : (comicCharacters[0]?.id || "bunny");
-}
-
-function getComicCharacterOptions() {
-  const builtIn = characters.map((character) => ({
-    id: character.id,
-    name: character.name,
-    avatar: getCharacterImage(character, "calm"),
-    expressions: character.expressions || {},
-    source: "game",
-  }));
-  const relationshipCards = loadRelationshipCardsForComic();
-  const relationshipOptions = relationshipCards.map((card) => ({
-    id: `relationship:${card.id}`,
-    name: comicRelationshipCardName(card),
-    avatar: comicRelationshipCardAvatar(card),
-    expressions: {},
-    source: "relationship",
-  }));
-  const seen = new Set();
-  return [...builtIn, ...relationshipOptions].filter((character) => {
-    if (!character.id || seen.has(character.id)) return false;
-    seen.add(character.id);
-    return true;
-  });
-}
-
-function loadRelationshipCardsForComic() {
-  try {
-    const raw = localStorage.getItem(RELATIONSHIP_CARDS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((card) => card && typeof card === "object") : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function comicRelationshipCardName(card) {
-  return cleanEditableText(card?.basic?.name || card?.basic?.realName || card?.name, "关系角色", 24);
-}
-
-function comicRelationshipCardAvatar(card) {
-  const firstImage = Array.isArray(card?.avatar?.imageItems)
-    ? card.avatar.imageItems.find((item) => String(item?.src || "").startsWith("data:image/"))
-    : null;
-  return firstImage?.src || absoluteAssetUrl(characters[0]?.image || "./assets/characters/bunny-white.png");
-}
-
-function getSelectedComicCharacter() {
-  const options = getComicCharacterOptions();
-  const id = dom.comicCharacterSelect?.value || getSelectedCharacter()?.id || "bunny";
-  return options.find((character) => character.id === id) || options[0] || {
-    id: "bunny",
-    name: "兔兔",
-    avatar: "./assets/characters/bunny-white.png",
-    expressions: {},
-  };
-}
-
-function generateComicDiary() {
-  openComicDiaryPanel();
-  const selectedCharacter = getSelectedComicCharacter();
-  const sourceText = cleanComicSourceText(dom.comicSourceInput?.value || ensureDay(diarySelectedDate).report || "");
-  if (dom.comicSourceInput) dom.comicSourceInput.value = sourceText;
-  const panelCount = Number(dom.comicPanelCountInput?.value) === 6 ? 6 : 4;
-  const moodStyle = COMIC_MOOD_LABELS[dom.comicMoodStyleInput?.value] ? dom.comicMoodStyleInput.value : "cute";
-  currentComicDiaryDraft = generateComicScriptFromText(sourceText, selectedCharacter, panelCount, moodStyle);
-  renderComicDiaryPage(currentComicDiaryDraft);
-  showToast("漫画日记生成好了。");
-}
-
-function clearComicDiaryDraft() {
-  currentComicDiaryDraft = null;
-  if (dom.comicSourceInput) dom.comicSourceInput.value = "";
-  if (dom.comicPanelCountInput) dom.comicPanelCountInput.value = "4";
-  if (dom.comicMoodStyleInput) dom.comicMoodStyleInput.value = "cute";
-  if (dom.comicDiaryPreview) {
-    dom.comicDiaryPreview.innerHTML = `<p class="diary-empty">漫画草稿已清空，可以重新输入。</p>`;
-  }
-  dom.comicSourceInput?.focus();
-  showToast("漫画草稿已清空。");
-}
-
-function cleanComicSourceText(value) {
-  return cleanEditableText(value, "今天发生了一点小事，我想把它记下来。", 420);
-}
-
-function generateComicScriptFromText(sourceText, selectedCharacter, panelCount = 4, moodStyle = "cute") {
-  const now = new Date().toISOString();
-  const count = panelCount === 6 ? 6 : 4;
-  const text = cleanComicSourceText(sourceText);
-  const segments = splitComicSourceText(text, count);
-  const expression = COMIC_EXPRESSION_MAP[moodStyle] || "calm";
-  const backgrounds = comicBackgroundSequence(moodStyle, count);
-  const dialogueTemplates = comicDialogueTemplates(moodStyle);
-  const panels = Array.from({ length: count }, (_, index) => {
-    const narration = segments[index] || comicFallbackNarration(index, count, moodStyle);
-    return {
-      id: makeId("comic-panel"),
-      index: index + 1,
-      scene: COMIC_BACKGROUND_MAP[backgrounds[index]] || COMIC_BACKGROUND_MAP.default,
-      emotion: comicEmotionLabel(moodStyle, index),
-      characterId: selectedCharacter.id,
-      characterName: selectedCharacter.name,
-      narration,
-      dialogue: dialogueTemplates[index % dialogueTemplates.length],
-      pose: "default",
-      expression,
-      background: backgrounds[index] || "default",
-    };
-  });
-  return {
-    id: makeId("comic-diary"),
-    title: comicTitleFromText(text, moodStyle),
-    date: diarySelectedDate || selectedDate || dateKey(new Date()),
-    characterIds: [selectedCharacter.id],
-    characterName: selectedCharacter.name,
-    characterAvatar: absoluteAssetUrl(selectedCharacter.avatar || characters[0]?.image || ""),
-    sourceText: text,
-    moodStyle,
-    panelCount: count,
-    panels,
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
-async function generateComicScriptWithAI(sourceText, selectedCharacter, panelCount, moodStyle) {
-  // TODO: future AI API integration. Keep local rules as the stable fallback for now.
-  return generateComicScriptFromText(sourceText, selectedCharacter, panelCount, moodStyle);
-}
-
-function splitComicSourceText(text, count) {
-  const parts = String(text || "")
-    .split(/[\n。！？!?；;，,]+/g)
-    .map((item) => cleanEditableText(item, "", 70))
-    .filter(Boolean);
-  if (!parts.length) return [];
-  if (parts.length >= count) return parts.slice(0, count);
-  const expanded = [...parts];
-  while (expanded.length < count) {
-    expanded.push(comicBridgeNarration(expanded.length, count));
-  }
-  return expanded;
-}
-
-function comicBridgeNarration(index, count) {
-  if (index === count - 1) return "最后，我把这一刻收进今天的小小记录里。";
-  return ["事情慢慢展开，我也在里面一点点反应。", "我停下来想了想，决定先照顾好当下。", "下一步不需要很大，只要继续往前一点。"][index % 3];
-}
-
-function comicFallbackNarration(index, count, moodStyle) {
-  if (index === 0) return "今天发生了一件值得记录的小事。";
-  if (index === count - 1) return moodStyle === "sad" ? "虽然不完美，但我还是撑到了这一格。" : "今天没有白过，我有认真生活。";
-  return comicBridgeNarration(index, count);
-}
-
-function comicBackgroundSequence(moodStyle, count) {
-  const presets = {
-    cute: ["room", "desk", "sparkle", "night", "sparkle", "room"],
-    funny: ["room", "street", "desk", "sparkle", "street", "night"],
-    sad: ["night", "room", "desk", "sparkle", "room", "night"],
-    healing: ["room", "desk", "sparkle", "night", "room", "sparkle"],
-    angry: ["street", "desk", "room", "sparkle", "night", "room"],
-    strange: ["sparkle", "street", "room", "night", "desk", "sparkle"],
-  };
-  return (presets[moodStyle] || presets.cute).slice(0, count);
-}
-
-function comicDialogueTemplates(moodStyle) {
-  const templates = {
-    cute: ["先试试看！", "我有在努力哦。", "这格也要可爱一点。", "今天收工，给自己一朵花。"],
-    funny: ["等一下，这也太突然了。", "我宣布：先假装很懂。", "好，剧情开始拐弯。", "至少很好笑，算赢。"],
-    sad: ["我有点没力气。", "但我还是来了。", "慢一点也可以。", "明天再轻轻继续吧。"],
-    healing: ["先呼吸一下。", "一点点就很好。", "我正在恢复中。", "把今天温柔收好。"],
-    angry: ["我真的会生气。", "这件事需要边界。", "先保护自己。", "我可以认真表达不满。"],
-    strange: ["咦，事情变怪了。", "我先观察一下。", "这个走向不简单。", "算了，也是一种剧情。"],
-  };
-  return templates[moodStyle] || templates.cute;
-}
-
-function comicEmotionLabel(moodStyle, index) {
-  const labels = {
-    cute: ["期待", "努力", "闪闪", "满足", "开心", "收藏"],
-    funny: ["惊讶", "混乱", "好笑", "转折", "离谱", "收场"],
-    sad: ["低落", "挣扎", "缓慢", "一点光", "安静", "继续"],
-    healing: ["呼吸", "照顾", "放松", "治愈", "稳定", "晚安"],
-    angry: ["不满", "边界", "保护", "表达", "冷静", "收束"],
-    strange: ["奇怪", "观察", "谜团", "漂浮", "转圈", "落地"],
-  };
-  return (labels[moodStyle] || labels.cute)[index] || "日常";
-}
-
-function comicTitleFromText(text, moodStyle) {
-  const first = splitComicSourceText(text, 1)[0] || "";
-  if (first) return cleanEditableText(first, "今天也努力活着", 16);
-  const titleMap = {
-    cute: "今天也努力活着",
-    funny: "今天的离谱小剧场",
-    sad: "慢慢撑过今天",
-    healing: "今天的温柔存档",
-    angry: "边界启动日",
-    strange: "奇怪但真实的一天",
-  };
-  return titleMap[moodStyle] || "今天也努力活着";
-}
-
-function renderComicDiaryPage(comic = currentComicDiaryDraft) {
-  if (!dom.comicDiaryPreview) return;
-  if (!comic) {
-    dom.comicDiaryPreview.innerHTML = `<p class="diary-empty">还没有生成漫画。</p>`;
-    return;
-  }
-  dom.comicDiaryPreview.innerHTML = comicDiaryPageHtml(comic);
-}
-
-function comicDiaryPageHtml(comic) {
-  const safe = normalizeComicDiary(comic);
-  return `
-    <article class="comic-diary-page comic-export-target is-${escapeHtml(safe.moodStyle)}" data-comic-id="${escapeHtml(safe.id)}">
-      <header class="comic-page-head">
-        <span>漫画日记</span>
-        <div>
-          <h3>${escapeHtml(safe.title)}</h3>
-          <p>${escapeHtml(safe.date)} · ${escapeHtml(safe.characterName || "角色")}</p>
-        </div>
-      </header>
-      <section class="comic-panel-grid is-${safe.panelCount === 6 ? "six" : "four"}">
-        ${safe.panels.map((panel) => renderComicPanel(panel, safe)).join("")}
-      </section>
-    </article>
-  `;
-}
-
-function renderComicPanel(panel, comic) {
-  const avatar = absoluteAssetUrl(getComicPanelAvatar(comic, panel.expression));
-  const icon = comicEmotionIcon(comic.moodStyle, panel.index);
-  return `
-    <article class="comic-panel is-bg-${escapeHtml(panel.background || "default")}">
-      <span class="comic-panel-index">${panel.index}</span>
-      <span class="comic-emotion-icon" aria-hidden="true">${escapeHtml(icon)}</span>
-      <p class="comic-narration">${escapeHtml(panel.narration)}</p>
-      <img class="comic-character" src="${escapeHtml(avatar)}" alt="${escapeHtml(panel.characterName || comic.characterName || "角色")}" />
-      <p class="comic-dialogue">${escapeHtml(panel.dialogue)}</p>
-    </article>
-  `;
-}
-
-function getComicPanelAvatar(comic, expression = "calm") {
-  const character = characters.find((item) => item.id === comic.characterIds?.[0] || item.id === comic.characterId);
-  if (character) return getCharacterImage(character, expression === "happy" ? "excited" : expression);
-  return comic.characterAvatar || characters[0]?.image || "./assets/characters/bunny-white.png";
-}
-
-function absoluteAssetUrl(src) {
-  const value = String(src || "");
-  if (!value || value.startsWith("data:") || /^https?:/i.test(value) || value.startsWith("file:")) return value;
-  try {
-    return new URL(value, window.location.href).href;
-  } catch (error) {
-    return value;
-  }
-}
-
-function comicEmotionIcon(moodStyle, index) {
-  const icons = {
-    cute: ["✦", "♡", "✿"],
-    funny: ["!?", "♪", "哈"],
-    sad: ["☁", "…", "滴"],
-    healing: ["☾", "✧", "呼"],
-    angry: ["!", "火", "界"],
-    strange: ["?", "◇", "嗡"],
-  };
-  const list = icons[moodStyle] || icons.cute;
-  return list[(index - 1) % list.length];
-}
-
-function saveComicDiary() {
-  if (!currentComicDiaryDraft) {
-    generateComicDiary();
-  }
-  if (!currentComicDiaryDraft) return;
-  const now = new Date().toISOString();
-  const comic = normalizeComicDiary({
-    ...currentComicDiaryDraft,
-    date: diarySelectedDate || selectedDate,
-    updatedAt: now,
-  });
-  const saved = loadComicDiaries().filter((item) => item.id !== comic.id);
-  saveComicDiaries([comic, ...saved].slice(0, 80));
-  currentComicDiaryDraft = comic;
-  renderComicDiarySavedList();
-  renderDiaryCalendar();
-  showToast("漫画日记已保存。");
-}
-
-function loadComicDiaryDraft(id) {
-  const comic = loadComicDiaries().find((item) => item.id === id);
-  if (!comic) return;
-  openComicDiaryPanel();
-  currentComicDiaryDraft = comic;
-  if (dom.comicSourceInput) dom.comicSourceInput.value = comic.sourceText || "";
-  if (dom.comicPanelCountInput) dom.comicPanelCountInput.value = String(comic.panelCount || 4);
-  if (dom.comicMoodStyleInput) dom.comicMoodStyleInput.value = comic.moodStyle || "cute";
-  renderComicDiaryPage(comic);
-}
-
-function renderComicDiarySavedList() {
-  if (!dom.comicDiarySavedList) return;
-  const date = diarySelectedDate || selectedDate;
-  const comics = loadComicDiaries().filter((item) => item.date === date).slice(0, 6);
-  if (!comics.length) {
-    dom.comicDiarySavedList.innerHTML = `<p class="diary-empty">这一天还没有保存漫画日记。</p>`;
-    return;
-  }
-  dom.comicDiarySavedList.innerHTML = `
-    <strong>已保存漫画</strong>
-    ${comics.map((comic) => `
-      <button type="button" data-action="load-comic-diary" data-id="${escapeHtml(comic.id)}">
-        <span>${escapeHtml(comic.title || "漫画日记")}</span>
-        <small>${escapeHtml(COMIC_MOOD_LABELS[comic.moodStyle] || "可爱")} · ${comic.panelCount || 4} 格</small>
-      </button>
-    `).join("")}
-  `;
-}
-
-function loadComicDiaries() {
-  try {
-    const raw = localStorage.getItem(COMIC_DIARY_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.map(normalizeComicDiary).filter(Boolean) : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function saveComicDiaries(comics) {
-  localStorage.setItem(COMIC_DIARY_KEY, JSON.stringify((Array.isArray(comics) ? comics : []).map(normalizeComicDiary).filter(Boolean)));
-}
-
-function normalizeComicDiary(comic) {
-  if (!comic || typeof comic !== "object") return null;
-  const now = new Date().toISOString();
-  const panelCount = Number(comic.panelCount) === 6 ? 6 : 4;
-  const moodStyle = COMIC_MOOD_LABELS[comic.moodStyle] ? comic.moodStyle : "cute";
-  const characterIds = Array.isArray(comic.characterIds) && comic.characterIds.length
-    ? comic.characterIds.map((id) => String(id)).slice(0, 4)
-    : [state?.selectedCharacter || "bunny"];
-  const character = getComicCharacterOptions().find((item) => item.id === characterIds[0])
-    || characters.find((item) => item.id === characterIds[0])
-    || characters[0]
-    || { id: "bunny", name: "兔兔", avatar: "./assets/characters/bunny-white.png" };
-  const panels = Array.isArray(comic.panels) ? comic.panels : [];
-  return {
-    id: cleanEditableText(comic.id, makeId("comic-diary"), 90),
-    title: cleanEditableText(comic.title, "今天也努力活着", 28),
-    date: isDateKey(comic.date) ? comic.date : (diarySelectedDate || selectedDate || dateKey(new Date())),
-    characterIds,
-    characterName: cleanEditableText(comic.characterName || character.name, "兔兔", 24),
-    characterAvatar: absoluteAssetUrl(comic.characterAvatar || character.avatar || characters[0]?.image || ""),
-    sourceText: cleanComicSourceText(comic.sourceText || ""),
-    moodStyle,
-    panelCount,
-    panels: panels.slice(0, panelCount).map((panel, index) => normalizeComicPanel(panel, comic, index, moodStyle)),
-    createdAt: comic.createdAt || now,
-    updatedAt: comic.updatedAt || now,
-  };
-}
-
-function normalizeComicPanel(panel, comic, index, moodStyle) {
-  const source = panel && typeof panel === "object" ? panel : {};
-  const characterId = source.characterId || comic.characterIds?.[0] || "";
-  return {
-    id: cleanEditableText(source.id, makeId("comic-panel"), 90),
-    index: index + 1,
-    scene: cleanEditableText(source.scene, COMIC_BACKGROUND_MAP.default, 20),
-    emotion: cleanEditableText(source.emotion, comicEmotionLabel(moodStyle, index), 16),
-    characterId,
-    characterName: cleanEditableText(source.characterName || comic.characterName, "角色", 24),
-    narration: cleanEditableText(source.narration, comicFallbackNarration(index, Number(comic.panelCount) || 4, moodStyle), 96),
-    dialogue: cleanEditableText(source.dialogue, comicDialogueTemplates(moodStyle)[index % comicDialogueTemplates(moodStyle).length], 56),
-    pose: cleanEditableText(source.pose, "default", 20),
-    expression: cleanEditableText(source.expression, COMIC_EXPRESSION_MAP[moodStyle] || "calm", 20),
-    background: cleanEditableText(source.background, "default", 20),
-  };
-}
-
-async function exportComicDiaryAsPng() {
-  if (!currentComicDiaryDraft) {
-    showToast("请先生成漫画。");
-    return;
-  }
-  const source = dom.comicDiaryPreview?.querySelector(".comic-export-target");
-  if (!source) {
-    showToast("找不到要导出的漫画页。");
-    return;
-  }
-  let exportLayer = null;
-  try {
-    if (document.fonts?.ready) await document.fonts.ready;
-    exportLayer = document.createElement("div");
-    exportLayer.className = "invoice-export-layer comic-export-layer";
-    const clone = source.cloneNode(true);
-    clone.classList.add("comic-export-clone");
-    exportLayer.appendChild(clone);
-    document.body.appendChild(exportLayer);
-    await waitForInvoiceImages(clone);
-    await nextAnimationFrame();
-    await nextAnimationFrame();
-    const width = Math.ceil(clone.scrollWidth || clone.getBoundingClientRect().width || 330);
-    const height = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height || 520);
-    await exportComicCloneToPng(clone, width, height, currentComicDiaryDraft);
-  } catch (error) {
-    showToast("漫画导出失败，请再试一次。");
-  } finally {
-    exportLayer?.remove();
-  }
-}
-
-function exportComicCloneToPng(clone, width, height, comic) {
-  const css = comicExportCss();
-  const serialized = new XMLSerializer().serializeToString(clone);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;background:transparent;overflow:visible;"><style>${css}</style>${serialized}</div></foreignObject></svg>`;
-  const image = new Image();
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-  return new Promise((resolve) => {
-    image.onload = () => {
-      const scale = Math.min(Math.max(2, Math.ceil(window.devicePixelRatio || 1)), 3);
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-      const context = canvas.getContext("2d");
-      context.scale(scale, scale);
-      context.clearRect(0, 0, width, height);
-      context.drawImage(image, 0, 0, width, height);
-      URL.revokeObjectURL(url);
-      downloadComicPngFromCanvas(canvas, comic);
-      resolve();
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      showToast("漫画导出失败，请再试一次。");
-      resolve();
-    };
-    image.src = url;
-  });
-}
-
-function downloadComicPngFromCanvas(canvas, comic) {
-  canvas.toBlob((blob) => {
-    if (!blob) {
-      showToast("漫画导出失败，请再试一次。");
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `comic-diary-${comic?.date || selectedDate}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1200);
-    showToast("漫画 PNG 已导出。");
-  }, "image/png");
-}
-
-function comicExportCss() {
-  return Array.from(document.styleSheets)
-    .map((sheet) => {
-      try {
-        return Array.from(sheet.cssRules || []).map((rule) => rule.cssText).join("\n");
-      } catch (error) {
-        return "";
-      }
-    })
-    .join("\n");
 }
 
 function renderGrowthDialog() {
@@ -8595,7 +8622,7 @@ function pageDefaultSelector(pageId = "home") {
 function gamePageForSelector(selector = "") {
   if (selector === "#time-distribution-zone") return "home";
   if (["#mainline", "#sidequests", "#daily-goals", "#timeline-zone"].includes(selector)) return "tasks";
-  if (["#finance-zone", "#virtual-finance-zone", "#ledger-zone", "#report-zone", "#archive-zone"].includes(selector)) return "finance";
+  if (["#finance-zone", "#virtual-finance-zone", "#ledger-zone", "#archive-zone"].includes(selector)) return "finance";
   return "home";
 }
 

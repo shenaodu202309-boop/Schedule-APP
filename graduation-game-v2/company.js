@@ -1,10 +1,85 @@
 const LIFE_COMPANY_KEY = "life-game-company-v1";
+const ACTIVE_SKIN_KEY = "life-game-active-skin-v1";
+const DEFAULT_SKIN = "warm-pixel";
+const WARM_PIXEL_SKIN_ID = "warm-pixel";
+const WARM_PIXEL_ASSET_BASE = "../assets/skins/warm-pixel";
 const GAME_STATE_KEY = "thirty-day-quest-v2";
 const COMPANY_TASK_LIMIT = 6;
 const COMPANY_DEPARTMENT_LIMIT = 6;
 const COMPANY_LONG_PRESS_MS = 520;
 const SKILL_MARKET_STORAGE_KEY = "life-skill-market-v1";
 const COMPANY_STARTING_STAKE = 600;
+const RELATIONSHIP_CARDS_KEY = "life-game-relationship-cards-v1";
+const COMPANY_LOCAL_DATA_RESET_KEYS = [
+  LIFE_COMPANY_KEY,
+  ACTIVE_SKIN_KEY,
+  GAME_STATE_KEY,
+  SKILL_MARKET_STORAGE_KEY,
+  RELATIONSHIP_CARDS_KEY,
+  "private-schedule-app-v1",
+  "life-game-comic-diary-v1",
+  "life-game-ootd-v1",
+  "private-schedule-daily-reminder-v1",
+  "private-schedule-voice-game-sync-v1",
+  "life-game-relationship-file-library-v1",
+  "life-game-relationship-reactions-v1",
+  "life-game-relationship-self-onboarding-v1",
+  "skillMarketEnabled",
+];
+const COMPANY_EXPLORATION_CELL_COUNT = 25;
+const COMPANY_EXPLORATION_SCAN_COST = 20;
+const COMPANY_ROOM_MEMBER_LIMIT = 4;
+const COMPANY_GARDEN_EVENT_POINTS = 10;
+const COMPANY_GARDEN_PLANT_POINTS = 100;
+const COMPANY_GARDEN_TARGET_PLANTS = 10;
+const COMPANY_DEPARTMENT_SCENE_PRICE = 1000;
+const COMPANY_GARDEN_SCENES = [
+  { id: "community-day", name: "友谊花园", plantKind: "friendship", src: "./assets/garden-scenes/community-garden-day.png" },
+  { id: "courtyard-day", name: "亲情花园", plantKind: "family", src: "./assets/garden-scenes/courtyard-garden-day.png" },
+  { id: "rose-dusk", name: "黄昏花园", plantKind: "love", src: "./assets/garden-scenes/rose-garden-dusk.png" },
+];
+const COMPANY_GARDEN_PLANT_VARIANTS = {
+  love: [
+    { id: "rose", name: "玫瑰" },
+    { id: "tulip", name: "郁金香" },
+    { id: "peony", name: "牡丹" },
+  ],
+  friendship: [
+    { id: "daisy", name: "雏菊" },
+    { id: "sunflower", name: "向日葵" },
+    { id: "hydrangea", name: "绣球花" },
+  ],
+  family: [
+    { id: "apple-tree", name: "苹果树" },
+    { id: "orange-tree", name: "橙树" },
+    { id: "ginkgo-tree", name: "银杏树" },
+  ],
+};
+const COMPANY_GARDEN_PLANT_OPTIONS = Object.values(COMPANY_GARDEN_PLANT_VARIANTS).flat();
+const COMPANY_GARDEN_PLANT_ANCHORS = {
+  "apple-tree": [[50.1, 96.5], [40.3, 96.5], [36.8, 96.5], [32.4, 96.5], [38.9, 98.1]],
+  daisy: [[55, 91.2], [50.2, 91.2], [47.1, 91.2], [43, 91.2], [40, 91.4]],
+  "ginkgo-tree": [[49.8, 86.1], [40.3, 86.1], [34.3, 86.1], [33, 86.1], [37, 87.2]],
+  hydrangea: [[56.1, 67.1], [49.6, 67.1], [47.6, 67.4], [42.8, 67.4], [39.3, 67.4]],
+  "orange-tree": [[50, 91.4], [40.3, 91.2], [35.8, 91.2], [33.5, 91.2], [39.3, 92.5]],
+  peony: [[52.9, 74.6], [47.3, 74.6], [41.4, 74.6], [37.3, 74.6], [39, 75.9]],
+  rose: [[54.4, 93.9], [49.1, 93.9], [43.3, 94.1], [37.3, 94.1], [37.8, 95.2]],
+  sunflower: [[57, 82.4], [50.5, 82.4], [49.4, 82.6], [43.9, 82.6], [39.6, 82.9]],
+  tulip: [[53.9, 82.1], [48.8, 82.1], [43.1, 81.8], [37.5, 81.8], [35.9, 82.9]],
+};
+const COMPANY_GARDEN_PLACEMENT_LIMIT = 10;
+const COMPANY_DEPARTMENT_SCENES = [
+  { id: "illustration-studio", name: "插画创作室", src: "./assets/company-scenes/illustration-studio.png", price: 0, aspectRatio: 3 },
+  { id: "animation-studio", name: "动画制作室", src: "./assets/company-scenes/animation-studio.png", price: 0, aspectRatio: 3 },
+  { id: "technology-lab", name: "技术研发室", src: "./assets/company-scenes/technology-lab.png", price: 0, aspectRatio: 3 },
+  { id: "photo-studio", name: "摄影内容室", src: "./assets/company-scenes/photo-studio.png", price: 0, aspectRatio: 3 },
+  { id: "meeting-office", name: "商务会议室", src: "./assets/company-scenes/meeting-office.png", price: 0, aspectRatio: 3 },
+  { id: "premium-sunlit-studio", name: "暖阳设计室", src: "./assets/company-scenes/premium-sunlit-studio.png", price: COMPANY_DEPARTMENT_SCENE_PRICE, aspectRatio: 1916 / 821 },
+  { id: "premium-botanical-office", name: "绿植研究室", src: "./assets/company-scenes/premium-botanical-office.png", price: COMPANY_DEPARTMENT_SCENE_PRICE, aspectRatio: 1916 / 821 },
+  { id: "premium-starlight-studio", name: "星夜动画室", src: "./assets/company-scenes/premium-starlight-studio.png", price: COMPANY_DEPARTMENT_SCENE_PRICE, aspectRatio: 1916 / 821 },
+  { id: "premium-midnight-lab", name: "深夜技术部", src: "./assets/company-scenes/premium-midnight-lab.png", price: COMPANY_DEPARTMENT_SCENE_PRICE, aspectRatio: 1916 / 821 },
+  { id: "premium-editorial-office", name: "复古编辑部", src: "./assets/company-scenes/premium-editorial-office.png", price: COMPANY_DEPARTMENT_SCENE_PRICE, aspectRatio: 1916 / 821 },
+];
 
 const COMPANY_LEVELS = [
   { level: 1, name: "起步公司", requiredExp: 0, requiredCoins: 0 },
@@ -117,21 +192,95 @@ let companyDepartmentLongPressTimer = null;
 let companyDepartmentLongPressStart = null;
 let companyDepartmentLongPressId = "";
 let companyDepartmentDeleteArmed = false;
+let openCompanyRoomDepartmentId = "";
+let companyGardenTacticsPage = 0;
+let companyGardenSceneMenuOpen = false;
+let companyGardenCharacterPickerOpen = false;
+let companyGardenPlantPickerOpen = false;
+let companyGardenPendingPlantId = "";
+let companyGardenCharacterLongPressTimer = null;
+let companyGardenCharacterLongPressStart = null;
+let companyGardenCharacterSuppressClickUntil = 0;
+let companyOfficeMemberDrag = null;
+let companyScenePan = null;
+let companyInlineMembersExpanded = false;
+let companyInlineTasksExpanded = false;
+let companyRoomMemberSearch = "";
+let companyPreviewMode = "";
 
 const companyDom = {};
 
 document.addEventListener("DOMContentLoaded", () => {
+  maybeClearLocalDataFromUrl();
+  const previewFromPath = window.location.pathname.endsWith("/company-scan-preview.html") ? "scan" : "";
+  companyPreviewMode = previewFromPath || new URLSearchParams(window.location.search).get("preview") || "";
+  applyCompanySkin();
   cacheCompanyDom();
-  lifeCompanyState = loadLifeCompany();
+  lifeCompanyState = companyPreviewMode === "scan" ? createCompanyScanPreviewState() : loadLifeCompany();
+  document.documentElement.dataset.companyPreview = companyPreviewMode;
   bindCompanyEvents();
   renderCompanyTypeOptions();
   renderLifeCompanyPage();
+  if (window.__companyLocalDataWasCleared) showCompanyToast("本地数据已清空。现在是全新状态。");
 });
+
+function maybeClearLocalDataFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("clearLocalData") !== "1") return;
+  COMPANY_LOCAL_DATA_RESET_KEYS.forEach((key) => localStorage.removeItem(key));
+  sessionStorage.clear();
+  window.__companyLocalDataWasCleared = true;
+  if (window.caches?.keys) {
+    caches.keys().then((keys) => {
+      keys.filter((key) => key.startsWith("daily-schedule-native-")).forEach((key) => caches.delete(key));
+    }).catch(() => undefined);
+  }
+  params.delete("clearLocalData");
+  const nextSearch = params.toString();
+  const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+}
+
+function applyCompanySkin() {
+  const activeSkin = localStorage.getItem(ACTIVE_SKIN_KEY) || DEFAULT_SKIN;
+  document.documentElement.dataset.skin = activeSkin;
+}
+
+function isWarmPixelSkin() {
+  return document.documentElement.dataset.skin === WARM_PIXEL_SKIN_ID;
+}
+
+function warmPixelAsset(path) {
+  return `${WARM_PIXEL_ASSET_BASE}/${path}`;
+}
+
+function warmPixelAsset2x(path) {
+  return path.replace(/(\.[a-z0-9]+)$/i, "@2x$1");
+}
+
+function renderWarmPixelImage(path, className, alt = "", attrs = "") {
+  return `
+    <img class="${className} pixel-art" src="${warmPixelAsset(path)}" srcset="${warmPixelAsset(warmPixelAsset2x(path))} 2x" alt="${escapeHtml(alt)}" ${attrs} />
+  `;
+}
 
 function cacheCompanyDom() {
   [
     "companyEmptyState",
     "companySystem",
+    "companyExplorerType",
+    "companyExplorerCompanyName",
+    "companyExplorationStage",
+    "companyExplorationTitle",
+    "companyExplorationProgress",
+    "companyDepartmentTrack",
+    "companyMineBoard",
+    "companyExplorationHint",
+    "companyExplorationNextAction",
+    "companyOperationsDrawer",
+    "companyGardenButton",
+    "companyGardenDialog",
+    "companyGardenBody",
     "companyTypeLabel",
     "companyName",
     "companyVision",
@@ -187,7 +336,25 @@ function cacheCompanyDom() {
     "companyDepartmentProjectCountInput",
     "companyDepartmentTaskCountInput",
     "companyDepartmentStatusInput",
+    "companyDepartmentSceneOptions",
     "companyDepartmentLevelLabel",
+    "companyInlineTaskPanel",
+    "companyInlineTaskSummary",
+    "companyInlineTaskList",
+    "companyInlineRoomMembers",
+    "companyInlineRoomToggle",
+    "companyInlineRoomContent",
+    "companyInlineRoomMemberCount",
+    "companyInlineRoomSearchInput",
+    "companyInlineRoomMemberList",
+    "companyRoomDialog",
+    "companyRoomTitle",
+    "companyRoomRule",
+    "companyPixelRoom",
+    "companyRoomMemberCount",
+    "companyRoomMemberList",
+    "companyUnlockDialog",
+    "companyUnlockText",
     "companyToast",
   ].forEach((id) => {
     companyDom[id] = document.getElementById(id);
@@ -197,9 +364,37 @@ function cacheCompanyDom() {
 function bindCompanyEvents() {
   document.addEventListener("click", (event) => {
     const target = event.target.closest("[data-company-action]");
-    if (!target) return;
+    if (!target) {
+      if (companyGardenPendingPlantId && event.target.closest(".company-garden-world")) {
+        placeCompanyGardenPlant(event);
+        return;
+      }
+      let shouldRenderGarden = false;
+      if (companyGardenSceneMenuOpen && !event.target.closest(".company-garden-scene-control")) {
+        companyGardenSceneMenuOpen = false;
+        shouldRenderGarden = true;
+      }
+      if (companyGardenCharacterPickerOpen && !event.target.closest(".company-garden-character-picker")) {
+        companyGardenCharacterPickerOpen = false;
+        shouldRenderGarden = true;
+      }
+      if (companyGardenPlantPickerOpen && !event.target.closest(".company-garden-plant-picker")) {
+        companyGardenPlantPickerOpen = false;
+        shouldRenderGarden = true;
+      }
+      if (shouldRenderGarden) renderCompanyGarden();
+      return;
+    }
 
     const action = target.dataset.companyAction;
+    if (companyPreviewMode === "scan" && [
+      "toggle-company-operations",
+      "open-company-garden",
+      "open-department-room",
+      "prompt-next-department",
+    ].includes(action)) {
+      return;
+    }
     if (action === "open-create-company") openCompanyForm("create");
     if (action === "open-edit-company") openCompanyForm("edit");
     if (action === "close-company-form") closeCompanyForm();
@@ -209,6 +404,7 @@ function bindCompanyEvents() {
     if (action === "delete-department") deleteCompanyDepartment();
     if (action === "upgrade-company") upgradeCompany();
     if (action === "upgrade-department") upgradeCompanyDepartment(target.dataset.departmentId || companyDom.companyDepartmentIdInput?.value);
+    if (action === "purchase-company-scene") purchaseCompanyDepartmentScene(target.dataset.sceneId);
     if (action === "open-create-project") openCompanyProjectForm();
     if (action === "close-project-form") closeCompanyProjectForm();
     if (action === "edit-project") openCompanyProjectForm(target.dataset.projectId);
@@ -216,6 +412,39 @@ function bindCompanyEvents() {
     if (action === "generate-project-task") generateCompanyTasksFromProject(target.dataset.projectId);
     if (action === "toggle-company-task") toggleCompanyTask(target.dataset.taskId);
     if (action === "delete-company-task") deleteCompanyTask(target.dataset.taskId);
+    if (action === "toggle-company-operations") toggleCompanyOperations();
+    if (action === "select-exploration-department") selectExplorationDepartment(target.dataset.departmentId);
+    if (action === "reveal-company-cell") revealCompanyCell(Number(target.dataset.cellIndex));
+    if (action === "open-department-room") openCompanyDepartmentRoom(target.dataset.departmentId);
+    if (action === "close-department-room") closeCompanyDepartmentRoom();
+    if (action === "toggle-room-member") toggleCompanyRoomMember(target.dataset.memberId);
+    if (action === "add-room-member") addCompanyRoomMember(target.dataset.memberId);
+    if (action === "remove-room-member") removeCompanyRoomMember(target.dataset.memberId);
+    if (action === "toggle-inline-members") toggleCompanyInlineRoomMembers();
+    if (action === "toggle-inline-tasks") toggleCompanyInlineTasks();
+    if (action === "edit-room-department") editOpenRoomDepartment();
+    if (action === "open-room-project") openProjectForRoomDepartment();
+    if (action === "prompt-next-department") promptNextCompanyDepartment();
+    if (action === "show-exploration-hint") showCompanyExplorationHint();
+    if (action === "unlock-next-department") unlockNextCompanyDepartment();
+    if (action === "close-unlock-dialog") closeDialog(companyDom.companyUnlockDialog);
+    if (action === "open-company-garden") openCompanyGarden();
+    if (action === "close-company-garden") closeDialog(companyDom.companyGardenDialog);
+    if (action === "unlock-company-garden") unlockCompanyGarden();
+    if (action === "toggle-garden-scene-menu") toggleCompanyGardenSceneMenu();
+    if (action === "select-garden-scene") selectCompanyGardenScene(target.dataset.sceneId);
+    if (action === "toggle-garden-character-picker") {
+      if (Date.now() < companyGardenCharacterSuppressClickUntil) return;
+      toggleCompanyGardenCharacterPicker();
+    }
+    if (action === "select-garden-character") selectCompanyGardenCharacter(target.dataset.characterId);
+    if (action === "toggle-garden-plant-picker") toggleCompanyGardenPlantPicker();
+    if (action === "select-garden-plant-type") selectCompanyGardenPlantType(target.dataset.plantId);
+    if (action === "cancel-garden-plant-placement") cancelCompanyGardenPlantPlacement();
+    if (action === "abandon-garden-target") abandonCompanyGardenTarget();
+    if (action === "record-garden-event") recordCompanyGardenEvent(target.dataset.eventNote);
+    if (action === "add-to-tactics-book") addCompanyGardenTargetToTacticsBook();
+    if (action === "turn-tactics-page") turnCompanyTacticsPage(Number(target.dataset.direction) || 0);
   });
 
   companyDom.companyForm?.addEventListener("submit", (event) => {
@@ -233,11 +462,31 @@ function bindCompanyEvents() {
     saveCompanyDepartmentFromForm();
   });
 
+  document.addEventListener("input", handleCompanyRoomMemberSearchInput);
+
   companyDom.companyDepartmentGrid?.addEventListener("pointerdown", startCompanyDepartmentLongPress);
   companyDom.companyDepartmentGrid?.addEventListener("pointermove", moveCompanyDepartmentLongPress);
   companyDom.companyDepartmentGrid?.addEventListener("pointerup", cancelCompanyDepartmentLongPress);
   companyDom.companyDepartmentGrid?.addEventListener("pointercancel", cancelCompanyDepartmentLongPress);
   companyDom.companyDepartmentGrid?.addEventListener("pointerleave", cancelCompanyDepartmentLongPress);
+  document.addEventListener("pointerdown", startCompanyScenePan);
+  document.addEventListener("pointermove", moveCompanyScenePan);
+  document.addEventListener("pointerup", endCompanyScenePan);
+  document.addEventListener("pointercancel", endCompanyScenePan);
+  document.addEventListener("keydown", handleCompanyScenePanKeydown);
+  document.addEventListener("pointerdown", startCompanyGardenCharacterLongPress);
+  document.addEventListener("pointermove", moveCompanyGardenCharacterLongPress);
+  document.addEventListener("pointerup", cancelCompanyGardenCharacterLongPress);
+  document.addEventListener("pointercancel", cancelCompanyGardenCharacterLongPress);
+  document.addEventListener("contextmenu", preventCompanyGardenCharacterContextMenu);
+  companyDom.companyPixelRoom?.addEventListener("pointerdown", startCompanyOfficeMemberDrag);
+  companyDom.companyPixelRoom?.addEventListener("pointermove", moveCompanyOfficeMemberDrag);
+  companyDom.companyPixelRoom?.addEventListener("pointerup", endCompanyOfficeMemberDrag);
+  companyDom.companyPixelRoom?.addEventListener("pointercancel", endCompanyOfficeMemberDrag);
+  companyDom.companyMineBoard?.addEventListener("pointerdown", startCompanyOfficeMemberDrag);
+  companyDom.companyMineBoard?.addEventListener("pointermove", moveCompanyOfficeMemberDrag);
+  companyDom.companyMineBoard?.addEventListener("pointerup", endCompanyOfficeMemberDrag);
+  companyDom.companyMineBoard?.addEventListener("pointercancel", endCompanyOfficeMemberDrag);
   companyDom.companyDepartmentGrid?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     const card = event.target.closest(".company-department-card[data-department-id]");
@@ -270,11 +519,75 @@ function loadLifeCompany() {
 }
 
 function saveLifeCompany() {
+  if (companyPreviewMode) return;
   localStorage.setItem(LIFE_COMPANY_KEY, JSON.stringify(lifeCompanyState));
   window.dispatchEvent(new CustomEvent("life-company-updated"));
 }
 
+function createCompanyScanPreviewState() {
+  const now = new Date().toISOString();
+  const type = companyTypeById("freelance-studio") || COMPANY_TYPES[0];
+  const departments = type.defaultDepartments.slice(0, COMPANY_DEPARTMENT_LIMIT).map((name, index) => {
+    const departmentId = `preview-dept-${index + 1}`;
+    return {
+      id: departmentId,
+      name,
+      status: "normal",
+      progress: 0,
+      level: 1,
+      exp: 0,
+      projectIds: [],
+      taskIds: [],
+      manualProjectCount: null,
+      manualTaskCount: null,
+      statusLocked: false,
+      taskCardLimit: index === 0 ? 3 : COMPANY_TASK_LIMIT,
+      exploration: {
+        unlocked: index === 0,
+        targetCell: 17,
+        portalCell: null,
+        revealedCells: index === 0 ? [0] : [],
+        completed: false,
+        completionPromptShown: false,
+      },
+      room: {
+        sceneId: normalizeCompanyDepartmentSceneId("", index),
+        memberIds: [],
+        memberPositions: {},
+      },
+    };
+  });
+  return normalizeLifeCompanyState({
+    company: {
+      id: "preview-company-scan",
+      name: "扫雷界面预览公司",
+      type: type.id,
+      vision: "用于单独检查公司扫雷 UI。",
+      mainGoal: { title: "检查公司扫雷界面", deadline: "", status: "active", progress: 0 },
+      departments,
+      activeDepartmentId: departments[0]?.id || "",
+      projects: [],
+      linkedSkillStocks: type.recommendedSkillStocks,
+      ownedSceneIds: COMPANY_DEPARTMENT_SCENES.filter((scene) => !scene.price).map((scene) => scene.id),
+      garden: { unlocked: false },
+      economy: {
+        companyCoins: 1000,
+        companyExp: 28,
+        companyLevel: 1,
+        assetValue: 1000,
+        currencyName: "金币",
+        transactions: [],
+      },
+      createdAt: now,
+      updatedAt: now,
+    },
+    tasks: [],
+    updatedAt: now,
+  });
+}
+
 function syncCompanyNameToGameTitle() {
+  if (companyPreviewMode) return;
   const companyName = String(lifeCompanyState?.company?.name || "").trim();
   if (!companyName) return;
   try {
@@ -316,8 +629,11 @@ function normalizeCompany(company) {
   const now = new Date().toISOString();
   const companyId = company.id || createId("company");
   const departments = Array.isArray(company.departments) && company.departments.length
-    ? company.departments.map(normalizeDepartment).filter(Boolean)
+    ? company.departments.map((department, index) => normalizeDepartment(department, index)).filter(Boolean)
     : initializeCompanyDepartments(type.id);
+  const activeDepartment = departments.find((department) => department.id === company.activeDepartmentId && department.exploration.unlocked)
+    || departments.find((department) => department.exploration.unlocked)
+    || departments[0];
   const projects = Array.isArray(company.projects) ? company.projects.map(normalizeCompanyProject).filter(Boolean) : [];
   return {
     id: companyId,
@@ -331,18 +647,126 @@ function normalizeCompany(company) {
       progress: clampNumber(company.mainGoal?.progress, 0, 100, 0),
     },
     departments,
+    activeDepartmentId: activeDepartment?.id || "",
     projects,
     linkedSkillStocks: Array.isArray(company.linkedSkillStocks) ? company.linkedSkillStocks : type.recommendedSkillStocks,
+    ownedSceneIds: normalizeCompanyOwnedSceneIds(company.ownedSceneIds),
+    garden: normalizeCompanyGarden(company.garden),
     economy: normalizeCompanyEconomy(company.economy),
     createdAt: company.createdAt || now,
     updatedAt: company.updatedAt || now,
   };
 }
 
-function normalizeDepartment(department) {
-  if (!department?.name) return null;
+function normalizeCompanyGarden(garden) {
+  const source = garden && typeof garden === "object" && !Array.isArray(garden) ? garden : {};
+  const sceneId = COMPANY_GARDEN_SCENES.some((scene) => scene.id === source.sceneId)
+    ? source.sceneId
+    : COMPANY_GARDEN_SCENES[0].id;
+  const rawScenes = source.scenes && typeof source.scenes === "object" && !Array.isArray(source.scenes)
+    ? source.scenes
+    : {};
+  const hasDedicatedScenes = Object.keys(rawScenes).length > 0;
+  const legacySceneState = {
+    selectedCharacterId: source.selectedCharacterId,
+    targets: source.targets,
+  };
+  const scenes = {};
+  COMPANY_GARDEN_SCENES.forEach((scene) => {
+    const rawSceneState = rawScenes[scene.id];
+    const sceneState = rawSceneState && typeof rawSceneState === "object" && !Array.isArray(rawSceneState)
+      ? rawSceneState
+      : (!hasDedicatedScenes && scene.id === sceneId ? legacySceneState : {});
+    scenes[scene.id] = normalizeCompanyGardenSceneState(sceneState);
+  });
   return {
-    id: department.id || createId("dept"),
+    unlocked: Boolean(source.unlocked),
+    sceneId,
+    scenes,
+  };
+}
+
+function normalizeCompanyGardenSceneState(sceneState) {
+  const source = sceneState && typeof sceneState === "object" && !Array.isArray(sceneState) ? sceneState : {};
+  const rawTargets = source.targets && typeof source.targets === "object" && !Array.isArray(source.targets)
+    ? source.targets
+    : {};
+  const targets = {};
+  Object.entries(rawTargets).forEach(([characterId, target]) => {
+    if (!characterId || !target || typeof target !== "object") return;
+    const plantCount = clampNumber(target.plantCount, 0, COMPANY_GARDEN_TARGET_PLANTS, 0);
+    targets[String(characterId)] = {
+      characterId: String(characterId),
+      intimacyPoints: clampNumber(target.intimacyPoints, 0, COMPANY_GARDEN_PLANT_POINTS - COMPANY_GARDEN_EVENT_POINTS, 0),
+      plantCount,
+      completed: plantCount >= COMPANY_GARDEN_TARGET_PLANTS || Boolean(target.completed),
+      inTacticsBook: Boolean(target.inTacticsBook),
+      events: Array.isArray(target.events)
+        ? target.events.map((event) => ({
+          id: String(event?.id || createId("garden-event")),
+          note: String(event?.note || "一次亲密事件").slice(0, 80),
+          createdAt: String(event?.createdAt || new Date().toISOString()),
+        })).slice(0, 30)
+        : [],
+      updatedAt: String(target.updatedAt || new Date().toISOString()),
+    };
+  });
+  const placedPlants = Array.isArray(source.placedPlants)
+    ? source.placedPlants.map((plant) => {
+      const variantId = String(plant?.variantId || "");
+      if (!COMPANY_GARDEN_PLANT_OPTIONS.some((option) => option.id === variantId)) return null;
+      return {
+        id: String(plant?.id || createId("garden-plant")),
+        variantId,
+        characterId: String(plant?.characterId || ""),
+        x: clampNumber(plant?.x, 5, 95, 50),
+        y: clampNumber(plant?.y, 34, 96, 78),
+        createdAt: String(plant?.createdAt || new Date().toISOString()),
+      };
+    }).filter(Boolean).slice(0, 60)
+    : [];
+  return {
+    selectedCharacterId: String(source.selectedCharacterId || ""),
+    placedPlants,
+    targets,
+  };
+}
+
+function normalizeDepartment(department, departmentIndex = 0) {
+  if (!department?.name) return null;
+  const departmentId = department.id || createId("dept");
+  const rawExploration = department.exploration && typeof department.exploration === "object"
+    ? department.exploration
+    : {};
+  const revealedCells = Array.isArray(rawExploration.revealedCells)
+    ? Array.from(new Set(rawExploration.revealedCells
+      .map(Number)
+      .filter((value) => Number.isInteger(value) && value >= 0 && value < COMPANY_EXPLORATION_CELL_COUNT)))
+    : [];
+  const portalCell = rawExploration.portalCell !== null
+    && rawExploration.portalCell !== undefined
+    && Number.isInteger(Number(rawExploration.portalCell))
+    && Number(rawExploration.portalCell) >= 0
+    && Number(rawExploration.portalCell) < COMPANY_EXPLORATION_CELL_COUNT
+    ? Number(rawExploration.portalCell)
+    : null;
+  const rawTargetCell = Number(rawExploration.targetCell);
+  const targetCell = Number.isInteger(rawTargetCell) && rawTargetCell >= 0 && rawTargetCell < COMPANY_EXPLORATION_CELL_COUNT
+    ? rawTargetCell
+    : portalCell ?? companyExplorationTargetCell(departmentId);
+  const rawRoom = department.room && typeof department.room === "object" ? department.room : {};
+  const memberPositions = rawRoom.memberPositions && typeof rawRoom.memberPositions === "object" && !Array.isArray(rawRoom.memberPositions)
+    ? Object.entries(rawRoom.memberPositions).reduce((positions, [memberId, position]) => {
+      if (!memberId || !position || typeof position !== "object") return positions;
+      positions[String(memberId)] = {
+        x: clampNumber(position.x, 8, 92, 50),
+        y: clampNumber(position.y, 28, 94, 76),
+      };
+      return positions;
+    }, {})
+    : {};
+  return {
+    id: departmentId,
     name: department.name,
     status: department.status || "normal",
     progress: clampNumber(department.progress, 0, 100, 0),
@@ -357,7 +781,45 @@ function normalizeDepartment(department) {
       ? null
       : clampNumber(department.manualTaskCount, 0, 99, 0),
     statusLocked: Boolean(department.statusLocked),
+    taskCardLimit: clampNumber(department.taskCardLimit, 1, COMPANY_TASK_LIMIT, departmentIndex === 0 ? 3 : COMPANY_TASK_LIMIT),
+    exploration: {
+      unlocked: rawExploration.unlocked === undefined ? departmentIndex === 0 : Boolean(rawExploration.unlocked),
+      targetCell,
+      portalCell: portalCell ?? (revealedCells.includes(targetCell) ? targetCell : null),
+      revealedCells,
+      completed: Boolean(rawExploration.completed) || portalCell !== null || revealedCells.includes(targetCell),
+      completionPromptShown: Boolean(rawExploration.completionPromptShown),
+    },
+    room: {
+      sceneId: normalizeCompanyDepartmentSceneId(rawRoom.sceneId, departmentIndex),
+      memberIds: Array.isArray(rawRoom.memberIds)
+        ? Array.from(new Set(rawRoom.memberIds.map(String).filter(Boolean))).slice(0, COMPANY_ROOM_MEMBER_LIMIT)
+        : [],
+      memberPositions,
+    },
   };
+}
+
+function normalizeCompanyDepartmentSceneId(sceneId, departmentIndex = 0) {
+  const requested = String(sceneId || "");
+  if (COMPANY_DEPARTMENT_SCENES.some((scene) => scene.id === requested)) return requested;
+  return COMPANY_DEPARTMENT_SCENES[Math.abs(Number(departmentIndex) || 0) % COMPANY_DEPARTMENT_SCENES.length].id;
+}
+
+function companyDepartmentScene(department) {
+  const sceneId = normalizeCompanyDepartmentSceneId(department?.room?.sceneId, 0);
+  return COMPANY_DEPARTMENT_SCENES.find((scene) => scene.id === sceneId) || COMPANY_DEPARTMENT_SCENES[0];
+}
+
+function normalizeCompanyOwnedSceneIds(sceneIds) {
+  if (!Array.isArray(sceneIds)) return [];
+  const premiumIds = new Set(COMPANY_DEPARTMENT_SCENES.filter((scene) => scene.price > 0).map((scene) => scene.id));
+  return Array.from(new Set(sceneIds.map(String).filter((sceneId) => premiumIds.has(sceneId))));
+}
+
+function companyOwnsDepartmentScene(sceneId) {
+  const scene = COMPANY_DEPARTMENT_SCENES.find((item) => item.id === sceneId);
+  return Boolean(scene && (!scene.price || lifeCompanyState.company?.ownedSceneIds?.includes(scene.id)));
 }
 
 function normalizeCompanyEconomy(economy) {
@@ -382,7 +844,7 @@ function normalizeCompanyEconomy(economy) {
 function normalizeEconomyTransaction(transaction) {
   if (!transaction || typeof transaction !== "object" || Array.isArray(transaction)) return null;
   const type = ["earn", "spend", "adjust"].includes(transaction.type) ? transaction.type : "adjust";
-  const source = ["task", "company-task-missed", "project", "skill-stock", "company-upgrade", "department-upgrade", "decoration", "relationship-reaction", "manual"].includes(transaction.source)
+  const source = ["task", "company-task-missed", "project", "skill-stock", "company-upgrade", "department-upgrade", "exploration", "decoration", "relationship-reaction", "manual"].includes(transaction.source)
     ? transaction.source
     : "manual";
   return {
@@ -444,6 +906,7 @@ function renderLifeCompanyPage() {
   if (!company) return;
 
   syncCompanyDerivedState();
+  renderCompanyExploration();
   renderCompanyOverview();
   renderCompanyEconomy();
   renderCompanyDepartments();
@@ -452,6 +915,1375 @@ function renderLifeCompanyPage() {
   renderRecommendedSkillStocks();
   renderCompanyReport();
   saveLifeCompany();
+}
+
+function activeCompanyDepartment() {
+  const company = lifeCompanyState.company;
+  if (!company?.departments?.length) return null;
+  const active = company.departments.find((department) => department.id === company.activeDepartmentId && department.exploration?.unlocked);
+  const fallback = company.departments.find((department) => department.exploration?.unlocked) || company.departments[0];
+  if (!active && fallback) company.activeDepartmentId = fallback.id;
+  return active || fallback;
+}
+
+function renderCompanyExploration() {
+  const company = lifeCompanyState.company;
+  const department = activeCompanyDepartment();
+  if (!company || !department) return;
+  const type = companyTypeById(company.type);
+  const departmentIndex = company.departments.findIndex((item) => item.id === department.id);
+  const revealed = new Set(department.exploration.revealedCells);
+  const nextDepartment = company.departments[departmentIndex + 1];
+  const canPromptNext = Boolean(department.exploration.completed && nextDepartment && !nextDepartment.exploration.unlocked);
+
+  setText(companyDom.companyExplorerType, type?.name || "人生公司");
+  setText(companyDom.companyExplorerCompanyName, company.name);
+  if (companyDom.companyGardenButton) {
+    companyDom.companyGardenButton.textContent = companyPreviewMode === "scan" ? "花园入口" : company.garden.unlocked ? "后花园" : "开启花园";
+    companyDom.companyGardenButton.classList.toggle("is-locked", !company.garden.unlocked);
+  }
+  setText(companyDom.companyExplorationStage, `部门 ${departmentIndex + 1} / ${company.departments.length}`);
+  setText(companyDom.companyExplorationProgress, department.exploration.completed
+    ? `${department.room.memberIds.length} / ${COMPANY_ROOM_MEMBER_LIMIT}`
+    : `公司账户 · ${formatCompanyCoins(company.economy.companyCoins)}`);
+  setText(companyDom.companyExplorationTitle, department.exploration.completed
+    ? `${department.name}办公室`
+    : `扫描格子，寻找${department.name}`);
+  const explorationBoard = companyDom.companyMineBoard?.closest(".company-exploration-board");
+  explorationBoard?.classList.toggle("is-department-room", department.exploration.completed);
+  companyDom.companyExplorationHint.hidden = department.exploration.completed;
+  if (!department.exploration.completed) {
+    setText(companyDom.companyExplorationHint, `每次扫描消耗 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)}，本区域只有一个真正入口。`);
+  }
+  companyDom.companyMineBoard.classList.toggle("is-complete", department.exploration.completed);
+  companyDom.companyMineBoard.classList.toggle("is-room-view", department.exploration.completed);
+
+  companyDom.companyExplorationNextAction.hidden = !canPromptNext;
+  companyDom.companyDepartmentTrack.innerHTML = company.departments.map((item, index) => {
+    const isActive = item.id === department.id;
+    const isUnlocked = Boolean(item.exploration?.unlocked);
+    return `
+      <button class="${isActive ? "is-active" : ""} ${item.exploration?.completed ? "is-complete" : ""}" type="button"
+        data-company-action="select-exploration-department" data-department-id="${escapeHtml(item.id)}"
+        ${isUnlocked ? "" : "disabled"} aria-label="${isUnlocked ? `查看${escapeHtml(item.name)}` : `尚未开启的部门 ${index + 1}`}">
+        <span>${isUnlocked ? index + 1 : "?"}</span>
+        <small>${isUnlocked ? escapeHtml(item.name) : "待开启"}</small>
+      </button>
+    `;
+  }).join("");
+
+  if (department.exploration.completed) {
+    openCompanyRoomDepartmentId = department.id;
+    companyDom.companyMineBoard.setAttribute("role", "group");
+    companyDom.companyMineBoard.setAttribute("aria-label", `${department.name}办公室`);
+    companyDom.companyMineBoard.innerHTML = renderCompanyDepartmentInteriorPreview(department);
+    renderCompanyInlineTasks(department);
+    renderCompanyInlineRoomMembers(department);
+    return;
+  }
+
+  openCompanyRoomDepartmentId = "";
+  if (companyDom.companyInlineTaskPanel) companyDom.companyInlineTaskPanel.hidden = true;
+  if (companyDom.companyInlineRoomMembers) companyDom.companyInlineRoomMembers.hidden = true;
+
+  companyDom.companyMineBoard.setAttribute("role", "grid");
+  companyDom.companyMineBoard.setAttribute("aria-label", "部门探索格");
+
+  const scanCells = Array.from({ length: COMPANY_EXPLORATION_CELL_COUNT }, (_, cellIndex) => {
+    const isRevealed = revealed.has(cellIndex);
+    const isPortal = department.exploration.portalCell === cellIndex;
+    if (department.exploration.completed && !isPortal) {
+      return `<button class="company-mine-cell is-cleared" type="button" role="gridcell" disabled aria-label="已清空格 ${cellIndex + 1}"><span></span></button>`;
+    }
+    if (!isRevealed) {
+      return `<button class="company-mine-cell is-covered" type="button" role="gridcell" data-company-action="reveal-company-cell" data-cell-index="${cellIndex}" aria-label="扫描格 ${cellIndex + 1}，消耗 ${COMPANY_EXPLORATION_SCAN_COST} 金币"><span></span></button>`;
+    }
+    if (isPortal) {
+      const portalState = department.exploration.completed ? "is-complete" : revealed.size <= 1 ? "is-entrance" : "is-open";
+      return `<button class="company-mine-cell is-revealed is-department ${portalState} is-current" type="button" role="gridcell" data-company-action="open-department-room" data-department-id="${escapeHtml(department.id)}" aria-label="进入${escapeHtml(department.name)}"><span>部</span><small>${escapeHtml(department.name)}</small></button>`;
+    }
+    return `<button class="company-mine-cell is-revealed is-empty" type="button" role="gridcell" disabled aria-label="格 ${cellIndex + 1} 未发现入口"><span>空</span></button>`;
+  }).join("");
+
+  companyDom.companyMineBoard.innerHTML = isWarmPixelSkin() ? `
+    <div class="company-scan-progress-card" aria-hidden="true">
+      <strong>探索进度</strong>
+      <span>已探索 <b>${revealed.size}</b>/${COMPANY_EXPLORATION_CELL_COUNT}</span>
+      <small>找到${escapeHtml(department.name)}入口即可解锁</small>
+    </div>
+    <div class="company-scan-grid" role="presentation">${scanCells}</div>
+    <div class="company-scan-cost-bar" aria-hidden="true">
+      <span>每次扫描消耗 <b>${COMPANY_EXPLORATION_SCAN_COST}</b> 金币</span>
+      <strong>${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)} 扫描格子</strong>
+    </div>
+  ` : scanCells;
+}
+
+function showCompanyExplorationHint() {
+  const department = activeCompanyDepartment();
+  if (!department || department.exploration?.completed) return;
+  const revealedCount = department.exploration.revealedCells.length;
+  const remainingCount = Math.max(0, COMPANY_EXPLORATION_CELL_COUNT - revealedCount);
+  showCompanyToast(`提示：${department.name}入口藏在未扫描格里，还剩 ${remainingCount} 格可探索。`);
+}
+
+function renderCompanyDepartmentInteriorPreview(department) {
+  const relationshipCards = loadCompanyRelationshipCards();
+  const scene = companyDepartmentScene(department);
+  const members = department.room.memberIds
+    .map((id) => relationshipCards.find((card) => card.id === id))
+    .filter(Boolean);
+  const tasks = companyTasksForDepartment(department);
+  const pendingTaskCount = tasks.filter((task) => !task.done).length;
+  if (isWarmPixelSkin()) {
+    return renderWarmPixelDepartmentRoom(department, scene, members, tasks, pendingTaskCount);
+  }
+  return `
+    <section class="company-department-interior-preview">
+      <div class="company-department-interior-pan" data-company-scene-pan tabindex="0" aria-label="${escapeHtml(department.name)}办公室场景，可左右移动">
+        <div class="company-department-interior-scene company-office-scene" style="--scene-aspect:${scene.aspectRatio};">
+          <img class="company-department-interior-image pixel-art" src="${escapeHtml(scene.src)}" alt="${escapeHtml(scene.name)}" draggable="false" />
+          ${members.map((member, index) => renderPixelOfficeMember(member, department, index)).join("")}
+          ${members.length ? "" : `<p class="pixel-room-empty">还没有安排部门成员</p>`}
+        </div>
+      </div>
+      <button class="company-department-task-toggle" type="button" data-company-action="toggle-inline-tasks" aria-expanded="${companyInlineTasksExpanded}">
+        <small>TASK MANAGEMENT</small>
+        <strong>任务管理</strong>
+        <span>${tasks.length} 项任务 · ${pendingTaskCount} 项待完成</span>
+        <i aria-hidden="true">${companyInlineTasksExpanded ? "⌃" : "⌄"}</i>
+      </button>
+    </section>
+  `;
+}
+
+function renderWarmPixelDepartmentRoom(department, scene, members, tasks, pendingTaskCount) {
+  const company = lifeCompanyState.company;
+  const departmentIndex = company?.departments.findIndex((item) => item.id === department.id) ?? 0;
+  const projects = (company?.projects || []).filter((project) => project.departmentName === department.name);
+  const doneTaskCount = tasks.filter((task) => task.done).length;
+  const reportLines = company ? companyDepartmentReportLines(company, department, projects, tasks) : [];
+  return `
+    <section class="company-department-interior-preview company-room-dashboard-preview">
+      <header class="company-room-dashboard-head">
+        <div>
+          <small>部门 ${departmentIndex + 1} / ${company?.departments.length || 1}</small>
+          <strong>${escapeHtml(department.name)}办公室</strong>
+        </div>
+        <span>${department.room.memberIds.length} / ${COMPANY_ROOM_MEMBER_LIMIT}</span>
+      </header>
+      <div class="company-room-stage-card">
+        <div class="company-department-interior-pan" data-company-scene-pan tabindex="0" aria-label="${escapeHtml(department.name)}办公室场景，可左右移动">
+          <div class="company-department-interior-scene company-office-scene company-room-new-scene" style="--scene-aspect:${scene.aspectRatio};">
+            <img class="company-department-interior-image pixel-art" src="${escapeHtml(scene.src)}" alt="${escapeHtml(scene.name)}" draggable="false" />
+            ${members.map((member, index) => renderPixelOfficeMember(member, department, index)).join("")}
+            ${members.length ? "" : `<p class="pixel-room-empty company-room-speech-bubble">还没有安排部门成员</p>`}
+          </div>
+        </div>
+        <button class="company-department-task-toggle company-room-task-card" type="button" data-company-action="toggle-inline-tasks" aria-expanded="${companyInlineTasksExpanded}">
+          <small>任务管理</small>
+          <strong>${tasks.length} 项任务</strong>
+          <span>${doneTaskCount} 项完成</span>
+          <i aria-hidden="true">›</i>
+        </button>
+      </div>
+      <div class="company-room-dashboard-grid">
+        <article class="company-room-panel company-room-project-panel">
+          <h3>小项目时间</h3>
+          ${renderWarmPixelDepartmentProjects(projects)}
+        </article>
+        <article class="company-room-panel company-room-today-panel">
+          <h3>今日公司任务</h3>
+          ${renderWarmPixelDepartmentTasks(tasks)}
+        </article>
+        <article class="company-room-panel company-room-report-panel">
+          <h3>公司运营报告</h3>
+          <ul>${reportLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderWarmPixelDepartmentProjects(projects) {
+  if (!projects.length) {
+    return `<p class="company-room-empty-copy">还没有小项目。</p><button type="button" data-company-action="open-room-project">新增项目</button>`;
+  }
+  return projects.slice(0, 2).map((project) => `
+    <div class="company-room-project-row">
+      <strong>${escapeHtml(project.title)}</strong>
+      <span>${project.progress || 0}%</span>
+      <i><b style="width:${project.progress || 0}%"></b></i>
+      <small>${project.deadline ? `截止 ${escapeHtml(formatDateShort(project.deadline))}` : "未设置时间"}</small>
+    </div>
+  `).join("") + `<button type="button" data-company-action="open-room-project">新增项目</button>`;
+}
+
+function renderWarmPixelDepartmentTasks(tasks) {
+  if (!tasks.length) {
+    return `<p class="company-room-empty-copy">还没有公司任务卡。</p><button type="button" data-company-action="open-room-project">生成任务</button>`;
+  }
+  return tasks.slice(0, 3).map((task) => `
+    <div class="company-room-task-row ${task.done ? "is-done" : ""}">
+      <button type="button" data-company-action="toggle-company-task" data-task-id="${escapeHtml(task.id)}" aria-label="${task.done ? "取消完成" : "完成"}${escapeHtml(task.title)}">${task.done ? "✓" : ""}</button>
+      <span><strong>${escapeHtml(task.title)}</strong><small>${formatCompanyTaskMinutes(task.durationMinutes)} · ${formatCompanyCoins(companyTaskCoinReward(task))}</small></span>
+    </div>
+  `).join("");
+}
+
+function companyDepartmentReportLines(company, department, projects, tasks) {
+  const doneTaskCount = tasks.filter((task) => task.done).length;
+  const statusLabel = DEPARTMENT_STATUS_LABELS[department.status] || "正常";
+  if (!projects.length && !tasks.length) {
+    return [`${department.name}暂无项目，状态${statusLabel}。`, "从一个项目开始生成任务，让公司今天产生实际行动。"];
+  }
+  return [
+    `${department.name}：${projects.length} 个项目，${tasks.length} 张任务，状态${statusLabel}。`,
+    `今日已完成 ${doneTaskCount} 项，待完成 ${Math.max(0, tasks.length - doneTaskCount)} 项。`,
+    `公司等级 ${currentCompanyLevel().name}，可用金币 ${formatCompanyCoins(company.economy.companyCoins)}。`,
+  ];
+}
+
+function companyTasksForDepartment(department) {
+  return lifeCompanyState.tasks
+    .filter((task) => task.departmentName === department.name)
+    .sort((a, b) => Number(a.done) - Number(b.done) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
+function renderCompanyInlineTasks(department) {
+  if (!companyDom.companyInlineTaskPanel || !companyDom.companyInlineTaskList) return;
+  const tasks = companyTasksForDepartment(department);
+  const pendingCount = tasks.filter((task) => !task.done).length;
+  companyDom.companyInlineTaskPanel.hidden = !companyInlineTasksExpanded;
+  setText(companyDom.companyInlineTaskSummary, `${tasks.length} 项任务 · ${pendingCount} 项待完成`);
+  if (!tasks.length) {
+    companyDom.companyInlineTaskList.innerHTML = `<p class="company-inline-task-empty">当前部门暂无任务。</p>`;
+    return;
+  }
+  companyDom.companyInlineTaskList.innerHTML = tasks.map((task) => {
+    const project = lifeCompanyState.company?.projects.find((item) => item.id === task.projectId);
+    const details = [
+      project?.title || "未关联项目",
+      formatCompanyTaskMinutes(task.durationMinutes),
+      project?.deadline ? `截止 ${formatDateShort(project.deadline)}` : "未设截止日期",
+    ];
+    return `
+      <article class="company-inline-task-item ${task.done ? "is-done" : ""}">
+        <button type="button" data-company-action="toggle-company-task" data-task-id="${escapeHtml(task.id)}" aria-label="${task.done ? "取消完成" : "完成"}${escapeHtml(task.title)}">${task.done ? "✓" : ""}</button>
+        <div>
+          <strong>${escapeHtml(task.title)}</strong>
+          <small>${details.map((detail) => escapeHtml(detail)).join(" · ")}</small>
+        </div>
+        <span><b>${task.done ? "已完成" : "待完成"}</b><em>${formatCompanyCoins(companyTaskCoinReward(task))}</em></span>
+      </article>
+    `;
+  }).join("");
+}
+
+function toggleCompanyInlineTasks() {
+  const department = activeCompanyDepartment();
+  if (!department?.exploration?.completed) return;
+  companyInlineTasksExpanded = !companyInlineTasksExpanded;
+  renderCompanyExploration();
+}
+
+function renderCompanyInlineRoomMembers(department) {
+  if (!companyDom.companyInlineRoomMembers || !companyDom.companyInlineRoomMemberList) return;
+  const relationshipCards = loadCompanyRelationshipCards();
+  const validMemberIds = new Set(relationshipCards.map((card) => card.id));
+  department.room.memberIds = department.room.memberIds
+    .filter((id) => validMemberIds.has(id))
+    .slice(0, COMPANY_ROOM_MEMBER_LIMIT);
+  companyDom.companyInlineRoomMembers.hidden = false;
+  companyDom.companyInlineRoomToggle?.setAttribute("aria-expanded", String(companyInlineMembersExpanded));
+  if (companyDom.companyInlineRoomContent) companyDom.companyInlineRoomContent.hidden = !companyInlineMembersExpanded;
+  companyDom.companyInlineRoomMembers.classList.toggle("is-expanded", companyInlineMembersExpanded);
+  setText(companyDom.companyInlineRoomMemberCount, `${department.room.memberIds.length} / ${COMPANY_ROOM_MEMBER_LIMIT}`);
+  if (companyDom.companyInlineRoomSearchInput && document.activeElement !== companyDom.companyInlineRoomSearchInput) {
+    companyDom.companyInlineRoomSearchInput.value = companyRoomMemberSearch;
+  }
+  companyDom.companyInlineRoomMemberList.innerHTML = renderCompanyRoomMemberOptions(department, relationshipCards, companyRoomMemberSearch);
+}
+
+function renderCompanyRoomMemberOptions(department, relationshipCards, query = "") {
+  if (!relationshipCards.length) {
+    return `
+      <div class="company-room-member-empty">
+        <p>人际关系里还没有角色。</p>
+        <a href="./relationships.html">去创建关系卡</a>
+      </div>
+    `;
+  }
+  const keyword = normalizeCompanyRelationshipSearchText(query);
+  const filteredCards = relationshipCards
+    .filter((member) => !keyword || member.searchText.includes(keyword))
+    .sort((a, b) => Number(department.room.memberIds.includes(b.id)) - Number(department.room.memberIds.includes(a.id))
+      || a.name.localeCompare(b.name, "zh-Hans-CN"));
+  if (!filteredCards.length) {
+    return `<div class="company-room-member-empty"><p>没有匹配的关系角色。</p></div>`;
+  }
+  return filteredCards.map((member) => {
+    const isAssigned = department.room.memberIds.includes(member.id);
+    return `
+      <article class="company-room-member-option ${isAssigned ? "is-assigned" : ""}">
+        <span class="company-room-member-avatar" style="--member-color: ${companyMemberColor(member.id)}">${renderCompanyRelationshipAvatar(member, "library")}</span>
+        <span class="company-room-member-copy"><b>${escapeHtml(member.name)}</b><small>${escapeHtml(member.relationshipType)}</small></span>
+        <button class="${isAssigned ? "is-remove" : "is-add"}" type="button" data-company-action="${isAssigned ? "remove-room-member" : "add-room-member"}" data-member-id="${escapeHtml(member.id)}" aria-label="${isAssigned ? `将${escapeHtml(member.name)}移出部门` : `将${escapeHtml(member.name)}加入部门`}" title="${isAssigned ? "移出部门" : "加入部门"}">${isAssigned ? "×" : "+"}</button>
+      </article>
+    `;
+  }).join("");
+}
+
+function toggleCompanyInlineRoomMembers() {
+  const department = activeCompanyDepartment();
+  if (!department?.exploration?.completed) return;
+  companyInlineMembersExpanded = !companyInlineMembersExpanded;
+  renderCompanyInlineRoomMembers(department);
+}
+
+function handleCompanyRoomMemberSearchInput(event) {
+  if (event.target?.id !== "companyInlineRoomSearchInput") return;
+  companyRoomMemberSearch = event.target.value;
+  const department = activeCompanyDepartment();
+  if (!department?.exploration?.completed || !companyDom.companyInlineRoomMemberList) return;
+  companyDom.companyInlineRoomMemberList.innerHTML = renderCompanyRoomMemberOptions(
+    department,
+    loadCompanyRelationshipCards(),
+    companyRoomMemberSearch,
+  );
+}
+
+function companyExplorationTargetCell(departmentId) {
+  const seed = Array.from(String(departmentId)).reduce((sum, character, index) => sum + character.charCodeAt(0) * (index + 3), 0);
+  return Math.abs(seed * 17 + 11) % COMPANY_EXPLORATION_CELL_COUNT;
+}
+
+function companyExplorationSignal(departmentId, cellIndex) {
+  const seed = Array.from(String(departmentId)).reduce((sum, character) => sum + character.charCodeAt(0), 0);
+  return (seed + cellIndex * 7 + Math.floor(cellIndex / 5) * 3) % 4;
+}
+
+function selectExplorationDepartment(departmentId) {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === departmentId);
+  if (!department?.exploration?.unlocked) {
+    showCompanyToast("这个部门还没有开启。");
+    return;
+  }
+  lifeCompanyState.company.activeDepartmentId = department.id;
+  renderCompanyExploration();
+  saveLifeCompany();
+}
+
+function revealCompanyCell(cellIndex) {
+  if (companyPreviewMode === "scan") {
+    showCompanyToast("扫雷预览页只展示未探索界面。");
+    return;
+  }
+  const company = lifeCompanyState.company;
+  const department = activeCompanyDepartment();
+  if (!company || !department || !Number.isInteger(cellIndex) || cellIndex < 0 || cellIndex >= COMPANY_EXPLORATION_CELL_COUNT) return;
+  const exploration = department.exploration;
+  if (exploration.completed || exploration.revealedCells.includes(cellIndex)) return;
+  const spent = spendCompanyCoins(COMPANY_EXPLORATION_SCAN_COST, "exploration", {
+    title: `扫描${department.name}`,
+    note: `探索格 ${cellIndex + 1}`,
+  });
+  if (!spent) {
+    showCompanyToast(`公司金币不足，需要 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)} 才能扫描。`);
+    return;
+  }
+  exploration.revealedCells.push(cellIndex);
+  exploration.revealedCells.sort((a, b) => a - b);
+  const foundPortal = cellIndex === exploration.targetCell;
+  if (foundPortal) {
+    exploration.portalCell = cellIndex;
+    exploration.completed = true;
+  }
+  company.updatedAt = new Date().toISOString();
+  renderLifeCompanyPage();
+  if (!foundPortal) {
+    showCompanyToast(`这里是空的，已消耗 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)}。`);
+    return;
+  }
+  showCompanyToast(`找到${department.name}，办公室已经建立。`);
+}
+
+function toggleCompanyOperations() {
+  if (!companyDom.companyOperationsDrawer) return;
+  companyDom.companyOperationsDrawer.hidden = !companyDom.companyOperationsDrawer.hidden;
+  if (!companyDom.companyOperationsDrawer.hidden) {
+    companyDom.companyOperationsDrawer.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function nextLockedCompanyDepartment() {
+  const company = lifeCompanyState.company;
+  const department = activeCompanyDepartment();
+  if (!company || !department) return null;
+  const index = company.departments.findIndex((item) => item.id === department.id);
+  const next = company.departments[index + 1];
+  return next && !next.exploration.unlocked ? next : null;
+}
+
+function promptNextCompanyDepartment() {
+  const department = activeCompanyDepartment();
+  const next = nextLockedCompanyDepartment();
+  if (!department?.exploration.completed) {
+    showCompanyToast("先扫描出当前部门的真正入口。");
+    return;
+  }
+  if (!next) {
+    showCompanyToast("所有部门都已经开启。");
+    return;
+  }
+  setText(companyDom.companyUnlockText, `${department.name}已经探索完成。要开启「${next.name}」吗？`);
+  showDialog(companyDom.companyUnlockDialog);
+}
+
+function unlockNextCompanyDepartment() {
+  const company = lifeCompanyState.company;
+  const current = activeCompanyDepartment();
+  const next = nextLockedCompanyDepartment();
+  if (!company || !current || !next) return;
+  current.exploration.completionPromptShown = true;
+  next.exploration.unlocked = true;
+  company.activeDepartmentId = next.id;
+  company.updatedAt = new Date().toISOString();
+  closeDialog(companyDom.companyUnlockDialog);
+  renderLifeCompanyPage();
+  showCompanyToast(`${next.name}已经开启。`);
+}
+
+function loadCompanyRelationshipCards() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RELATIONSHIP_CARDS_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((card) => {
+      const name = String(card?.basic?.name || card?.basic?.realName || "未命名角色").trim() || "未命名角色";
+      const relationshipType = String(card?.basic?.relationshipType || "其他");
+      return {
+        id: String(card?.id || ""),
+        name,
+        relationshipType,
+        avatar: card?.avatar && typeof card.avatar === "object" && !Array.isArray(card.avatar) ? card.avatar : {},
+        searchText: normalizeCompanyRelationshipSearchText([
+          name,
+          relationshipType,
+          card?.basic?.meaning,
+          card?.basic?.note,
+          card?.relationship?.status,
+          card?.relationship?.boundary,
+          ...(Array.isArray(card?.relationship?.tags) ? card.relationship.tags : []),
+          ...(Array.isArray(card?.profile?.tags) ? card.profile.tags : []),
+          ...(Array.isArray(card?.profile?.keywords) ? card.profile.keywords : []),
+          card?.profile?.recentInteraction,
+        ].filter(Boolean).join(" ")),
+      };
+    }).filter((card) => card.id);
+  } catch (error) {
+    return [];
+  }
+}
+
+function normalizeCompanyRelationshipSearchText(value) {
+  return String(value || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function renderCompanyRelationshipAvatar(card, variant = "library") {
+  if (window.RelationshipAvatarView?.render) return window.RelationshipAvatarView.render(card?.avatar || {}, variant);
+  return `<span class="company-avatar-fallback" style="--member-color: ${companyMemberColor(card?.id)}">${escapeHtml(companyMemberInitial(card?.name))}</span>`;
+}
+
+function openCompanyGarden() {
+  if (!lifeCompanyState.company) return;
+  companyGardenSceneMenuOpen = false;
+  companyGardenCharacterPickerOpen = false;
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  renderCompanyGarden();
+  showDialog(companyDom.companyGardenDialog);
+}
+
+function unlockCompanyGarden() {
+  const company = lifeCompanyState.company;
+  if (!company) return;
+  company.garden.unlocked = true;
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyExploration();
+  renderCompanyGarden();
+  showCompanyToast("后花园已经开启。");
+}
+
+function companyGardenRelationshipKind(relationshipType) {
+  if (relationshipType === "恋人 / 前任") return "love";
+  if (relationshipType === "家人") return "family";
+  return "friendship";
+}
+
+function companyGardenPlantOptions(sceneId = lifeCompanyState.company?.garden?.sceneId) {
+  const scene = COMPANY_GARDEN_SCENES.find((item) => item.id === sceneId) || COMPANY_GARDEN_SCENES[0];
+  return COMPANY_GARDEN_PLANT_VARIANTS[scene.plantKind] || COMPANY_GARDEN_PLANT_VARIANTS.friendship;
+}
+
+function companyGardenKindLabel(kind) {
+  if (kind === "love") return "爱情花圃";
+  if (kind === "family") return "亲情果木";
+  return "友情花圃";
+}
+
+function companyGardenSceneState(sceneId = lifeCompanyState.company?.garden?.sceneId) {
+  const garden = lifeCompanyState.company?.garden;
+  const selectedSceneId = COMPANY_GARDEN_SCENES.some((scene) => scene.id === sceneId)
+    ? sceneId
+    : COMPANY_GARDEN_SCENES[0].id;
+  if (!garden) return null;
+  if (!garden.scenes || typeof garden.scenes !== "object" || Array.isArray(garden.scenes)) garden.scenes = {};
+  if (!garden.scenes[selectedSceneId]) {
+    garden.scenes[selectedSceneId] = {
+      selectedCharacterId: "",
+      placedPlants: [],
+      targets: {},
+    };
+  }
+  return garden.scenes[selectedSceneId];
+}
+
+function companyGardenTarget(characterId, sceneId = lifeCompanyState.company?.garden?.sceneId) {
+  const sceneState = companyGardenSceneState(sceneId);
+  if (!sceneState || !characterId) return null;
+  if (!sceneState.targets[characterId]) {
+    sceneState.targets[characterId] = {
+      characterId,
+      intimacyPoints: 0,
+      plantCount: 0,
+      completed: false,
+      inTacticsBook: false,
+      events: [],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+  return sceneState.targets[characterId];
+}
+
+function renderCompanyGarden() {
+  const company = lifeCompanyState.company;
+  if (!company || !companyDom.companyGardenBody) return;
+  const garden = company.garden;
+  if (!garden.unlocked) {
+    companyDom.companyGardenBody.innerHTML = `
+      <section class="company-garden-locked">
+        <div class="company-garden-gate" aria-hidden="true">
+          ${isWarmPixelSkin() ? renderWarmPixelImage("garden/gate_closed.png", "skin-garden-gate-image", "", 'loading="lazy"') : ""}
+          <span></span><span></span>
+        </div>
+        <h3>开启公司的秘密后花园</h3>
+        <p>把人际关系里的角色放进花园，用共同完成的亲密事件培育关系植物。</p>
+        <button type="button" data-company-action="unlock-company-garden">开启后花园</button>
+      </section>
+    `;
+    return;
+  }
+
+  const cards = loadCompanyRelationshipCards();
+  const selectedScene = COMPANY_GARDEN_SCENES.find((scene) => scene.id === garden.sceneId)
+    || COMPANY_GARDEN_SCENES[0];
+  const sceneState = companyGardenSceneState(selectedScene.id);
+  const selectedCard = cards.find((card) => card.id === sceneState.selectedCharacterId) || null;
+  if (sceneState.selectedCharacterId && !selectedCard) sceneState.selectedCharacterId = "";
+  const target = selectedCard ? companyGardenTarget(selectedCard.id, selectedScene.id) : null;
+  const activeTargetLocked = Boolean(selectedCard && target && !target.completed);
+  const tacticsCards = cards.filter((card) => sceneState.targets[card.id]?.inTacticsBook);
+  const maxTacticsPage = Math.max(0, Math.ceil(tacticsCards.length / 4) - 1);
+  companyGardenTacticsPage = Math.min(companyGardenTacticsPage, maxTacticsPage);
+
+  companyDom.companyGardenBody.innerHTML = `
+    <section class="company-garden-world ${companyGardenPendingPlantId ? "is-placing-plant" : ""}">
+      <img class="company-garden-scene-image" src="${escapeHtml(selectedScene.src)}" alt="${escapeHtml(selectedScene.name)}" />
+      ${renderCompanyGardenSceneControl(selectedScene)}
+      ${companyGardenCharacterPickerOpen
+        ? renderCompanyGardenCharacterPicker(cards, sceneState, selectedCard, activeTargetLocked)
+        : selectedCard
+          ? renderCompanyGardenCharacter(selectedCard)
+          : renderCompanyGardenEmptyCharacterSlot()}
+      ${renderCompanyGardenPlantControl(selectedCard, sceneState)}
+      ${companyGardenPlantPickerOpen ? renderCompanyGardenPlantPicker(selectedScene) : ""}
+      ${renderCompanyGardenPlacedPlants(sceneState)}
+      ${companyGardenPendingPlantId ? renderCompanyGardenPlacementHint() : ""}
+      ${!selectedCard && !sceneState.placedPlants.length
+        ? `<div class="company-garden-plots"><div class="company-garden-empty-plot"><strong>这块花圃还空着</strong><small>先点击角色＋，再点击植物＋开始种植</small></div></div>`
+        : ""}
+    </section>
+
+    ${selectedCard ? renderCompanyGardenEventPanel(selectedCard, target) : ""}
+
+    <section class="company-tactics-book">
+      <div class="company-garden-section-head">
+        <div><strong>已攻略战术册</strong><small>种满 10 株并确认后会收藏在这里</small></div>
+        <span>${tacticsCards.length}</span>
+      </div>
+      ${renderCompanyTacticsBook(tacticsCards)}
+    </section>
+  `;
+}
+
+function renderCompanyGardenCharacter(card) {
+  return `
+    <button class="company-garden-character" type="button" data-company-action="toggle-garden-character-picker" data-garden-character-id="${escapeHtml(card.id)}" style="--member-color:${companyMemberColor(card.id)};" aria-label="${escapeHtml(card.name)}位于花园中，点击查看角色选择，长按可移出花园">
+      ${renderCompanyRelationshipAvatar(card, "map")}
+      <b>${escapeHtml(card.name)}</b>
+    </button>
+  `;
+}
+
+function renderCompanyGardenEmptyCharacterSlot() {
+  return `<button class="company-garden-empty-character-slot" type="button" data-company-action="toggle-garden-character-picker" aria-label="选择花园角色"><span aria-hidden="true">＋</span></button>`;
+}
+
+function renderCompanyGardenPlantControl(selectedCard, sceneState) {
+  const disabled = !selectedCard;
+  const growingPlant = selectedCard ? companyGardenGrowingPlant(sceneState, selectedCard.id) : null;
+  const label = disabled
+    ? "请先选择花园角色"
+    : growingPlant
+      ? "当前种子开花后才能种下一株植物"
+      : "选择植物并种植";
+  return `
+    <button class="company-garden-empty-plant-slot ${growingPlant ? "is-locked" : ""}" type="button" data-company-action="toggle-garden-plant-picker" aria-label="${label}" title="${label}" ${disabled ? "disabled" : ""} ${growingPlant ? 'aria-disabled="true"' : ""}>＋</button>
+  `;
+}
+
+function renderCompanyGardenPlantPicker(scene) {
+  const plants = companyGardenPlantOptions(scene?.id);
+  return `
+    <section class="company-garden-plant-picker">
+      <div class="company-garden-section-head">
+        <div><strong>选择植物种类</strong><small>选择后点击花园中的位置完成种植</small></div>
+        <button class="company-garden-picker-close" type="button" data-company-action="toggle-garden-plant-picker" aria-label="关闭植物选择">×</button>
+      </div>
+      <div class="company-garden-plant-options">
+        ${plants.map((plant) => `
+          <button type="button" data-company-action="select-garden-plant-type" data-plant-id="${escapeHtml(plant.id)}">
+            <img src="./assets/garden-plants/${escapeHtml(plant.id)}/stage_05.png?v=2" alt="" loading="lazy" />
+            <b>${escapeHtml(plant.name)}</b>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderCompanyGardenPlacedPlants(sceneState) {
+  const perCharacterIndexes = {};
+  return `
+    <div class="company-garden-placed-plants" aria-label="已种植的植物">
+      ${sceneState.placedPlants.map((plant) => {
+        const characterId = plant.characterId || "unassigned";
+        const index = perCharacterIndexes[characterId] || 0;
+        perCharacterIndexes[characterId] = index + 1;
+        const target = sceneState.targets[plant.characterId];
+        const stage = target ? companyGardenPlantStage(target, index) : 5;
+        const stageName = `stage_${String(stage).padStart(2, "0")}.png`;
+        const option = COMPANY_GARDEN_PLANT_OPTIONS.find((item) => item.id === plant.variantId);
+        const [anchorX, anchorY] = COMPANY_GARDEN_PLANT_ANCHORS[plant.variantId]?.[stage - 1] || [50, 100];
+        return `
+          <span class="company-garden-placed-plant" style="left:${plant.x}%;top:${plant.y}%;--plant-anchor-x:-${anchorX}%;--plant-anchor-y:-${anchorY}%;" aria-label="${escapeHtml(option?.name || "植物")}，成长阶段 ${stage}">
+            <img src="./assets/garden-plants/${escapeHtml(plant.variantId)}/${stageName}?v=2" alt="" loading="lazy" />
+          </span>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderCompanyGardenPlacementHint() {
+  const plant = COMPANY_GARDEN_PLANT_OPTIONS.find((item) => item.id === companyGardenPendingPlantId);
+  return `
+    <div class="company-garden-placement-hint">
+      <span>点击花园中的位置种下${escapeHtml(plant?.name || "植物")}</span>
+      <button type="button" data-company-action="cancel-garden-plant-placement">取消</button>
+    </div>
+  `;
+}
+
+function renderCompanyGardenCharacterPicker(cards, sceneState, selectedCard, activeTargetLocked) {
+  return `
+    <section class="company-garden-character-picker is-scene-popover">
+      <div class="company-garden-section-head">
+        <div><strong>选择花园角色</strong><small>${activeTargetLocked ? `${escapeHtml(selectedCard.name)}攻略中，完成或放弃后可更换` : "每个花园一次只能放入一位攻略对象"}</small></div>
+        <button class="company-garden-picker-close" type="button" data-company-action="toggle-garden-character-picker" aria-label="关闭角色选择">×</button>
+      </div>
+      <div class="company-garden-character-list">
+        ${cards.length ? cards.map((card) => {
+          const progress = sceneState.targets[card.id];
+          const selected = card.id === sceneState.selectedCharacterId;
+          const lockedByOtherTarget = activeTargetLocked && !selected;
+          return `
+            <button class="${selected ? "is-selected" : ""}" type="button" data-company-action="select-garden-character" data-character-id="${escapeHtml(card.id)}" ${lockedByOtherTarget ? "disabled" : ""}>
+              <span class="company-garden-avatar-chip" style="--member-color: ${companyMemberColor(card.id)}">
+                ${isWarmPixelSkin() ? renderWarmPixelImage("relationship-ui/avatar_frame.png", "skin-avatar-frame", "", 'loading="lazy"') : ""}
+                ${renderCompanyRelationshipAvatar(card, "library")}
+              </span>
+              <b>${escapeHtml(card.name)}</b>
+              <small>${lockedByOtherTarget ? "当前不可放入" : `${escapeHtml(card.relationshipType)} · ${progress?.plantCount || 0}/${COMPANY_GARDEN_TARGET_PLANTS} 株`}</small>
+            </button>
+          `;
+        }).join("") : `<div class="company-room-member-empty"><p>还没有可放入花园的关系角色。</p><a href="./relationships.html">去创建关系卡</a></div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderCompanyGardenSceneControl(selectedScene) {
+  return `
+    <div class="company-garden-target company-garden-scene-control ${companyGardenSceneMenuOpen ? "is-open" : ""}">
+      <button class="company-garden-scene-trigger" type="button" data-company-action="toggle-garden-scene-menu" aria-expanded="${companyGardenSceneMenuOpen}">${escapeHtml(selectedScene.name)}</button>
+      <div class="company-garden-scene-menu" role="menu" ${companyGardenSceneMenuOpen ? "" : "hidden"}>
+        ${COMPANY_GARDEN_SCENES.map((scene) => `
+          <button class="${scene.id === selectedScene.id ? "is-selected" : ""}" type="button" role="menuitemradio" data-company-action="select-garden-scene" data-scene-id="${escapeHtml(scene.id)}" aria-checked="${scene.id === selectedScene.id}">${escapeHtml(scene.name)}</button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderCompanyGardenPlants(card, target) {
+  const kind = companyGardenRelationshipKind(card.relationshipType);
+  return `
+    <div class="company-plant-grid" aria-label="${escapeHtml(card.name)}的关系植物">
+      ${Array.from({ length: COMPANY_GARDEN_TARGET_PLANTS }, (_, index) => renderCompanyGardenPlant(kind, target, index)).join("")}
+    </div>
+  `;
+}
+
+function companyGardenPlantStage(target, index) {
+  if (index < target.plantCount) return 5;
+  if (index > target.plantCount || target.completed) return 1;
+  return Math.max(1, Math.min(5, Math.floor(Number(target.intimacyPoints || 0) / 25) + 1));
+}
+
+function companyGardenGrowingPlant(sceneState, characterId = sceneState?.selectedCharacterId) {
+  const target = sceneState?.targets?.[characterId];
+  if (!target || !characterId) return null;
+  const plants = sceneState.placedPlants.filter((plant) => plant.characterId === characterId);
+  return plants.find((plant, index) => companyGardenPlantStage(target, index) < 5) || null;
+}
+
+function renderCompanyGardenPlant(kind, target, index) {
+  const stage = companyGardenPlantStage(target, index);
+  const grown = index < target.plantCount;
+  const current = index === target.plantCount && !target.completed;
+  const variants = COMPANY_GARDEN_PLANT_VARIANTS[kind] || COMPANY_GARDEN_PLANT_VARIANTS.friendship;
+  const variant = variants[index % variants.length];
+  const stageName = `stage_${String(stage).padStart(2, "0")}.png`;
+  return `
+    <span class="company-garden-plant has-art ${kind} ${grown ? "is-grown" : ""} ${current ? "is-current" : ""}" aria-label="第 ${index + 1} 株${escapeHtml(variant.name)}${grown ? "已长成" : "成长阶段 " + stage}">
+      <img class="company-garden-art-plant" src="./assets/garden-plants/${escapeHtml(variant.id)}/${stageName}?v=2" alt="" loading="lazy" />
+    </span>
+  `;
+}
+
+function renderCompanyGardenEventPanel(card, target) {
+  const completed = target.plantCount >= COMPANY_GARDEN_TARGET_PLANTS;
+  const recentEvents = target.events.slice(0, 3);
+  return `
+    <section class="company-garden-event-panel ${completed ? "is-complete" : ""}">
+      ${isWarmPixelSkin() ? `
+        <div class="skin-relationship-effects" aria-hidden="true">
+          ${renderWarmPixelImage(completed ? "relationship-ui/relationship_complete_effect.png" : "relationship-ui/plant_growth_effect.png", "skin-relation-effect", "", 'loading="lazy"')}
+          ${completed ? renderWarmPixelImage("relationship-ui/celebration_garland.png", "skin-celebration-garland", "", 'loading="lazy"') : ""}
+        </div>
+      ` : ""}
+      <div class="company-garden-progress-copy">
+        <div>
+          <strong>${completed ? "攻略完成" : `第 ${Math.min(target.plantCount + 1, COMPANY_GARDEN_TARGET_PLANTS)} 株成长中`}</strong>
+          <small>${target.plantCount} / ${COMPANY_GARDEN_TARGET_PLANTS} 株植物</small>
+        </div>
+        <b>${completed ? "100%" : `${target.intimacyPoints}%`}</b>
+      </div>
+      <i class="company-garden-meter"><b style="width: ${completed ? 100 : target.intimacyPoints}%"></b></i>
+      ${completed
+        ? `<button class="company-tactics-add-button" type="button" data-company-action="add-to-tactics-book" ${target.inTacticsBook ? "disabled" : ""}>${target.inTacticsBook ? "已加入战术册" : `把${escapeHtml(card.name)}加入已攻略战术册`}</button>`
+        : `
+          <label class="company-garden-event-input">
+            <span>亲密事件</span>
+            <input id="companyGardenEventInput" type="text" maxlength="80" placeholder="例如：一起散步、认真聊天、共同完成一件事" />
+          </label>
+          ${isWarmPixelSkin() ? `
+            <div class="company-garden-event-presets" aria-label="亲密事件快捷记录">
+              ${renderCompanyGardenEventPreset("relationship-ui/event_heart.png", "认真陪伴")}
+              ${renderCompanyGardenEventPreset("relationship-ui/event_gift.png", "送出礼物")}
+              ${renderCompanyGardenEventPreset("relationship-ui/event_message.png", "好好聊天")}
+              ${renderCompanyGardenEventPreset("relationship-ui/event_record.png", "记录回忆")}
+            </div>
+          ` : ""}
+          <button class="company-garden-event-button" type="button" data-company-action="record-garden-event">完成一次亲密事件 +${COMPANY_GARDEN_EVENT_POINTS}</button>
+          <button class="company-garden-abandon-button" type="button" data-company-action="abandon-garden-target">放弃当前攻略</button>
+        `}
+      ${recentEvents.length ? `<ol class="company-garden-event-history">${recentEvents.map((event) => `<li><span>${escapeHtml(event.note)}</span><small>${escapeHtml(formatTransactionTime(event.createdAt))}</small></li>`).join("")}</ol>` : ""}
+    </section>
+  `;
+}
+
+function renderCompanyGardenEventPreset(iconPath, note) {
+  return `
+    <button type="button" data-company-action="record-garden-event" data-event-note="${escapeHtml(note)}" aria-label="${escapeHtml(note)}">
+      ${renderWarmPixelImage(iconPath, "skin-event-icon", "", 'loading="lazy"')}
+      <span>${escapeHtml(note)}</span>
+    </button>
+  `;
+}
+
+function renderCompanyTacticsBook(tacticsCards) {
+  if (!tacticsCards.length) {
+    return `
+      <div class="company-tactics-book-stage is-empty">
+        ${isWarmPixelSkin() ? renderWarmPixelImage("strategy-book/cover.png", "skin-tactics-cover", "", 'loading="lazy"') : ""}
+        <p>还没有加入战术册的角色。</p>
+      </div>
+    `;
+  }
+  const pageCards = tacticsCards.slice(companyGardenTacticsPage * 4, companyGardenTacticsPage * 4 + 4);
+  const maxTacticsPage = Math.max(0, Math.ceil(tacticsCards.length / 4) - 1);
+  return `
+    <div class="company-tactics-book-stage">
+      ${isWarmPixelSkin() ? renderWarmPixelImage("strategy-book/open_book.png", "skin-tactics-open-book", "", 'loading="lazy"') : ""}
+      <button class="company-tactics-page-button is-prev" type="button" data-company-action="turn-tactics-page" data-direction="-1" ${companyGardenTacticsPage <= 0 ? "disabled" : ""} aria-label="上一页">
+        ${isWarmPixelSkin() ? renderWarmPixelImage("strategy-book/page_left_arrow.png", "skin-tactics-arrow", "", 'loading="lazy"') : "‹"}
+      </button>
+      <div class="company-tactics-list">
+        ${pageCards.map((card) => `
+          <article>
+            <span style="--member-color: ${companyMemberColor(card.id)}">
+              ${isWarmPixelSkin() ? renderWarmPixelImage("strategy-book/complete_stamp.png", "skin-tactics-stamp", "", 'loading="lazy"') : ""}
+              ${renderCompanyRelationshipAvatar(card, "library")}
+            </span>
+            <div><b>${escapeHtml(card.name)}</b><small>${escapeHtml(companyGardenKindLabel(companyGardenRelationshipKind(card.relationshipType)))}</small></div>
+            <em>攻略完成</em>
+          </article>
+        `).join("")}
+      </div>
+      <button class="company-tactics-page-button is-next" type="button" data-company-action="turn-tactics-page" data-direction="1" ${companyGardenTacticsPage >= maxTacticsPage ? "disabled" : ""} aria-label="下一页">
+        ${isWarmPixelSkin() ? renderWarmPixelImage("strategy-book/page_right_arrow.png", "skin-tactics-arrow", "", 'loading="lazy"') : "›"}
+      </button>
+    </div>
+  `;
+}
+
+function turnCompanyTacticsPage(direction) {
+  const cards = loadCompanyRelationshipCards();
+  const sceneState = companyGardenSceneState();
+  const tacticsCount = cards.filter((card) => sceneState?.targets[card.id]?.inTacticsBook).length;
+  const maxTacticsPage = Math.max(0, Math.ceil(tacticsCount / 4) - 1);
+  companyGardenTacticsPage = Math.max(0, Math.min(maxTacticsPage, companyGardenTacticsPage + direction));
+  renderCompanyGarden();
+}
+
+function selectCompanyGardenScene(sceneId) {
+  const company = lifeCompanyState.company;
+  const scene = COMPANY_GARDEN_SCENES.find((item) => item.id === sceneId);
+  if (!company?.garden?.unlocked || !scene) return;
+  companyGardenSceneMenuOpen = false;
+  companyGardenCharacterPickerOpen = false;
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  if (company.garden.sceneId === scene.id) {
+    renderCompanyGarden();
+    return;
+  }
+  company.garden.sceneId = scene.id;
+  companyGardenTacticsPage = 0;
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast(`花园场景已切换为${scene.name}。`);
+}
+
+function toggleCompanyGardenSceneMenu() {
+  if (!lifeCompanyState.company?.garden?.unlocked) return;
+  companyGardenCharacterPickerOpen = false;
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  companyGardenSceneMenuOpen = !companyGardenSceneMenuOpen;
+  renderCompanyGarden();
+}
+
+function toggleCompanyGardenCharacterPicker() {
+  if (!lifeCompanyState.company?.garden?.unlocked) return;
+  companyGardenSceneMenuOpen = false;
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  companyGardenCharacterPickerOpen = !companyGardenCharacterPickerOpen;
+  renderCompanyGarden();
+}
+
+function toggleCompanyGardenPlantPicker() {
+  const sceneState = companyGardenSceneState();
+  if (!lifeCompanyState.company?.garden?.unlocked || !sceneState?.selectedCharacterId) {
+    showCompanyToast("请先选择一位花园角色。");
+    return;
+  }
+  if (companyGardenGrowingPlant(sceneState)) {
+    showCompanyToast("当前种子还没有开花，开花后才能种下一株植物。");
+    return;
+  }
+  companyGardenSceneMenuOpen = false;
+  companyGardenCharacterPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  companyGardenPlantPickerOpen = !companyGardenPlantPickerOpen;
+  renderCompanyGarden();
+}
+
+function selectCompanyGardenPlantType(plantId) {
+  const sceneState = companyGardenSceneState();
+  const option = COMPANY_GARDEN_PLANT_OPTIONS.find((item) => item.id === plantId);
+  const characterId = sceneState?.selectedCharacterId;
+  if (!option || !characterId) return;
+  if (!companyGardenPlantOptions().some((plant) => plant.id === option.id)) {
+    companyGardenPlantPickerOpen = false;
+    renderCompanyGarden();
+    showCompanyToast("这种植物不能种在当前花园里。");
+    return;
+  }
+  if (companyGardenGrowingPlant(sceneState, characterId)) {
+    companyGardenPlantPickerOpen = false;
+    renderCompanyGarden();
+    showCompanyToast("当前种子还没有开花，暂时不能种第二株。");
+    return;
+  }
+  const characterPlantCount = sceneState.placedPlants.filter((plant) => plant.characterId === characterId).length;
+  if (characterPlantCount >= COMPANY_GARDEN_PLACEMENT_LIMIT) {
+    showCompanyToast("每位攻略对象最多可以在一个花园种植 10 株植物。");
+    return;
+  }
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = option.id;
+  renderCompanyGarden();
+  showCompanyToast(`已选择${option.name}，点击花园中的位置完成种植。`);
+}
+
+function placeCompanyGardenPlant(event) {
+  const company = lifeCompanyState.company;
+  const sceneState = companyGardenSceneState();
+  const world = event.target.closest(".company-garden-world");
+  const characterId = sceneState?.selectedCharacterId;
+  const option = COMPANY_GARDEN_PLANT_OPTIONS.find((item) => item.id === companyGardenPendingPlantId);
+  if (!company?.garden?.unlocked || !world || !sceneState || !characterId || !option) return;
+  if (!companyGardenPlantOptions().some((plant) => plant.id === option.id)) {
+    companyGardenPendingPlantId = "";
+    renderCompanyGarden();
+    showCompanyToast("这种植物不能种在当前花园里。");
+    return;
+  }
+  if (companyGardenGrowingPlant(sceneState, characterId)) {
+    companyGardenPendingPlantId = "";
+    renderCompanyGarden();
+    showCompanyToast("当前种子还没有开花，暂时不能种第二株。");
+    return;
+  }
+  const characterPlantCount = sceneState.placedPlants.filter((plant) => plant.characterId === characterId).length;
+  if (characterPlantCount >= COMPANY_GARDEN_PLACEMENT_LIMIT) {
+    companyGardenPendingPlantId = "";
+    renderCompanyGarden();
+    showCompanyToast("当前攻略对象已经种满 10 株植物。");
+    return;
+  }
+  const rect = world.getBoundingClientRect();
+  const placementWidth = world.clientWidth || rect.width;
+  const placementHeight = world.clientHeight || rect.height;
+  if (!placementWidth || !placementHeight) return;
+  const localX = event.clientX - rect.left - world.clientLeft;
+  const localY = event.clientY - rect.top - world.clientTop;
+  sceneState.placedPlants.push({
+    id: createId("garden-plant"),
+    variantId: option.id,
+    characterId,
+    x: Math.round(clampNumber((localX / placementWidth) * 100, 5, 95, 50) * 10) / 10,
+    y: Math.round(clampNumber((localY / placementHeight) * 100, 34, 96, 78) * 10) / 10,
+    createdAt: new Date().toISOString(),
+  });
+  companyGardenPendingPlantId = "";
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast(`${option.name}已经种进花园。`);
+}
+
+function cancelCompanyGardenPlantPlacement() {
+  companyGardenPendingPlantId = "";
+  renderCompanyGarden();
+}
+
+function startCompanyGardenCharacterLongPress(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const character = event.target.closest(".company-garden-character[data-garden-character-id]");
+  if (!character) return;
+  cancelCompanyGardenCharacterLongPress();
+  companyGardenCharacterLongPressStart = {
+    characterId: character.dataset.gardenCharacterId || "",
+    pointerId: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+  };
+  companyGardenCharacterLongPressTimer = window.setTimeout(() => {
+    const characterId = companyGardenCharacterLongPressStart?.characterId;
+    companyGardenCharacterLongPressTimer = null;
+    companyGardenCharacterLongPressStart = null;
+    if (!characterId) return;
+    companyGardenCharacterSuppressClickUntil = Date.now() + 900;
+    removeCompanyGardenCharacter(characterId);
+  }, COMPANY_LONG_PRESS_MS);
+}
+
+function moveCompanyGardenCharacterLongPress(event) {
+  const start = companyGardenCharacterLongPressStart;
+  if (!start || event.pointerId !== start.pointerId) return;
+  if (Math.abs(event.clientX - start.x) > 8 || Math.abs(event.clientY - start.y) > 8) {
+    cancelCompanyGardenCharacterLongPress();
+  }
+}
+
+function cancelCompanyGardenCharacterLongPress() {
+  if (companyGardenCharacterLongPressTimer) window.clearTimeout(companyGardenCharacterLongPressTimer);
+  companyGardenCharacterLongPressTimer = null;
+  companyGardenCharacterLongPressStart = null;
+}
+
+function preventCompanyGardenCharacterContextMenu(event) {
+  if (event.target.closest(".company-garden-character")) event.preventDefault();
+}
+
+function removeCompanyGardenCharacter(characterId) {
+  const company = lifeCompanyState.company;
+  const sceneState = companyGardenSceneState();
+  if (!company?.garden?.unlocked || !sceneState || sceneState.selectedCharacterId !== characterId) return;
+  const card = loadCompanyRelationshipCards().find((item) => item.id === characterId);
+  const target = sceneState.targets[characterId];
+  const scene = COMPANY_GARDEN_SCENES.find((item) => item.id === company.garden.sceneId);
+  const clearsProgress = Boolean(target && !target.completed);
+  const confirmed = window.confirm(
+    `确定将${card?.name || "当前角色"}移出${scene?.name || "当前花园"}吗？\n\n${clearsProgress
+      ? "该角色在这个花园内的植物、成长值和事件记录会一并删除。"
+      : "已完成的攻略记录和战术册收藏会继续保留。"}`,
+  );
+  if (!confirmed) return;
+  if (clearsProgress) delete sceneState.targets[characterId];
+  if (clearsProgress) sceneState.placedPlants = sceneState.placedPlants.filter((plant) => plant.characterId !== characterId);
+  sceneState.selectedCharacterId = "";
+  companyGardenCharacterPickerOpen = false;
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast(`${card?.name || "角色"}已移出${scene?.name || "当前花园"}。`);
+}
+
+function selectCompanyGardenCharacter(characterId) {
+  const company = lifeCompanyState.company;
+  const exists = loadCompanyRelationshipCards().some((card) => card.id === characterId);
+  if (!company?.garden?.unlocked || !exists) return;
+  const sceneState = companyGardenSceneState();
+  const activeCharacterId = sceneState.selectedCharacterId;
+  const activeTarget = activeCharacterId ? sceneState.targets[activeCharacterId] : null;
+  if (activeCharacterId && activeCharacterId !== characterId && activeTarget && !activeTarget.completed) {
+    showCompanyToast("请先完成或放弃当前攻略，再放入新的角色。");
+    return;
+  }
+  if (activeCharacterId === characterId) {
+    companyGardenCharacterPickerOpen = false;
+    renderCompanyGarden();
+    return;
+  }
+  sceneState.selectedCharacterId = characterId;
+  companyGardenTarget(characterId);
+  companyGardenCharacterPickerOpen = false;
+  companyGardenPlantPickerOpen = false;
+  companyGardenPendingPlantId = "";
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyGarden();
+}
+
+function abandonCompanyGardenTarget() {
+  const company = lifeCompanyState.company;
+  const sceneState = companyGardenSceneState();
+  const characterId = sceneState?.selectedCharacterId;
+  const target = characterId ? sceneState.targets[characterId] : null;
+  const card = loadCompanyRelationshipCards().find((item) => item.id === characterId);
+  if (!company?.garden?.unlocked || !sceneState || !target || target.completed) return;
+  const confirmed = window.confirm(`确定放弃${card?.name || "当前角色"}的攻略吗？\n\n这个花园内该角色的植物、成长值和事件记录会被清除。`);
+  if (!confirmed) return;
+  delete sceneState.targets[characterId];
+  sceneState.placedPlants = sceneState.placedPlants.filter((plant) => plant.characterId !== characterId);
+  sceneState.selectedCharacterId = "";
+  companyGardenCharacterPickerOpen = false;
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast("已放弃当前攻略，可以放入新的角色了。");
+}
+
+function recordCompanyGardenEvent(presetNote = "") {
+  const company = lifeCompanyState.company;
+  const garden = company?.garden;
+  const sceneState = companyGardenSceneState();
+  const card = loadCompanyRelationshipCards().find((item) => item.id === sceneState?.selectedCharacterId);
+  const target = card ? companyGardenTarget(card.id) : null;
+  if (!company || !garden || !card || !target || target.completed) return;
+  const input = document.getElementById("companyGardenEventInput");
+  const note = String(presetNote || input?.value || "").trim() || "完成一次亲密事件";
+  target.events.unshift({ id: createId("garden-event"), note, createdAt: new Date().toISOString() });
+  target.events = target.events.slice(0, 30);
+  target.intimacyPoints += COMPANY_GARDEN_EVENT_POINTS;
+  let grewPlant = false;
+  if (target.intimacyPoints >= COMPANY_GARDEN_PLANT_POINTS) {
+    target.intimacyPoints = 0;
+    target.plantCount = Math.min(COMPANY_GARDEN_TARGET_PLANTS, target.plantCount + 1);
+    grewPlant = true;
+  }
+  target.completed = target.plantCount >= COMPANY_GARDEN_TARGET_PLANTS;
+  target.updatedAt = new Date().toISOString();
+  company.updatedAt = target.updatedAt;
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast(target.completed ? `${card.name}的攻略已经完成。` : grewPlant ? "一株新的关系植物长成了。" : "亲密事件已记录，成长值 +10。 ");
+}
+
+function addCompanyGardenTargetToTacticsBook() {
+  const company = lifeCompanyState.company;
+  const garden = company?.garden;
+  const sceneState = companyGardenSceneState();
+  const target = sceneState ? sceneState.targets[sceneState.selectedCharacterId] : null;
+  if (!company || !target?.completed) return;
+  target.inTacticsBook = true;
+  target.updatedAt = new Date().toISOString();
+  company.updatedAt = target.updatedAt;
+  saveLifeCompany();
+  renderCompanyGarden();
+  showCompanyToast("角色已经加入已攻略战术册。");
+}
+
+function openCompanyDepartmentRoom(departmentId) {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === departmentId);
+  if (!department?.exploration?.unlocked || department.exploration.portalCell === null) return;
+  openCompanyRoomDepartmentId = department.id;
+  renderCompanyDepartmentRoom();
+  showDialog(companyDom.companyRoomDialog);
+}
+
+function closeCompanyDepartmentRoom() {
+  openCompanyRoomDepartmentId = "";
+  closeDialog(companyDom.companyRoomDialog);
+}
+
+function renderCompanyDepartmentRoom() {
+  const company = lifeCompanyState.company;
+  const department = company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!company || !department) return;
+  const relationshipCards = loadCompanyRelationshipCards();
+  const validMemberIds = new Set(relationshipCards.map((card) => card.id));
+  department.room.memberIds = department.room.memberIds.filter((id) => validMemberIds.has(id)).slice(0, COMPANY_ROOM_MEMBER_LIMIT);
+  const assignedMembers = department.room.memberIds
+    .map((id) => relationshipCards.find((card) => card.id === id))
+    .filter(Boolean);
+  const departmentIndex = company.departments.findIndex((item) => item.id === department.id);
+  const scene = companyDepartmentScene(department);
+
+  setText(companyDom.companyRoomTitle, department.name);
+  setText(companyDom.companyRoomRule, departmentIndex === 0
+    ? `每日任务卡上限 ${department.taskCardLimit}`
+    : `部门任务卡上限 ${department.taskCardLimit}`);
+  setText(companyDom.companyRoomMemberCount, `${assignedMembers.length} / ${COMPANY_ROOM_MEMBER_LIMIT}`);
+  companyDom.companyPixelRoom?.classList.toggle("has-warm-pixel-office", isWarmPixelSkin());
+  companyDom.companyPixelRoom?.classList.add("has-wide-office-scene");
+  companyDom.companyPixelRoom?.classList.toggle("is-empty-office", !assignedMembers.length);
+
+  companyDom.companyPixelRoom.innerHTML = `
+    <div class="company-office-pan" data-company-scene-pan tabindex="0" aria-label="${escapeHtml(department.name)}办公室场景，可左右移动">
+      <div class="company-office-scene" style="--scene-aspect:${scene.aspectRatio};">
+        <img class="company-office-scene-image pixel-art" src="${escapeHtml(scene.src)}" alt="${escapeHtml(scene.name)}" draggable="false" />
+        ${assignedMembers.map((member, index) => renderPixelOfficeMember(member, department, index)).join("")}
+        ${assignedMembers.length ? "" : `<p class="pixel-room-empty">从人际关系卡选择成员<br />加入后可以拖动位置</p>`}
+      </div>
+    </div>
+  `;
+
+  companyDom.companyRoomMemberList.innerHTML = renderCompanyRoomMemberOptions(department, relationshipCards);
+}
+
+function renderPixelOfficeMember(member, department, index) {
+  const position = companyOfficeMemberPosition(department, member.id, index);
+  return `
+    <div class="pixel-office-member" data-member-id="${escapeHtml(member.id)}" style="--member-color: ${companyMemberColor(member.id)};left:${position.x}%;top:${position.y}%;" aria-label="拖动${escapeHtml(member.name)}调整办公室位置">
+      ${renderCompanyRelationshipAvatar(member, "map")}
+      <b>${escapeHtml(member.name)}</b>
+    </div>
+  `;
+}
+
+function companyOfficeMemberPosition(department, memberId, index = 0) {
+  const defaults = [
+    { x: 27, y: 88 },
+    { x: 51, y: 88 },
+    { x: 75, y: 88 },
+    { x: 54, y: 63 },
+  ];
+  const fallback = defaults[index] || defaults[0];
+  const stored = department?.room?.memberPositions?.[memberId];
+  return {
+    x: clampNumber(stored?.x, 8, 92, fallback.x),
+    y: clampNumber(stored?.y, 28, 94, fallback.y),
+  };
+}
+
+function startCompanyOfficeMemberDrag(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const member = event.target.closest(".pixel-office-member[data-member-id]");
+  const stage = member?.closest(".company-office-scene") || member?.closest(".company-pixel-room");
+  if (!member || !stage || !openCompanyRoomDepartmentId) return;
+  companyOfficeMemberDrag = {
+    member,
+    stage,
+    memberId: member.dataset.memberId || "",
+    pointerId: event.pointerId,
+    moved: false,
+    startX: event.clientX,
+    startY: event.clientY,
+    x: Number.parseFloat(member.style.left) || 50,
+    y: Number.parseFloat(member.style.top) || 76,
+  };
+  member.setPointerCapture?.(event.pointerId);
+  member.classList.add("is-dragging");
+  event.preventDefault();
+}
+
+function startCompanyScenePan(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  if (event.target.closest("button, a, input, select, textarea, .pixel-office-member, .company-garden-character")) return;
+  const scroller = event.target.closest("[data-company-scene-pan]");
+  if (!scroller || scroller.scrollWidth <= scroller.clientWidth + 1) return;
+  companyScenePan = {
+    scroller,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startScrollLeft: scroller.scrollLeft,
+    moved: false,
+  };
+  scroller.setPointerCapture?.(event.pointerId);
+  scroller.classList.add("is-panning");
+  event.preventDefault();
+}
+
+function moveCompanyScenePan(event) {
+  if (!companyScenePan || event.pointerId !== companyScenePan.pointerId) return;
+  const deltaX = event.clientX - companyScenePan.startX;
+  companyScenePan.scroller.scrollLeft = companyScenePan.startScrollLeft - deltaX;
+  if (Math.abs(deltaX) > 3) companyScenePan.moved = true;
+  event.preventDefault();
+}
+
+function endCompanyScenePan(event) {
+  if (!companyScenePan || event.pointerId !== companyScenePan.pointerId) return;
+  companyScenePan.scroller.releasePointerCapture?.(event.pointerId);
+  companyScenePan.scroller.classList.remove("is-panning");
+  companyScenePan = null;
+}
+
+function handleCompanyScenePanKeydown(event) {
+  const scroller = event.target.closest?.("[data-company-scene-pan]");
+  if (!scroller || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+  event.preventDefault();
+  scroller.scrollLeft += event.key === "ArrowRight" ? 96 : -96;
+}
+
+function moveCompanyOfficeMemberDrag(event) {
+  if (!companyOfficeMemberDrag || event.pointerId !== companyOfficeMemberDrag.pointerId) return;
+  const drag = companyOfficeMemberDrag;
+  const rect = drag.stage.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  drag.x = clampNumber(((event.clientX - rect.left) / rect.width) * 100, 8, 92, drag.x);
+  drag.y = clampNumber(((event.clientY - rect.top) / rect.height) * 100, 28, 94, drag.y);
+  drag.member.style.left = `${drag.x}%`;
+  drag.member.style.top = `${drag.y}%`;
+  if (Math.abs(event.clientX - drag.startX) > 3 || Math.abs(event.clientY - drag.startY) > 3) drag.moved = true;
+  event.preventDefault();
+}
+
+function endCompanyOfficeMemberDrag(event) {
+  if (!companyOfficeMemberDrag || event.pointerId !== companyOfficeMemberDrag.pointerId) return;
+  const drag = companyOfficeMemberDrag;
+  drag.member.releasePointerCapture?.(event.pointerId);
+  drag.member.classList.remove("is-dragging");
+  companyOfficeMemberDrag = null;
+  if (!drag.moved) return;
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!department || !drag.memberId) return;
+  department.room.memberPositions ||= {};
+  department.room.memberPositions[drag.memberId] = {
+    x: Math.round(drag.x * 10) / 10,
+    y: Math.round(drag.y * 10) / 10,
+  };
+  lifeCompanyState.company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  showCompanyToast("办公室位置已保存。");
+}
+
+function companyMemberInitial(name) {
+  return Array.from(String(name || "人"))[0] || "人";
+}
+
+function companyMemberColor(id) {
+  const colors = ["#ff7aa8", "#6d8cff", "#38b98a", "#f3aa3d", "#9a6ce0", "#e96b5c"];
+  const seed = Array.from(String(id)).reduce((sum, character) => sum + character.charCodeAt(0), 0);
+  return colors[seed % colors.length];
+}
+
+function toggleCompanyRoomMember(memberId) {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!department || !memberId) return;
+  if (department.room.memberIds.includes(memberId)) removeCompanyRoomMember(memberId);
+  else addCompanyRoomMember(memberId);
+}
+
+function addCompanyRoomMember(memberId) {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!department || !memberId || department.room.memberIds.includes(memberId)) return;
+  if (department.room.memberIds.length >= COMPANY_ROOM_MEMBER_LIMIT) {
+    showCompanyToast(`每个部门最多安排 ${COMPANY_ROOM_MEMBER_LIMIT} 人。`);
+    return;
+  }
+  department.room.memberIds.push(memberId);
+  persistCompanyRoomMemberChange();
+  showCompanyToast("角色已加入当前部门。");
+}
+
+function removeCompanyRoomMember(memberId) {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!department || !memberId || !department.room.memberIds.includes(memberId)) return;
+  department.room.memberIds = department.room.memberIds.filter((id) => id !== memberId);
+  if (department.room.memberPositions) delete department.room.memberPositions[memberId];
+  persistCompanyRoomMemberChange();
+  showCompanyToast("角色已移出当前部门。");
+}
+
+function persistCompanyRoomMemberChange() {
+  lifeCompanyState.company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  if (companyDom.companyRoomDialog?.open) renderCompanyDepartmentRoom();
+  renderCompanyExploration();
+}
+
+function editOpenRoomDepartment() {
+  const departmentId = openCompanyRoomDepartmentId;
+  closeCompanyDepartmentRoom();
+  openCompanyDepartmentForm(departmentId);
+}
+
+function openProjectForRoomDepartment() {
+  const department = lifeCompanyState.company?.departments.find((item) => item.id === openCompanyRoomDepartmentId);
+  if (!department) return;
+  closeCompanyDepartmentRoom();
+  openCompanyProjectForm();
+  if (companyDom.companyProjectDepartmentInput) companyDom.companyProjectDepartmentInput.value = department.name;
 }
 
 function renderCompanyOverview() {
@@ -667,8 +2499,9 @@ function addCompanyDepartment() {
     showCompanyToast(`部门最多 ${COMPANY_DEPARTMENT_LIMIT} 个。`);
     return;
   }
+  const departmentId = createId("dept");
   const department = {
-    id: createId("dept"),
+    id: departmentId,
     name: `新部门 ${company.departments.length + 1}`,
     status: "normal",
     progress: 0,
@@ -678,6 +2511,20 @@ function addCompanyDepartment() {
     taskIds: [],
     manualProjectCount: 0,
     manualTaskCount: 0,
+    taskCardLimit: COMPANY_TASK_LIMIT,
+    exploration: {
+      unlocked: true,
+      targetCell: companyExplorationTargetCell(departmentId),
+      portalCell: null,
+      revealedCells: [],
+      completed: false,
+      completionPromptShown: false,
+    },
+    room: {
+      sceneId: normalizeCompanyDepartmentSceneId("", company.departments.length),
+      memberIds: [],
+      memberPositions: {},
+    },
   };
   company.departments.push(department);
   company.updatedAt = new Date().toISOString();
@@ -697,10 +2544,53 @@ function openCompanyDepartmentForm(departmentId = "") {
   companyDom.companyDepartmentProjectCountInput.value = displayDepartmentProjectCount(department);
   companyDom.companyDepartmentTaskCountInput.value = displayDepartmentTaskCount(department);
   companyDom.companyDepartmentStatusInput.value = department.status || "normal";
+  renderCompanyDepartmentSceneOptions(department.room.sceneId);
   renderDepartmentEconomyState(department);
   const deleteButton = companyDom.companyDepartmentForm?.querySelector("[data-company-action='delete-department']");
   if (deleteButton) deleteButton.textContent = "删除部门";
   showDialog(companyDom.companyDepartmentDialog);
+}
+
+function renderCompanyDepartmentSceneOptions(selectedSceneId) {
+  if (!companyDom.companyDepartmentSceneOptions) return;
+  const selected = normalizeCompanyDepartmentSceneId(selectedSceneId, 0);
+  companyDom.companyDepartmentSceneOptions.innerHTML = COMPANY_DEPARTMENT_SCENES.map((scene) => {
+    const owned = companyOwnsDepartmentScene(scene.id);
+    const canAfford = (lifeCompanyState.company?.economy?.companyCoins || 0) >= scene.price;
+    return `
+      <article class="company-department-scene-option ${owned ? "is-owned" : "is-locked"}">
+        <label>
+          <input type="radio" name="departmentScene" value="${escapeHtml(scene.id)}" ${scene.id === selected && owned ? "checked" : ""} ${owned ? "" : "disabled"} />
+          <span>
+            <img src="${escapeHtml(scene.src)}" alt="" loading="lazy" draggable="false" />
+            <b>${escapeHtml(scene.name)}</b>
+            <small>${owned ? (scene.price ? "已购买" : "免费") : formatCompanyCoins(scene.price)}</small>
+          </span>
+        </label>
+        ${owned ? "" : `<button type="button" data-company-action="purchase-company-scene" data-scene-id="${escapeHtml(scene.id)}" ${canAfford ? "" : "disabled"}>${canAfford ? `购买 ${formatCompanyCoins(scene.price)}` : `需要 ${formatCompanyCoins(scene.price)}`}</button>`}
+      </article>
+    `;
+  }).join("");
+}
+
+function purchaseCompanyDepartmentScene(sceneId) {
+  const company = lifeCompanyState.company;
+  const scene = COMPANY_DEPARTMENT_SCENES.find((item) => item.id === sceneId);
+  if (!company || !scene?.price || companyOwnsDepartmentScene(scene.id)) return;
+  const spent = spendCompanyCoins(scene.price, "decoration", {
+    title: `购买${scene.name}`,
+    note: "部门办公室场景",
+  });
+  if (!spent) {
+    showCompanyToast(`公司金币不足，需要 ${formatCompanyCoins(scene.price)}。`);
+    return;
+  }
+  company.ownedSceneIds = normalizeCompanyOwnedSceneIds([...(company.ownedSceneIds || []), scene.id]);
+  company.updatedAt = new Date().toISOString();
+  saveLifeCompany();
+  renderCompanyDepartmentSceneOptions(scene.id);
+  renderCompanyEconomy();
+  showCompanyToast(`${scene.name}已购买，可以用于所有部门。`);
 }
 
 function renderDepartmentEconomyState(department) {
@@ -731,6 +2621,14 @@ function saveCompanyDepartmentFromForm() {
 
   department.name = nextName;
   department.status = companyDom.companyDepartmentStatusInput.value || "normal";
+  department.room.sceneId = normalizeCompanyDepartmentSceneId(
+    companyDom.companyDepartmentSceneOptions?.querySelector("input[name='departmentScene']:checked")?.value,
+    company.departments.indexOf(department),
+  );
+  if (!companyOwnsDepartmentScene(department.room.sceneId)) {
+    showCompanyToast("请先购买这个场景。 ");
+    return;
+  }
   department.statusLocked = true;
   department.manualProjectCount = clampNumber(companyDom.companyDepartmentProjectCountInput.value, 0, 99, 0);
   department.manualTaskCount = clampNumber(companyDom.companyDepartmentTaskCountInput.value, 0, 99, 0);
@@ -767,6 +2665,9 @@ function deleteCompanyDepartment() {
   }
 
   company.departments = company.departments.filter((item) => item.id !== departmentId);
+  if (company.activeDepartmentId === departmentId) {
+    company.activeDepartmentId = company.departments.find((item) => item.exploration?.unlocked)?.id || company.departments[0]?.id || "";
+  }
   company.projects.forEach((project) => {
     if (project.departmentName === department.name) project.departmentName = "";
   });
@@ -785,6 +2686,7 @@ function saveCompanyFromForm() {
   const existing = editingCompanyMode === "edit" ? lifeCompanyState.company : null;
   const companyName = companyDom.companyNameInput.value.trim() || defaultCompanyName(type);
   if (!existing && !confirmCompanyStartingStake(companyName)) return;
+  const nextDepartments = existing && existing.type === type.id ? existing.departments : initializeCompanyDepartments(type.id);
   lifeCompanyState.company = {
     id: existing?.id || createId("company"),
     name: companyName,
@@ -796,9 +2698,14 @@ function saveCompanyFromForm() {
       status: "active",
       progress: existing?.mainGoal?.progress || 0,
     },
-    departments: existing && existing.type === type.id ? existing.departments : initializeCompanyDepartments(type.id),
+    departments: nextDepartments,
+    activeDepartmentId: existing && existing.type === type.id
+      ? existing.activeDepartmentId
+      : nextDepartments[0]?.id || "",
     projects: existing ? existing.projects : [],
     linkedSkillStocks: type.recommendedSkillStocks,
+    ownedSceneIds: existing?.ownedSceneIds || [],
+    garden: existing?.garden || normalizeCompanyGarden(null),
     economy: existing?.economy || normalizeCompanyEconomy(null),
     createdAt: existing?.createdAt || now,
     updatedAt: now,
@@ -940,6 +2847,18 @@ function generateCompanyTasksFromProject(projectId) {
   if (lifeCompanyState.tasks.length >= COMPANY_TASK_LIMIT) {
     showCompanyToast(`今日公司任务最多 ${COMPANY_TASK_LIMIT} 张。`);
     return;
+  }
+  const department = company.departments.find((item) => item.name === project.departmentName);
+  if (department) {
+    const today = dateKey(new Date());
+    const departmentTaskCount = lifeCompanyState.tasks.filter((task) => (
+      task.departmentName === department.name
+      && dateKey(new Date(task.createdAt)) === today
+    )).length;
+    if (departmentTaskCount >= department.taskCardLimit) {
+      showCompanyToast(`${department.name}每天最多生成 ${department.taskCardLimit} 张任务卡。`);
+      return;
+    }
   }
 
   const durationMinutes = calculateCompanyTaskMinutes(project);
@@ -1316,6 +3235,7 @@ function economySourceLabel(source) {
     "skill-stock": "技能股交易",
     "company-upgrade": "公司升级",
     "department-upgrade": "部门升级",
+    exploration: "部门扫描",
     decoration: "装饰解锁",
     manual: "手动调整",
   };
@@ -1324,18 +3244,35 @@ function economySourceLabel(source) {
 
 function initializeCompanyDepartments(companyTypeId) {
   const type = companyTypeById(companyTypeId) || COMPANY_TYPES[0];
-  return type.defaultDepartments.slice(0, COMPANY_DEPARTMENT_LIMIT).map((name) => ({
-    id: createId("dept"),
-    name,
-    status: "normal",
-    progress: 0,
-    level: 1,
-    exp: 0,
-    projectIds: [],
-    taskIds: [],
-    manualProjectCount: null,
-    manualTaskCount: null,
-  }));
+  return type.defaultDepartments.slice(0, COMPANY_DEPARTMENT_LIMIT).map((name, index) => {
+    const departmentId = createId("dept");
+    return {
+      id: departmentId,
+      name,
+      status: "normal",
+      progress: 0,
+      level: 1,
+      exp: 0,
+      projectIds: [],
+      taskIds: [],
+      manualProjectCount: null,
+      manualTaskCount: null,
+      taskCardLimit: index === 0 ? 3 : COMPANY_TASK_LIMIT,
+      exploration: {
+        unlocked: index === 0,
+        targetCell: companyExplorationTargetCell(departmentId),
+        portalCell: null,
+        revealedCells: [],
+        completed: false,
+        completionPromptShown: false,
+      },
+      room: {
+        sceneId: normalizeCompanyDepartmentSceneId("", index),
+        memberIds: [],
+        memberPositions: {},
+      },
+    };
+  });
 }
 
 function syncCompanyDerivedState() {

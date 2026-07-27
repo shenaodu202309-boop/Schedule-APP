@@ -2821,7 +2821,7 @@ body[data-view="collaborationSection"] .undo-button {
 
 .collaboration-timeline-head {
   display: grid;
-  grid-template-columns: 126px minmax(0, 1fr);
+  grid-template-columns: 118px minmax(0, 1fr);
   align-items: center;
   gap: 4px;
 }
@@ -3047,6 +3047,8 @@ body[data-view="collaborationSection"] .undo-button {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 5px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .collaboration-head-actions .ghost-button {
@@ -3057,6 +3059,25 @@ body[data-view="collaborationSection"] .undo-button {
   font-size: 0.58rem;
   font-weight: 850;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 430px) {
+  #collaborationInviteButton,
+  #workspaceChatButton {
+    font-size: 0;
+  }
+
+  #collaborationInviteButton::after {
+    content: "成员";
+    font-size: 0.58rem;
+  }
+
+  #workspaceChatButton::after {
+    content: "聊天";
+    font-size: 0.58rem;
+  }
 }
 .collaboration-day-plan { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
 .collaboration-day-plan-toggle {

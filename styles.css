@@ -811,7 +811,7 @@ textarea:focus {
 .timeline {
   overflow: auto;
   overscroll-behavior-x: contain;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 30px;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px) 0 0 / var(--day-width) 100%,
@@ -1139,7 +1139,7 @@ textarea:focus {
   position: relative;
   overflow: auto;
   height: 520px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 30px;
   background: var(--surface-soft);
 }
@@ -2695,6 +2695,17 @@ body[data-view="overviewSection"] .topbar {
   order: 3;
   min-width: 0;
   padding: 16px;
+}
+
+/* Let the planning surfaces use the full phone width without a decorative outer card. */
+#timelineSection.main-board,
+#todaySection.day-board,
+#collaborationSection.main-board {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .day-layout,

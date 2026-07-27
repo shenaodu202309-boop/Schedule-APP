@@ -2747,15 +2747,14 @@ body[data-view="collaborationSection"] .undo-button {
 }
 
 .collaboration-timeline-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
 }
 
 .collaboration-head-summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
   min-width: 0;
   gap: 6px;
@@ -2786,6 +2785,7 @@ body[data-view="collaborationSection"] .undo-button {
   display: flex;
   position: relative;
   align-items: center;
+  min-width: 0;
   gap: 7px;
   overflow: visible;
   padding-bottom: 3px;
@@ -2963,14 +2963,21 @@ body[data-view="collaborationSection"] .undo-button {
   gap: 7px;
 }
 
-.collaboration-head-actions { display: flex; gap: 4px; align-items: center; }
+.collaboration-head-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+}
 
 .collaboration-head-actions .ghost-button {
   min-height: 28px;
-  padding: 0 8px;
+  min-width: 0;
+  padding: 0 5px;
   border-radius: 14px;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 850;
+  white-space: nowrap;
 }
 .collaboration-day-plan { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
 .collaboration-day-plan-toggle {

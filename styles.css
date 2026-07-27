@@ -2821,14 +2821,14 @@ body[data-view="collaborationSection"] .undo-button {
 
 .collaboration-timeline-head {
   display: grid;
-  grid-template-columns: 118px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
   gap: 4px;
 }
 
 .collaboration-head-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: max-content max-content;
   align-items: center;
   min-width: 0;
   gap: 3px;
@@ -3064,6 +3064,15 @@ body[data-view="collaborationSection"] .undo-button {
 }
 
 @media (max-width: 430px) {
+  .collaboration-timeline-meta {
+    font-size: 0;
+  }
+
+  .collaboration-timeline-meta::after {
+    content: "1人";
+    font-size: 0.52rem;
+  }
+
   #collaborationInviteButton,
   #workspaceChatButton {
     font-size: 0;
@@ -3075,7 +3084,7 @@ body[data-view="collaborationSection"] .undo-button {
   }
 
   #workspaceChatButton::after {
-    content: "聊天";
+    content: "聊天室";
     font-size: 0.58rem;
   }
 }

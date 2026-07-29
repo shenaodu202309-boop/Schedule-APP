@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#d7ff2f" />
+    <title>刷新应用缓存</title>
+    <style>
+      :root {
+        color: #111;
+        background: #dcdcdc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        background: linear-gradient(120deg, #d7ff2f, #eeeeee 42%, #f2c9d2);
+      }
+
+      main {
+        display: grid;
+        width: min(82vw, 360px);
+        gap: 14px;
+        padding: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.86);
+        border-radius: 28px;
+        background: rgba(248, 248, 248, 0.88);
+        box-shadow: 0 24px 54px rgba(0, 0, 0, 0.16);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.28rem;
+      }
+
+      p {
+        margin: 0;
+        color: #5f5f5f;
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>正在刷新应用</h1>
+      <p>只清理旧页面缓存，不会删除你的计划和本地存档。</p>
+    </main>
+    <script>
+      const nextUrl = "./index.html?force=420#overviewSection";
+
+      async function refreshAppCache() {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+      }
+
+      refreshAppCache()
+        .catch(() => {})
+        .finally(() => {
+          window.location.replace(nextUrl);
+        });
+    </script>
+  </body>
+</html>

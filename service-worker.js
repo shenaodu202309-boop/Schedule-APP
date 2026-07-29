@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-schedule-native-v419';
+const CACHE_NAME = 'daily-schedule-native-v420';
 const GARDEN_PLANT_ASSETS = [
   'rose',
   'tulip',
@@ -15,6 +15,7 @@ const GARDEN_PLANT_ASSETS = [
 ));
 const APP_SHELL = [
   './index.html',
+  './refresh.html',
   './styles.css',
   './native-notifications.js',
   './app.js',

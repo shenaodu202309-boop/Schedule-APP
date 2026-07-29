@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-schedule-native-v417';
+const CACHE_NAME = 'daily-schedule-native-v418';
 const GARDEN_PLANT_ASSETS = [
   'rose',
   'tulip',

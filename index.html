@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=100" />
+    <link rel="stylesheet" href="./styles.css?v=101" />
   </head>
   <body>
     <div class="app-shell">
@@ -733,11 +733,11 @@
     </nav>
 
     <script src="./native-notifications.js?v=67"></script>
-    <script src="./app.js?v=133"></script>
+    <script src="./app.js?v=134"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./service-worker.js?v=417", { updateViaCache: "none" }).catch(() => {});
+          navigator.serviceWorker.register("./service-worker.js?v=419", { updateViaCache: "none" }).catch(() => {});
         });
       }
     </script>

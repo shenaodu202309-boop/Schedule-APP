@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>私人排期 / Private Schedule</title>
-    <link rel="stylesheet" href="./styles.css?v=94" />
+    <link rel="stylesheet" href="./styles.css?v=100" />
   </head>
   <body>
     <div class="app-shell">
@@ -42,9 +42,11 @@
               </label>
               <button class="icon-button" type="button" data-action="next-range" title="下一段 / Next" aria-label="下一段 / Next">›</button>
               <button class="secondary-button" type="button" data-action="go-today" data-i18n="today">今天 / Today</button>
+              <button id="timelineViewToggle" class="timeline-view-toggle" type="button" data-action="show-week-plan" aria-label="切换到周计划">周计划</button>
             </div>
           </header>
           <div id="timeline" class="timeline" aria-label="项目时间轴 / Project timeline"></div>
+          <section id="weeklyPlanner" class="weekly-planner" hidden aria-label="周计划"></section>
         </section>
 
         <section id="collaborationSection" class="main-board collaboration-timeline-panel" hidden aria-label="多人协作时间轴">
@@ -246,8 +248,8 @@
             <input id="projectStartInput" type="date" required />
           </label>
           <label class="field project-duration-field">
-            <span data-i18n="durationDays">持续天数 / Duration Days</span>
-            <input id="projectDurationInput" type="number" min="1" max="365" step="1" required />
+            <span data-i18n="endDate">结束日期 / End Date</span>
+            <input id="projectDurationInput" type="date" required />
           </label>
           <label class="field project-color-field">
             <span data-i18n="color">颜色 / Color</span>
@@ -722,7 +724,7 @@
     </nav>
 
     <script src="./native-notifications.js?v=67"></script>
-    <script src="./app.js?v=123"></script>
+    <script src="./app.js?v=133"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

@@ -60,6 +60,8 @@ const TASK_REMINDER_MISSED_GRACE_MS = 30 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_WIDTH = 112;
 const TIMELINE_STUB_WIDTH_KEY = "private-schedule-timeline-stub-width-v1";
+const PERSONAL_TIMELINE_VIEW_KEY = "private-schedule-personal-timeline-view-v1";
+const COLLABORATION_TIMELINE_VIEW_KEY = "private-schedule-collaboration-timeline-view-v1";
 const HOUR_HEIGHT = 64;
 const DAY_HOUR_WIDTH = 34;
 const START_HOUR = 0;
@@ -162,6 +164,7 @@ const I18N = {
   list: { zh: "清单", en: "List" },
   projectName: { zh: "项目名称", en: "Project Name" },
   startDate: { zh: "开始日期", en: "Start Date" },
+  endDate: { zh: "结束日期", en: "End Date" },
   durationDays: { zh: "持续天数", en: "Duration Days" },
   color: { zh: "颜色", en: "Color" },
   goal: { zh: "目标", en: "Goal" },
@@ -454,6 +457,9 @@ let pendingCommercialProject = null;
 let collaborationSubscription = null;
 let collaborationSessionUserId = "";
 let collaborationCalendarMonth = todayISO().slice(0, 7);
+let personalTimelineView = "timeline";
+let collaborationTimelineView = "timeline";
+let personalCollaborationSyncQueued = false;
 let collaborationWorkspaceMenuOpen = false;
 let collaborationCreateMenuOpen = false;
 let collaborationDayPlanExpanded = false;
@@ -483,6 +489,8 @@ document.addEventListener("DOMContentLoaded", () => {
   state = loadState();
   normalizeState();
   restoreTimelineStubWidth();
+  personalTimelineView = loadPersonalTimelineView();
+  collaborationTimelineView = loadCollaborationTimelineView();
   workspaceChatUnread = loadWorkspaceChatUnread();
   if (consumeCollaborationGameUpdates()) saveState();
   bindEvents();
@@ -538,6 +546,8 @@ function cacheDom() {
   dom.bottomNav = document.querySelector(".bottom-nav");
   dom.settingsPanel = document.querySelector("#settingsPanel");
   dom.settingsToggle = document.querySelector("[data-action='toggle-settings']");
+  dom.timelineViewToggle = document.querySelector("#timelineViewToggle");
+  dom.weeklyPlanner = document.querySelector("#weeklyPlanner");
   dom.appSections = Array.from(document.querySelectorAll("#timelineSection, #overviewSection, #todaySection, #journalSection, #collaborationSection"));
   dom.navTabs = Array.from(document.querySelectorAll('.bottom-nav a[href^="#"]'));
   dom.collaborationNav = document.querySelector("#collaborationNav");
@@ -707,6 +717,14 @@ function bindEvents() {
   dom.rangeDaysInput.addEventListener("change", () => {
     state.settings.rangeDays = clamp(Number(dom.rangeDaysInput.value) || 30, 7, 90);
     saveAndRender();
+  });
+  dom.projectStartInput.addEventListener("change", () => {
+    const start = dom.projectStartInput.value;
+    if (!isValidISODate(start)) return;
+    dom.projectDurationInput.min = start;
+    if (!isValidISODate(dom.projectDurationInput.value) || dom.projectDurationInput.value < start) {
+      dom.projectDurationInput.value = start;
+    }
   });
   dom.dailyNoteInput.addEventListener("input", () => {
     state.notes[state.selectedDate] = dom.dailyNoteInput.value;
@@ -1005,6 +1023,9 @@ function normalizeState() {
       task.startTime ||= "09:00";
       task.duration = Math.max(0.25, Number(task.duration) || 1);
       task.status = ["todo", "done", "missed"].includes(task.status) ? task.status : "todo";
+      task.dailyStatuses = task.dailyStatuses && typeof task.dailyStatuses === "object" && !Array.isArray(task.dailyStatuses)
+        ? Object.fromEntries(Object.entries(task.dailyStatuses).filter(([date, status]) => isValidISODate(date) && ["todo", "done", "missed"].includes(status)))
+        : {};
       task.color ||= project.color;
       task.detail ||= "";
       task.dailyOnly = Boolean(task.dailyOnly);
@@ -1156,9 +1177,10 @@ function saveState() {
   }
 }
 
-function saveAndRender() {
+function saveAndRender(syncLinkedCollaboration = true) {
   saveState();
   render();
+  if (syncLinkedCollaboration) queuePersonalChangesToCollaboration();
 }
 
 function rememberUndo() {
@@ -1412,6 +1434,8 @@ function reportItem(task, project, statusClass) {
 function renderTimeline() {
   if (!state.projects.length) {
     dom.timeline.innerHTML = `<div class="empty-state">${text("noProjects")}</div>`;
+    renderWeeklyPlanner();
+    setPersonalTimelineView(personalTimelineView, false);
     return;
   }
   const days = getVisibleDays();
@@ -1445,6 +1469,70 @@ function renderTimeline() {
     ? visibleProjects.map((project) => renderProjectRow(project, days)).join("")
     : renderEmptyTimelineRange(days);
   dom.timeline.innerHTML = `<div class="timeline-inner day-schedule-inner ${visibleProjects.length ? "" : "empty-timeline"}" style="--days:${days.length}">${header}${rows}</div>`;
+  renderWeeklyPlanner();
+  setPersonalTimelineView(personalTimelineView, false);
+}
+
+function loadPersonalTimelineView() {
+  try {
+    return localStorage.getItem(PERSONAL_TIMELINE_VIEW_KEY) === "week" ? "week" : "timeline";
+  } catch {
+    return "timeline";
+  }
+}
+
+function setPersonalTimelineView(view, persist = true) {
+  personalTimelineView = view === "week" ? "week" : "timeline";
+  const showingWeek = personalTimelineView === "week";
+  if (dom.timeline) dom.timeline.hidden = showingWeek;
+  if (dom.weeklyPlanner) dom.weeklyPlanner.hidden = !showingWeek;
+  if (dom.timelineViewToggle) {
+    dom.timelineViewToggle.dataset.action = showingWeek ? "show-personal-timeline" : "show-week-plan";
+    dom.timelineViewToggle.textContent = showingWeek ? "时间轴" : "周计划";
+    dom.timelineViewToggle.setAttribute("aria-label", showingWeek ? "切换到时间轴" : "切换到周计划");
+  }
+  if (persist) {
+    try {
+      localStorage.setItem(PERSONAL_TIMELINE_VIEW_KEY, personalTimelineView);
+    } catch {
+      // The view still works for this session when storage is unavailable.
+    }
+  }
+}
+
+function renderWeeklyPlanner() {
+  if (!dom.weeklyPlanner) return;
+  const weekStart = addDays(state.settings.rangeStart, -parseDate(state.settings.rangeStart).getDay());
+  const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const dayCards = days.map((date) => {
+    const projects = state.projects
+      .filter((project) => date >= project.start && date < addDays(project.start, Math.max(1, Number(project.duration) || 1)));
+    const tasks = state.projects
+      .flatMap((project) => project.tasks.map((task) => ({ project, task })))
+      .filter(({ task }) => !task.dailyOnly && date >= task.date && date < addDays(task.date, Math.max(1, Number(task.spanDays) || 1)))
+      .sort((a, b) => timeToMinutes(a.task.startTime) - timeToMinutes(b.task.startTime));
+    const projectList = projects.map((project) => `
+      <button class="week-plan-project ${project.completed ? "completed" : ""}" type="button" data-action="edit-project" data-project-id="${project.id}" style="--week-project-color:${project.color}">
+        <span class="week-plan-project-color" aria-hidden="true"></span>
+        <strong>${project.completed ? "✓ " : ""}${escapeHtml(project.title)}</strong>
+      </button>
+    `).join("");
+    const taskList = tasks.length
+      ? tasks.map(({ project, task }) => {
+        const status = getWeeklyTaskStatus(task, date);
+        const statusIcon = status === "done" ? "✓" : status === "missed" ? "!" : "";
+        return `<div class="week-plan-task ${status}" style="--week-task-color:${task.color}"><button class="status-button ${status}" type="button" data-action="cycle-weekly-task-status" data-task-id="${task.id}" data-date="${date}" aria-label="${text("toggleStatus")}">${statusIcon}</button><button class="week-plan-task-copy" type="button" data-action="edit-task" data-task-id="${task.id}"><span class="week-plan-color-dot" aria-hidden="true"></span><span><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(project.title)} · ${timeRange(task)}</small></span></button></div>`;
+      }).join("")
+      : "";
+    const entries = `${projectList}${taskList}` || `<p class="week-plan-empty">暂无任务</p>`;
+    return `<section class="week-plan-day ${date === todayISO() ? "today" : ""}" aria-label="${escapeHtml(formatDateLong(date))}"><header><div><strong>${escapeHtml(weekdayName(date))}</strong><span>${monthDay(date)}</span><small>${projects.length + tasks.length} 项</small></div><button class="week-plan-add" type="button" data-action="add-weekly-task" data-date="${date}" aria-label="新增当天任务">+</button></header><div class="week-plan-task-list">${entries}</div></section>`;
+  }).join("");
+  dom.weeklyPlanner.innerHTML = `<div class="weekly-planner-head"><strong>${escapeHtml(`${monthDay(days[0])} - ${monthDay(days[6])}`)}</strong><small>本周计划</small></div><div class="weekly-planner-grid">${dayCards}</div>`;
+}
+
+function getWeeklyTaskStatus(task, date) {
+  if (Math.max(1, Number(task.spanDays) || 1) === 1) return task.status;
+  return task.dailyStatuses?.[date] || task.status;
 }
 
 function renderEmptyTimelineRange(days) {
@@ -1546,12 +1634,20 @@ function renderTimelineTask(project, task, lane) {
   if (left + width < 0 || left > state.settings.rangeDays * DAY_WIDTH) return "";
   const top = 60 + lane * 28;
   const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
+  const dailyStatusSegments = spanDays > 1
+    ? Array.from({ length: spanDays }, (_, index) => {
+      const date = addDays(task.date, index);
+      const status = getWeeklyTaskStatus(task, date);
+      return `<span class="timeline-task-day-status ${status}" style="left:${(index / spanDays) * 100}%;width:${100 / spanDays}%" aria-hidden="true"></span>`;
+    }).join("")
+    : "";
   return `
     <button class="timeline-task ${task.status}" type="button"
       data-action="edit-task"
       data-drag-type="task-date"
       data-task-id="${task.id}"
       style="left:${left}px;top:${top}px;width:${Math.max(48, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}">
+      ${dailyStatusSegments}
       <span class="resize-handle left" data-drag-type="task-left" data-task-id="${task.id}"></span>
       <span class="floating-bar-label">
         <strong>${statusMark}${escapeHtml(task.title)}</strong>
@@ -1599,6 +1695,9 @@ function normalizeCollaborationTimeline(value = {}) {
             startTime: /^\d{2}:\d{2}$/.test(String(normalizedTask.startTime || "")) ? normalizedTask.startTime : "09:00",
             duration: Math.max(0.25, Number(normalizedTask.duration) || 1),
             status: ["todo", "done", "missed"].includes(normalizedTask.status) ? normalizedTask.status : "todo",
+            dailyStatuses: normalizedTask.dailyStatuses && typeof normalizedTask.dailyStatuses === "object" && !Array.isArray(normalizedTask.dailyStatuses)
+              ? Object.fromEntries(Object.entries(normalizedTask.dailyStatuses).filter(([date, status]) => isValidISODate(date) && ["todo", "done", "missed"].includes(status)))
+              : {},
             color: normalizeHexColor(normalizedTask.color, normalizedProject.color || COLORS[index % COLORS.length]),
             reminder: normalizeTaskReminder(normalizedTask.reminder),
             dailyOnly: Boolean(normalizedTask.dailyOnly),
@@ -1739,10 +1838,92 @@ function applyCollaborationTaskToPersonal(task, personalTask, syncKey = "") {
   personalTask.startTime = task.startTime;
   personalTask.duration = task.duration;
   personalTask.status = task.status;
+  personalTask.dailyStatuses = { ...(task.dailyStatuses || {}) };
   personalTask.color = task.color;
   personalTask.reminder = normalizeTaskReminder(task.reminder);
   personalTask.dailyOnly = Boolean(task.dailyOnly);
   if (syncKey) personalTask.collaborationSyncKey = syncKey;
+}
+
+function applyPersonalProjectToCollaboration(personalProject, collaborationProject) {
+  const next = {
+    title: personalProject.title,
+    goal: personalProject.goal,
+    start: personalProject.start,
+    duration: personalProject.duration,
+    color: personalProject.color,
+    completed: Boolean(personalProject.completed),
+    completedDate: personalProject.completed ? personalProject.completedDate : "",
+  };
+  const changed = Object.entries(next).some(([key, value]) => collaborationProject[key] !== value);
+  if (changed) Object.assign(collaborationProject, next);
+  return changed;
+}
+
+function applyPersonalTaskToCollaboration(personalTask, collaborationTask) {
+  const next = {
+    title: personalTask.title,
+    detail: personalTask.detail,
+    date: personalTask.date,
+    spanDays: personalTask.spanDays,
+    startTime: personalTask.startTime,
+    duration: personalTask.duration,
+    status: personalTask.status,
+    dailyStatuses: { ...(personalTask.dailyStatuses || {}) },
+    color: personalTask.color,
+    reminder: normalizeTaskReminder(personalTask.reminder),
+    dailyOnly: Boolean(personalTask.dailyOnly),
+  };
+  const changed = Object.entries(next).some(([key, value]) => (
+    typeof value === "object"
+      ? JSON.stringify(collaborationTask[key] || {}) !== JSON.stringify(value)
+      : collaborationTask[key] !== value
+  ));
+  if (changed) Object.assign(collaborationTask, next);
+  return changed;
+}
+
+function queuePersonalChangesToCollaboration() {
+  if (personalCollaborationSyncQueued || !getCurrentUser()) return;
+  const syncState = getCollaborationSyncState();
+  if (!Object.keys(syncState.projectLinks).length && !Object.keys(syncState.taskLinks).length) return;
+  personalCollaborationSyncQueued = true;
+  queueMicrotask(async () => {
+    personalCollaborationSyncQueued = false;
+    const timelines = new Map();
+    const getMutableTimeline = (workspaceId) => {
+      if (timelines.has(workspaceId)) return timelines.get(workspaceId);
+      const workspace = getCollaborationWorkspace(workspaceId);
+      if (!workspace) return null;
+      const entry = { timeline: cloneCollaborationTimeline(workspace.timeline), changed: false };
+      timelines.set(workspaceId, entry);
+      return entry;
+    };
+    Object.values(syncState.projectLinks).forEach((link) => {
+      const personalProject = findProject(link.personalProjectId);
+      const entry = personalProject ? getMutableTimeline(link.workspaceId) : null;
+      const collaborationProject = entry?.timeline.projects.find((project) => project.id === link.projectId);
+      if (!personalProject || !collaborationProject) return;
+      entry.changed = applyPersonalProjectToCollaboration(personalProject, collaborationProject) || entry.changed;
+      Object.entries(link.taskIds || {}).forEach(([collaborationTaskId, personalTaskId]) => {
+        const personalTask = personalProject.tasks.find((task) => task.id === personalTaskId);
+        const collaborationTask = collaborationProject.tasks.find((task) => task.id === collaborationTaskId);
+        if (personalTask && collaborationTask) entry.changed = applyPersonalTaskToCollaboration(personalTask, collaborationTask) || entry.changed;
+      });
+    });
+    Object.values(syncState.taskLinks).forEach((link) => {
+      if (syncState.projectLinks[collaborationProjectSyncKey(link.workspaceId, link.projectId)]) return;
+      const personalProject = findProject(link.personalProjectId);
+      const personalTask = personalProject?.tasks.find((task) => task.id === link.personalTaskId);
+      const entry = personalTask ? getMutableTimeline(link.workspaceId) : null;
+      const collaborationProject = entry?.timeline.projects.find((project) => project.id === link.projectId);
+      const collaborationTask = collaborationProject?.tasks.find((task) => task.id === link.taskId);
+      if (personalTask && collaborationTask) entry.changed = applyPersonalTaskToCollaboration(personalTask, collaborationTask) || entry.changed;
+    });
+    await Promise.all([...timelines.entries()]
+      .filter(([, entry]) => entry.changed)
+      .map(([workspaceId, entry]) => persistCollaborationTimeline(workspaceId, entry.timeline)));
+  });
 }
 
 function getLinkedPersonalCollaborationTask(workspaceId, projectId, taskId) {
@@ -1971,7 +2152,7 @@ function synchronizeCollaborationWorkspaceToPersonal(workspaceId) {
 
 function finishCollaborationPersonalSync(changed) {
   if (!changed) return;
-  saveAndRender();
+  saveAndRender(false);
   scheduleNativeReminderSync();
 }
 
@@ -2184,6 +2365,28 @@ function renderCollaborationTimeline() {
   dom.collaborationTimeline.innerHTML = `<div class="timeline-inner day-schedule-inner ${visibleProjects.length ? "" : "empty-timeline"}" style="--days:${days.length}">${header}${rows}</div>`;
   renderCollaborationDaySchedule(workspace);
   renderCollaborationCalendar(workspace, projects);
+  setCollaborationTimelineView(collaborationTimelineView, false);
+}
+
+function loadCollaborationTimelineView() {
+  try {
+    return localStorage.getItem(COLLABORATION_TIMELINE_VIEW_KEY) === "calendar" ? "calendar" : "timeline";
+  } catch {
+    return "timeline";
+  }
+}
+
+function setCollaborationTimelineView(view, persist = true) {
+  collaborationTimelineView = view === "calendar" ? "calendar" : "timeline";
+  const showingCalendar = collaborationTimelineView === "calendar";
+  if (dom.collaborationTimeline) dom.collaborationTimeline.hidden = showingCalendar;
+  if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = showingCalendar;
+  if (dom.collaborationCalendar) dom.collaborationCalendar.hidden = !showingCalendar;
+  if (dom.collaborationViewToggle) {
+    dom.collaborationViewToggle.dataset.action = showingCalendar ? "show-collaboration-timeline" : "show-collaboration-calendar";
+    dom.collaborationViewToggle.textContent = showingCalendar ? "时间轴" : "日历";
+  }
+  if (persist) localStorage.setItem(COLLABORATION_TIMELINE_VIEW_KEY, collaborationTimelineView);
 }
 
 function renderCollaborationDaySchedule(workspace) {
@@ -2222,9 +2425,8 @@ function renderCollaborationDaySchedule(workspace) {
   const rows = tasks.map(({ task, project }) => {
     const left = ((timeToMinutes(task.startTime) - START_HOUR * 60) / 60) * DAY_HOUR_WIDTH + 8;
     const width = task.duration * DAY_HOUR_WIDTH;
-    const dailyCompleted = Boolean(task.dailyCompleted) || task.status === "done";
-    const dailyStatus = dailyCompleted ? "done" : task.status;
-    const statusMark = dailyCompleted ? "✓ " : task.status === "missed" ? "! " : "";
+    const dailyStatus = getWeeklyTaskStatus(task, state.selectedDate);
+    const statusMark = dailyStatus === "done" ? "✓ " : dailyStatus === "missed" ? "! " : "";
     const lockMark = task.assigneeId ? `<span class="task-assignment-lock" aria-label="已分配">🔒</span>` : "";
     const dailyTaskLabel = task.assigneeId
       ? (memberNames.get(task.assigneeId) || task.assigneeName || "协作成员")
@@ -2261,10 +2463,14 @@ function renderCollaborationCalendar(workspace, projects) {
   const monthLabel = `${year}年${month}月`;
   const cells = Array.from({ length: 42 }, (_, index) => {
     const date = toISO(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
-    const entries = projects.flatMap((project) => project.tasks
+    const projectEntries = projects
+      .filter((project) => date >= project.start && date < addDays(project.start, Math.max(1, project.duration || 1)))
+      .map((project) => ({ title: project.title, color: project.color, kind: "project" }));
+    const taskEntries = projects.flatMap((project) => project.tasks
       .filter((task) => date >= task.date && date < addDays(task.date, Math.max(1, task.spanDays || 1)))
-      .map((task) => ({ title: task.title, color: task.color })));
-    return `<button class="collaboration-calendar-day ${date.slice(0, 7) === collaborationCalendarMonth ? "" : "outside"} ${date === todayISO() ? "today" : ""}" type="button" data-action="select-collab-calendar-date" data-date="${date}"><strong>${date.slice(-2).replace(/^0/, "")}</strong><span>${entries.slice(0, 2).map((entry) => `<i style="--calendar-color:${entry.color}">${escapeHtml(entry.title)}</i>`).join("")}</span>${entries.length > 2 ? `<em>+${entries.length - 2}</em>` : ""}</button>`;
+      .map((task) => ({ title: task.title, color: task.color, kind: "task" })));
+    const entries = [...projectEntries, ...taskEntries];
+    return `<button class="collaboration-calendar-day ${date.slice(0, 7) === collaborationCalendarMonth ? "" : "outside"} ${date === todayISO() ? "today" : ""}" type="button" data-action="select-collab-calendar-date" data-date="${date}"><strong>${date.slice(-2).replace(/^0/, "")}</strong><span>${entries.slice(0, 3).map((entry) => `<i class="is-${entry.kind}" title="${escapeHtml(entry.title)}" style="--calendar-color:${entry.color}">${escapeHtml(entry.title)}</i>`).join("")}</span>${entries.length > 3 ? `<em>+${entries.length - 3}</em>` : ""}</button>`;
   }).join("");
   dom.collaborationCalendar.innerHTML = `<div class="collaboration-calendar-head"><button class="icon-button" type="button" data-action="change-collaboration-calendar-month" data-offset="-1" aria-label="上个月">‹</button><strong>${monthLabel}</strong><button class="icon-button" type="button" data-action="change-collaboration-calendar-month" data-offset="1" aria-label="下个月">›</button></div><div class="collaboration-calendar-weekdays">${WEEKDAYS.zh.map((day) => `<span>${day}</span>`).join("")}</div><div class="collaboration-calendar-grid">${cells}</div>`;
 }
@@ -2296,7 +2502,14 @@ function renderCollaborationProjectRow(workspaceId, project, days) {
     if (left + width < 0 || left > state.settings.rangeDays * DAY_WIDTH) return "";
     const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
     const lockMark = task.assigneeId ? `<span class="task-assignment-lock" aria-label="已分配">🔒</span>` : "";
-    return `<button class="timeline-task ${task.status}" type="button" data-drag-type="task-date" data-action="edit-collab-task" data-workspace-id="${workspaceId}" data-task-id="${task.id}" style="left:${left}px;top:${60 + lanes[task.id] * 28}px;width:${Math.max(48, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}"><span class="resize-handle left" data-drag-type="task-left" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span><span class="floating-bar-label"><strong>${lockMark}${statusMark}${escapeHtml(task.title)}</strong><small>${formatDays(spanDays)}</small></span><span class="resize-handle right" data-drag-type="task-right" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span></button>`;
+    const dailyStatusSegments = spanDays > 1
+      ? Array.from({ length: spanDays }, (_, index) => {
+        const date = addDays(task.date, index);
+        const status = getWeeklyTaskStatus(task, date);
+        return `<span class="timeline-task-day-status ${status}" style="left:${(index / spanDays) * 100}%;width:${100 / spanDays}%" aria-hidden="true"></span>`;
+      }).join("")
+      : "";
+    return `<button class="timeline-task ${task.status}" type="button" data-drag-type="task-date" data-action="edit-collab-task" data-workspace-id="${workspaceId}" data-task-id="${task.id}" style="left:${left}px;top:${60 + lanes[task.id] * 28}px;width:${Math.max(48, width)}px;--bar-color:${task.color};--bar-text:${readableText(task.color)}">${dailyStatusSegments}<span class="resize-handle left" data-drag-type="task-left" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span><span class="floating-bar-label"><strong>${lockMark}${statusMark}${escapeHtml(task.title)}</strong><small>${formatDays(spanDays)}</small></span><span class="resize-handle right" data-drag-type="task-right" data-workspace-id="${workspaceId}" data-task-id="${task.id}"></span></button>`;
   }).join("");
 
   return `
@@ -3243,7 +3456,8 @@ function renderDaySchedule() {
     const start = timeToMinutes(task.startTime);
     const left = ((start - START_HOUR * 60) / 60) * DAY_HOUR_WIDTH + 8;
     const width = task.duration * DAY_HOUR_WIDTH;
-    const statusMark = task.status === "done" ? "✓ " : task.status === "missed" ? "! " : "";
+    const status = getWeeklyTaskStatus(task, state.selectedDate);
+    const statusMark = status === "done" ? "✓ " : status === "missed" ? "! " : "";
     return `
       <div class="day-track-row" data-search="${escapeHtml(`${task.title} ${task.detail} ${project.title}`)}">
         <div class="day-track-label">
@@ -3251,7 +3465,7 @@ function renderDaySchedule() {
           <small>${trimNumber(task.duration)}h</small>
         </div>
         <div class="day-track">
-          <button class="day-task-block ${task.status}" type="button"
+          <button class="day-task-block ${status}" type="button"
             data-action="edit-task"
             data-drag-type="task-time"
             data-task-id="${task.id}"
@@ -3300,10 +3514,11 @@ function renderTaskList() {
     return;
   }
   dom.taskList.innerHTML = tasks.map(({ task, project }) => {
-    const icon = task.status === "done" ? "✓" : task.status === "missed" ? "!" : "";
+    const status = getWeeklyTaskStatus(task, state.selectedDate);
+    const icon = status === "done" ? "✓" : status === "missed" ? "!" : "";
     return `
-      <div class="task-row ${task.status}" data-search="${escapeHtml(`${task.title} ${task.detail} ${project.title}`)}">
-        <button class="status-button ${task.status}" type="button" data-action="cycle-task-status" data-task-id="${task.id}" aria-label="${text("toggleStatus")}">${icon}</button>
+      <div class="task-row ${status}" data-search="${escapeHtml(`${task.title} ${task.detail} ${project.title}`)}">
+        <button class="status-button ${status}" type="button" data-action="cycle-weekly-task-status" data-task-id="${task.id}" data-date="${state.selectedDate}" aria-label="${text("toggleStatus")}">${icon}</button>
         <button class="task-copy ghost-button" type="button" data-action="edit-task" data-task-id="${task.id}">
           <strong>${escapeHtml(task.title)}</strong>
           <small>${escapeHtml(project.title)}${task.detail ? ` · ${escapeHtml(task.detail)}` : ""}</small>
@@ -6631,23 +6846,28 @@ function handleDocumentClick(event) {
     return;
   }
   if (action === "show-collaboration-calendar") {
-    dom.collaborationTimeline.hidden = true;
-    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = true;
-    dom.collaborationCalendar.hidden = false;
-    if (dom.collaborationViewToggle) {
-      dom.collaborationViewToggle.dataset.action = "show-collaboration-timeline";
-      dom.collaborationViewToggle.textContent = "时间轴";
-    }
+    setCollaborationTimelineView("calendar");
     return;
   }
   if (action === "show-collaboration-timeline") {
-    dom.collaborationCalendar.hidden = true;
-    dom.collaborationTimeline.hidden = false;
-    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = false;
-    if (dom.collaborationViewToggle) {
-      dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
-      dom.collaborationViewToggle.textContent = "日历";
-    }
+    setCollaborationTimelineView("timeline");
+    return;
+  }
+  if (action === "show-week-plan") {
+    setPersonalTimelineView("week");
+    return;
+  }
+  if (action === "show-personal-timeline") {
+    setPersonalTimelineView("timeline");
+    return;
+  }
+  if (action === "add-weekly-task") {
+    state.selectedDate = button.dataset.date || state.selectedDate;
+    openTaskDialog();
+    return;
+  }
+  if (action === "cycle-weekly-task-status") {
+    cycleWeeklyTaskStatus(button.dataset.taskId, button.dataset.date);
     return;
   }
   if (action === "change-collaboration-calendar-month") {
@@ -6659,13 +6879,7 @@ function handleDocumentClick(event) {
   }
   if (action === "select-collab-calendar-date") {
     state.selectedDate = button.dataset.date || state.selectedDate;
-    dom.collaborationCalendar.hidden = true;
-    dom.collaborationTimeline.hidden = false;
-    if (dom.collaborationDayPlan) dom.collaborationDayPlan.hidden = false;
-    if (dom.collaborationViewToggle) {
-      dom.collaborationViewToggle.dataset.action = "show-collaboration-calendar";
-      dom.collaborationViewToggle.textContent = "日历";
-    }
+    setCollaborationTimelineView("timeline");
     saveState();
     renderCollaborationTimeline();
     return;
@@ -7707,15 +7921,15 @@ function showBlockActionMenu(x, y) {
     ? (contextTarget.scope === "collab" ? findCollabProject(contextTarget.workspaceId, contextTarget.projectId) : findProject(contextTarget.projectId))
     : null;
   if (completeButton) {
-    const isDailyCollaborationPlan = contextTarget?.scope === "collab" && contextTarget?.kind === "day-task";
+    const isDailyPlan = contextTarget?.kind === "day-task";
     const isDone = task
-      ? (isDailyCollaborationPlan ? (Boolean(task.dailyCompleted) || task.status === "done") : task.status === "done")
+      ? (isDailyPlan ? getWeeklyTaskStatus(task, state.selectedDate) === "done" : task.status === "done")
       : Boolean(project?.completed);
     const canUndo = contextTarget?.scope !== "collab" || canManageCollaborationWorkspace(contextTarget.workspaceId);
     const canEditTask = !task || contextTarget?.scope !== "collab"
       || (contextTarget?.kind === "day-task" ? canPlanCollaborationDailyTask(task) : canEditCollaborationTask(contextTarget.workspaceId, task));
     completeButton.hidden = (!task && !project) || !canEditTask || (isDone && !canUndo);
-    completeButton.textContent = isDailyCollaborationPlan
+    completeButton.textContent = isDailyPlan
       ? (isDone ? "取消完成今日安排" : "完成今日安排")
       : (isDone ? (project ? "取消完成项目" : "取消完成任务") : (project ? "完成项目" : "完成任务"));
   }
@@ -7782,7 +7996,8 @@ async function completeContextTask() {
     const task = timeline.projects.flatMap((project) => project.tasks).find((item) => item.id === contextTarget.taskId);
     if (!task) return;
     if (contextTarget.kind === "day-task") {
-      task.dailyCompleted = !task.dailyCompleted;
+      task.dailyStatuses ||= {};
+      task.dailyStatuses[state.selectedDate] = getWeeklyTaskStatus(task, state.selectedDate) === "done" ? "todo" : "done";
       closeBlockActionMenu();
       await persistCollaborationTimeline(contextTarget.workspaceId, timeline);
       return;
@@ -7795,14 +8010,20 @@ async function completeContextTask() {
   const found = findTask(contextTarget.taskId);
   if (!found) return;
   rememberUndo();
-  found.task.status = found.task.status === "done" ? "todo" : "done";
-  if (found.task.status === "done" && found.task.gameMainTaskId) {
+  const isDailyPlan = contextTarget.kind === "day-task";
+  if (isDailyPlan) {
+    found.task.dailyStatuses ||= {};
+    found.task.dailyStatuses[state.selectedDate] = getWeeklyTaskStatus(found.task, state.selectedDate) === "done" ? "todo" : "done";
+  } else {
+    found.task.status = found.task.status === "done" ? "todo" : "done";
+  }
+  if (!isDailyPlan && found.task.status === "done" && found.task.gameMainTaskId) {
     completeCollaborationGameTask(found.task.gameMainTaskId, found.task.gameMainTaskDate || found.task.date);
   }
   closeBlockActionMenu();
   saveAndRender();
   scheduleNativeReminderSync();
-  if (found.task.status === "done") playTaskFireworks();
+  if ((isDailyPlan && getWeeklyTaskStatus(found.task, state.selectedDate) === "done") || found.task.status === "done") playTaskFireworks();
 }
 
 function playTaskFireworks() {
@@ -8148,7 +8369,8 @@ function handlePointerDown(event) {
 }
 
 function moveRange(amount) {
-  state.settings.rangeStart = addDays(state.settings.rangeStart, amount);
+  const step = personalTimelineView === "week" ? Math.sign(amount || 1) * 7 : amount;
+  state.settings.rangeStart = addDays(state.settings.rangeStart, step);
   saveAndRender();
 }
 
@@ -8174,8 +8396,11 @@ function openProjectDialog(projectId = "", context = {}) {
     : (isCollaborationProject ? "新建协作项目" : isCommercialCreation ? "新建商业协作项目" : text("projectDialogNew"));
   dom.projectIdInput.value = project?.id || "";
   dom.projectTitleInput.value = project?.title || "";
-  dom.projectStartInput.value = project?.start || state.selectedDate;
-  dom.projectDurationInput.value = project?.duration || 30;
+  const projectStart = project?.start || state.selectedDate;
+  const projectDuration = Math.max(1, Number(project?.duration) || 30);
+  dom.projectStartInput.value = projectStart;
+  dom.projectDurationInput.min = projectStart;
+  dom.projectDurationInput.value = addDays(projectStart, projectDuration - 1);
   dom.projectColorInput.value = project?.color || nextColor();
   dom.projectGoalInput.value = project?.goal || "";
   if (dom.projectCommercialInput) {
@@ -8203,10 +8428,13 @@ async function handleProjectSubmit(event) {
       ? findCollabProject(projectDialogContext.workspaceId, id)
       : findProject(id))
     : null;
+  const start = dom.projectStartInput.value;
+  const end = dom.projectDurationInput.value;
+  if (!isValidISODate(start) || !isValidISODate(end) || end < start) return;
   const payload = {
     title: dom.projectTitleInput.value.trim(),
-    start: dom.projectStartInput.value,
-    duration: Math.max(1, Number(dom.projectDurationInput.value) || 1),
+    start,
+    duration: diffDays(start, end) + 1,
     color: dom.projectColorInput.value,
     goal: dom.projectGoalInput.value.trim(),
     completed: Boolean(existingProject?.completed),
@@ -8519,6 +8747,22 @@ function cycleTaskStatus(taskId) {
   found.task.status = order[(current + 1) % order.length];
   saveAndRender();
   scheduleNativeReminderSync();
+}
+
+function cycleWeeklyTaskStatus(taskId, date) {
+  const found = findTask(taskId);
+  if (!found || !isValidISODate(date)) return;
+  const spanDays = Math.max(1, Number(found.task.spanDays) || 1);
+  if (spanDays === 1) {
+    cycleTaskStatus(taskId);
+    return;
+  }
+  const order = ["todo", "done", "missed"];
+  const current = order.indexOf(getWeeklyTaskStatus(found.task, date));
+  rememberUndo();
+  found.task.dailyStatuses ||= {};
+  found.task.dailyStatuses[date] = order[(current + 1) % order.length];
+  saveAndRender();
 }
 
 function startDrag(event, target) {
@@ -8850,8 +9094,8 @@ function getTasksForDate(date) {
 function getDayReport(date) {
   const items = getTasksForDate(date);
   const completedProjects = getProjectsCompletedOnDate(date);
-  const completed = items.filter(({ task }) => task.status === "done");
-  const unfinished = items.filter(({ task }) => task.status !== "done");
+  const completed = items.filter(({ task }) => getWeeklyTaskStatus(task, date) === "done");
+  const unfinished = items.filter(({ task }) => getWeeklyTaskStatus(task, date) !== "done");
   const plannedHours = items.reduce((sum, { task }) => sum + Number(task.duration || 0), 0);
   const completedHours = completed.reduce((sum, { task }) => sum + Number(task.duration || 0), 0);
   const taskRatio = items.length ? completed.length / items.length : 0;

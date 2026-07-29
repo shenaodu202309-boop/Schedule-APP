@@ -675,15 +675,15 @@ function ensureSkillMarketCompanyEconomy(company) {
     ? company.economy
     : {};
   company.economy = {
-    currencyName: normalizeCoinName(economy.currencyName),
-    currencySymbol: String(economy.currencySymbol || "◈"),
-    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
-    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
-    lifetimeSpent: roundCompanyCoins(economy.lifetimeSpent || 0),
+    currencyName: "",
+    currencySymbol: "",
+    companyCoins: 0,
+    lifetimeEarned: 0,
+    lifetimeSpent: 0,
     companyLevel: clampNumber(economy.companyLevel, 1, 6, 1),
     companyExp: Math.max(0, Math.floor(Number(economy.companyExp || 0))),
-    assetValue: roundCompanyCoins(economy.assetValue || 0),
-    transactions: Array.isArray(economy.transactions) ? economy.transactions.slice(0, 80) : [],
+    assetValue: 0,
+    transactions: [],
   };
   return company.economy;
 }
@@ -696,44 +696,14 @@ function getSkillMarketCompanyEconomy() {
 }
 
 function getSkillMarketAvailableCoins() {
-  const companyEconomy = getSkillMarketCompanyEconomy();
-  if (!companyEconomy) return roundMoney(skillMarketState?.cash || 0);
-  return roundCompanyCoins(companyEconomy.economy.companyCoins);
+  return Number.POSITIVE_INFINITY;
 }
 
 function spendSkillMarketCompanyCoins(amount, stock, shares) {
-  const cleanAmount = roundCompanyCoins(amount);
-  const companyEconomy = getSkillMarketCompanyEconomy();
-  if (!companyEconomy) {
-    if (cleanAmount > skillMarketState.cash) return false;
-    skillMarketState.cash = roundMoney(skillMarketState.cash - cleanAmount);
-    return true;
-  }
-  const { companyState, company, economy } = companyEconomy;
-  if (economy.companyCoins < cleanAmount) return false;
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins - cleanAmount);
-  economy.lifetimeSpent = roundCompanyCoins(economy.lifetimeSpent + cleanAmount);
-  pushSkillMarketCompanyTransaction(company, economy, "spend", cleanAmount, stock, shares, "买入技能股");
-  updateSkillMarketCompanyAssetValue(companyState);
-  writeSkillMarketLifeCompany(companyState);
-  skillMarketState.cash = economy.companyCoins;
   return true;
 }
 
 function earnSkillMarketCompanyCoins(amount, stock, shares, title = "卖出技能股") {
-  const cleanAmount = roundCompanyCoins(amount);
-  const companyEconomy = getSkillMarketCompanyEconomy();
-  if (!companyEconomy) {
-    skillMarketState.cash = roundMoney(skillMarketState.cash + cleanAmount);
-    return true;
-  }
-  const { companyState, company, economy } = companyEconomy;
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins + cleanAmount);
-  economy.lifetimeEarned = roundCompanyCoins(economy.lifetimeEarned + cleanAmount);
-  pushSkillMarketCompanyTransaction(company, economy, "earn", cleanAmount, stock, shares, title);
-  updateSkillMarketCompanyAssetValue(companyState);
-  writeSkillMarketLifeCompany(companyState);
-  skillMarketState.cash = economy.companyCoins;
   return true;
 }
 
@@ -757,20 +727,12 @@ function updateSkillMarketCompanyAssetValue(companyState) {
   const company = companyState?.company;
   const economy = ensureSkillMarketCompanyEconomy(company);
   if (!company || !economy) return;
-  const completedProjectValue = Array.isArray(company.projects)
-    ? company.projects.filter((project) => project?.status === "completed").length * 120
-    : 0;
-  const departmentValue = Array.isArray(company.departments)
-    ? company.departments.reduce((sum, department) => sum + Math.max(0, Number(department?.level || 1) - 1) * 90, 0)
-    : 0;
-  const levelValue = clampNumber(economy.companyLevel, 1, 6, 1) * 420;
-  economy.assetValue = roundCompanyCoins(economy.companyCoins + completedProjectValue + departmentValue + levelValue + calculateSkillMarketHoldingsValue());
+  economy.assetValue = 0;
 }
 
 function syncSkillMarketCashFromCompany() {
-  const companyEconomy = getSkillMarketCompanyEconomy();
-  if (!companyEconomy || !skillMarketState) return;
-  skillMarketState.cash = roundMoney(companyEconomy.economy.companyCoins);
+  if (!skillMarketState) return;
+  skillMarketState.cash = 0;
 }
 
 function refreshSkillMarketCompanyAssetValue() {
@@ -920,37 +882,7 @@ function toggleSkillMarketTask(taskId) {
 }
 
 function awardSkillMarketTaskCoins(task) {
-  if (!task?.id) return false;
-  const companyEconomy = getSkillMarketCompanyEconomy();
-  if (!companyEconomy) return false;
-  const { companyState, company, economy } = companyEconomy;
-  const uniqueKey = `skill:${task.id}`;
-  const exists = economy.transactions.some((transaction) =>
-    transaction.source === "task" &&
-    (transaction.relatedTaskId === uniqueKey || transaction.relatedTaskId === task.id)
-  );
-  if (exists) return false;
-  const stock = findSkillMarketStock(task.symbol);
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins + 8);
-  economy.lifetimeEarned = roundCompanyCoins(economy.lifetimeEarned + 8);
-  economy.companyExp = Math.max(0, Math.floor(Number(economy.companyExp || 0))) + 8;
-  economy.transactions = [{
-    id: createSkillMarketId("economy"),
-    type: "earn",
-    amount: 8,
-    source: "task",
-    title: "完成技能股任务",
-    note: task.title || "",
-    relatedCompanyId: company.id || "",
-    relatedProjectId: "",
-    relatedTaskId: uniqueKey,
-    relatedStockId: stock?.symbol || task.symbol || "",
-    createdAt: new Date().toISOString(),
-  }, ...(economy.transactions || [])].slice(0, 80);
-  updateSkillMarketCompanyAssetValue(companyState);
-  writeSkillMarketLifeCompany(companyState);
-  syncSkillMarketCashFromCompany();
-  return true;
+  return false;
 }
 
 function settleSkillMarketToday() {
@@ -1358,14 +1290,12 @@ function renderSkillMarketStatus() {
 function renderSkillMarketAccount() {
   syncSkillMarketCashFromCompany();
   const holdingsValue = calculateSkillMarketHoldingsValue();
-  const cash = getSkillMarketAvailableCoins();
-  const equity = roundMoney(cash + holdingsValue);
   const cost = calculateSkillMarketHoldingsCost();
   const pnl = roundMoney(holdingsValue - cost);
   const pressure = calculateSkillMarketPressure();
-  setText(skillMarketDom.cash, formatSkillMarketMoney(cash));
+  setText(skillMarketDom.cash, "不限");
   setText(skillMarketDom.holdingsValue, formatSkillMarketMoney(holdingsValue));
-  setText(skillMarketDom.equity, formatSkillMarketMoney(equity));
+  setText(skillMarketDom.equity, formatSkillMarketMoney(holdingsValue));
   setText(skillMarketDom.pnl, formatSignedSkillMarketMoney(pnl));
   setText(skillMarketDom.pressureValue, `${pressure}`);
   setText(skillMarketDom.pressureText, pressure >= 76 ? "压力过热" : pressure >= 48 ? "压力升高" : "压力可控");
@@ -1800,7 +1730,7 @@ function seededSkillMarketNumber(seed) {
 }
 
 function formatSkillMarketMoney(value) {
-  return `◈ ${roundMoney(value).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return roundMoney(value).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function roundMoney(value) {
@@ -1814,9 +1744,7 @@ function roundCompanyCoins(value) {
 }
 
 function normalizeCoinName(value) {
-  const name = String(value || "金币").trim();
-  if (!name || ["公司币", "游戏币", "技能币"].includes(name)) return "金币";
-  return name;
+  return "";
 }
 
 function createSkillMarketId(prefix) {

@@ -27,12 +27,12 @@ const COMPANY_LOCAL_DATA_RESET_KEYS = [
   "skillMarketEnabled",
 ];
 const COMPANY_EXPLORATION_CELL_COUNT = 25;
-const COMPANY_EXPLORATION_SCAN_COST = 20;
+const COMPANY_EXPLORATION_SCAN_COST = 0;
 const COMPANY_ROOM_MEMBER_LIMIT = 4;
 const COMPANY_GARDEN_EVENT_POINTS = 10;
 const COMPANY_GARDEN_PLANT_POINTS = 100;
 const COMPANY_GARDEN_TARGET_PLANTS = 10;
-const COMPANY_DEPARTMENT_SCENE_PRICE = 1000;
+const COMPANY_DEPARTMENT_SCENE_PRICE = 0;
 const COMPANY_GARDEN_SCENES = [
   { id: "community-day", name: "友谊花园", plantKind: "friendship", src: "./assets/garden-scenes/community-garden-day.png" },
   { id: "courtyard-day", name: "亲情花园", plantKind: "family", src: "./assets/garden-scenes/courtyard-garden-day.png" },
@@ -82,11 +82,11 @@ const COMPANY_DEPARTMENT_SCENES = [
 ];
 
 const COMPANY_LEVELS = [
-  { level: 1, name: "起步公司", requiredExp: 0, requiredCoins: 0 },
+  { level: 1, name: "起步阶段", requiredExp: 0, requiredCoins: 0 },
   { level: 2, name: "小型工作室", requiredExp: 100, requiredCoins: 300 },
   { level: 3, name: "稳定运营", requiredExp: 350, requiredCoins: 800 },
   { level: 4, name: "专业机构", requiredExp: 800, requiredCoins: 1800 },
-  { level: 5, name: "品牌公司", requiredExp: 1500, requiredCoins: 3500 },
+  { level: 5, name: "品牌阶段", requiredExp: 1500, requiredCoins: 3500 },
   { level: 6, name: "梦想企业", requiredExp: 3000, requiredCoins: 7000 },
 ];
 
@@ -107,7 +107,7 @@ const PROJECT_REWARD_MAX = 150;
 const COMPANY_TYPES = [
   {
     id: "animation-company",
-    name: "动画公司",
+    name: "动画计划",
     icon: "影",
     description: "适合动画、短片、角色表演、作品集和求职方向。",
     defaultDepartments: ["创作部", "动画制作部", "技术研发部", "作品集部", "宣传发行部", "求职商务部"],
@@ -221,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindCompanyEvents();
   renderCompanyTypeOptions();
   renderLifeCompanyPage();
+  maybeOpenCompanyGardenFromUrl();
   if (window.__companyLocalDataWasCleared) showCompanyToast("本地数据已清空。现在是全新状态。");
 });
 
@@ -560,10 +561,10 @@ function createCompanyScanPreviewState() {
   return normalizeLifeCompanyState({
     company: {
       id: "preview-company-scan",
-      name: "扫雷界面预览公司",
+      name: "扫雷界面预览",
       type: type.id,
-      vision: "用于单独检查公司扫雷 UI。",
-      mainGoal: { title: "检查公司扫雷界面", deadline: "", status: "active", progress: 0 },
+      vision: "用于单独检查扫雷 UI。",
+      mainGoal: { title: "检查扫雷界面", deadline: "", status: "active", progress: 0 },
       departments,
       activeDepartmentId: departments[0]?.id || "",
       projects: [],
@@ -571,11 +572,12 @@ function createCompanyScanPreviewState() {
       ownedSceneIds: COMPANY_DEPARTMENT_SCENES.filter((scene) => !scene.price).map((scene) => scene.id),
       garden: { unlocked: false },
       economy: {
-        companyCoins: 1000,
+        companyCoins: 0,
         companyExp: 28,
         companyLevel: 1,
-        assetValue: 1000,
-        currencyName: "金币",
+        assetValue: 0,
+        currencyName: "",
+        currencySymbol: "",
         transactions: [],
       },
       createdAt: now,
@@ -828,16 +830,16 @@ function normalizeCompanyEconomy(economy) {
     ? economy.transactions.map(normalizeEconomyTransaction).filter(Boolean)
     : [];
   return {
-    currencyName: normalizeCoinName(hasEconomy ? economy.currencyName : "金币"),
-    currencySymbol: hasEconomy ? String(economy.currencySymbol || "◈") : "◈",
-    companyCoins: roundCompanyCoins(hasEconomy && economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
-    lifetimeEarned: roundCompanyCoins(hasEconomy && economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
-    lifetimeSpent: roundCompanyCoins(hasEconomy && economy.lifetimeSpent !== undefined ? economy.lifetimeSpent : 0),
+    currencyName: "",
+    currencySymbol: "",
+    companyCoins: 0,
+    lifetimeEarned: 0,
+    lifetimeSpent: 0,
     companyLevel: clampNumber(hasEconomy ? economy.companyLevel : 1, 1, COMPANY_LEVELS.length, 1),
     companyExp: Math.max(0, Math.floor(Number(hasEconomy ? economy.companyExp : 0) || 0)),
-    assetValue: roundCompanyCoins(hasEconomy && economy.assetValue !== undefined ? economy.assetValue : 0),
+    assetValue: 0,
     lastCompanyUpgradeAt: String(hasEconomy ? economy.lastCompanyUpgradeAt || "" : ""),
-    transactions: transactions.slice(0, 80),
+    transactions: [],
   };
 }
 
@@ -936,7 +938,7 @@ function renderCompanyExploration() {
   const nextDepartment = company.departments[departmentIndex + 1];
   const canPromptNext = Boolean(department.exploration.completed && nextDepartment && !nextDepartment.exploration.unlocked);
 
-  setText(companyDom.companyExplorerType, type?.name || "人生公司");
+  setText(companyDom.companyExplorerType, type?.name || "人生计划");
   setText(companyDom.companyExplorerCompanyName, company.name);
   if (companyDom.companyGardenButton) {
     companyDom.companyGardenButton.textContent = companyPreviewMode === "scan" ? "花园入口" : company.garden.unlocked ? "后花园" : "开启花园";
@@ -945,7 +947,7 @@ function renderCompanyExploration() {
   setText(companyDom.companyExplorationStage, `部门 ${departmentIndex + 1} / ${company.departments.length}`);
   setText(companyDom.companyExplorationProgress, department.exploration.completed
     ? `${department.room.memberIds.length} / ${COMPANY_ROOM_MEMBER_LIMIT}`
-    : `公司账户 · ${formatCompanyCoins(company.economy.companyCoins)}`);
+    : "探索中");
   setText(companyDom.companyExplorationTitle, department.exploration.completed
     ? `${department.name}办公室`
     : `扫描格子，寻找${department.name}`);
@@ -953,7 +955,7 @@ function renderCompanyExploration() {
   explorationBoard?.classList.toggle("is-department-room", department.exploration.completed);
   companyDom.companyExplorationHint.hidden = department.exploration.completed;
   if (!department.exploration.completed) {
-    setText(companyDom.companyExplorationHint, `每次扫描消耗 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)}，本区域只有一个真正入口。`);
+    setText(companyDom.companyExplorationHint, "继续扫描，本区域只有一个真正入口。");
   }
   companyDom.companyMineBoard.classList.toggle("is-complete", department.exploration.completed);
   companyDom.companyMineBoard.classList.toggle("is-room-view", department.exploration.completed);
@@ -996,7 +998,7 @@ function renderCompanyExploration() {
       return `<button class="company-mine-cell is-cleared" type="button" role="gridcell" disabled aria-label="已清空格 ${cellIndex + 1}"><span></span></button>`;
     }
     if (!isRevealed) {
-      return `<button class="company-mine-cell is-covered" type="button" role="gridcell" data-company-action="reveal-company-cell" data-cell-index="${cellIndex}" aria-label="扫描格 ${cellIndex + 1}，消耗 ${COMPANY_EXPLORATION_SCAN_COST} 金币"><span></span></button>`;
+      return `<button class="company-mine-cell is-covered" type="button" role="gridcell" data-company-action="reveal-company-cell" data-cell-index="${cellIndex}" aria-label="扫描格 ${cellIndex + 1}"><span></span></button>`;
     }
     if (isPortal) {
       const portalState = department.exploration.completed ? "is-complete" : revealed.size <= 1 ? "is-entrance" : "is-open";
@@ -1013,8 +1015,8 @@ function renderCompanyExploration() {
     </div>
     <div class="company-scan-grid" role="presentation">${scanCells}</div>
     <div class="company-scan-cost-bar" aria-hidden="true">
-      <span>每次扫描消耗 <b>${COMPANY_EXPLORATION_SCAN_COST}</b> 金币</span>
-      <strong>${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)} 扫描格子</strong>
+      <span>继续扫描，找到真正入口</span>
+      <strong>扫描格子</strong>
     </div>
   ` : scanCells;
 }
@@ -1093,11 +1095,11 @@ function renderWarmPixelDepartmentRoom(department, scene, members, tasks, pendin
           ${renderWarmPixelDepartmentProjects(projects)}
         </article>
         <article class="company-room-panel company-room-today-panel">
-          <h3>今日公司任务</h3>
+          <h3>今日项目任务</h3>
           ${renderWarmPixelDepartmentTasks(tasks)}
         </article>
         <article class="company-room-panel company-room-report-panel">
-          <h3>公司运营报告</h3>
+          <h3>计划推进报告</h3>
           <ul>${reportLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
         </article>
       </div>
@@ -1121,12 +1123,12 @@ function renderWarmPixelDepartmentProjects(projects) {
 
 function renderWarmPixelDepartmentTasks(tasks) {
   if (!tasks.length) {
-    return `<p class="company-room-empty-copy">还没有公司任务卡。</p><button type="button" data-company-action="open-room-project">生成任务</button>`;
+    return `<p class="company-room-empty-copy">还没有项目任务卡。</p><button type="button" data-company-action="open-room-project">生成任务</button>`;
   }
   return tasks.slice(0, 3).map((task) => `
     <div class="company-room-task-row ${task.done ? "is-done" : ""}">
       <button type="button" data-company-action="toggle-company-task" data-task-id="${escapeHtml(task.id)}" aria-label="${task.done ? "取消完成" : "完成"}${escapeHtml(task.title)}">${task.done ? "✓" : ""}</button>
-      <span><strong>${escapeHtml(task.title)}</strong><small>${formatCompanyTaskMinutes(task.durationMinutes)} · ${formatCompanyCoins(companyTaskCoinReward(task))}</small></span>
+      <span><strong>${escapeHtml(task.title)}</strong><small>${formatCompanyTaskMinutes(task.durationMinutes)}</small></span>
     </div>
   `).join("");
 }
@@ -1135,12 +1137,12 @@ function companyDepartmentReportLines(company, department, projects, tasks) {
   const doneTaskCount = tasks.filter((task) => task.done).length;
   const statusLabel = DEPARTMENT_STATUS_LABELS[department.status] || "正常";
   if (!projects.length && !tasks.length) {
-    return [`${department.name}暂无项目，状态${statusLabel}。`, "从一个项目开始生成任务，让公司今天产生实际行动。"];
+    return [`${department.name}暂无项目，状态${statusLabel}。`, "从一个项目开始生成任务，让计划今天产生实际行动。"];
   }
   return [
     `${department.name}：${projects.length} 个项目，${tasks.length} 张任务，状态${statusLabel}。`,
     `今日已完成 ${doneTaskCount} 项，待完成 ${Math.max(0, tasks.length - doneTaskCount)} 项。`,
-    `公司等级 ${currentCompanyLevel().name}，可用金币 ${formatCompanyCoins(company.economy.companyCoins)}。`,
+    `成长等级 ${currentCompanyLevel().name}。`,
   ];
 }
 
@@ -1174,7 +1176,7 @@ function renderCompanyInlineTasks(department) {
           <strong>${escapeHtml(task.title)}</strong>
           <small>${details.map((detail) => escapeHtml(detail)).join(" · ")}</small>
         </div>
-        <span><b>${task.done ? "已完成" : "待完成"}</b><em>${formatCompanyCoins(companyTaskCoinReward(task))}</em></span>
+        <span><b>${task.done ? "已完成" : "待完成"}</b></span>
       </article>
     `;
   }).join("");
@@ -1284,14 +1286,6 @@ function revealCompanyCell(cellIndex) {
   if (!company || !department || !Number.isInteger(cellIndex) || cellIndex < 0 || cellIndex >= COMPANY_EXPLORATION_CELL_COUNT) return;
   const exploration = department.exploration;
   if (exploration.completed || exploration.revealedCells.includes(cellIndex)) return;
-  const spent = spendCompanyCoins(COMPANY_EXPLORATION_SCAN_COST, "exploration", {
-    title: `扫描${department.name}`,
-    note: `探索格 ${cellIndex + 1}`,
-  });
-  if (!spent) {
-    showCompanyToast(`公司金币不足，需要 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)} 才能扫描。`);
-    return;
-  }
   exploration.revealedCells.push(cellIndex);
   exploration.revealedCells.sort((a, b) => a - b);
   const foundPortal = cellIndex === exploration.targetCell;
@@ -1302,7 +1296,7 @@ function revealCompanyCell(cellIndex) {
   company.updatedAt = new Date().toISOString();
   renderLifeCompanyPage();
   if (!foundPortal) {
-    showCompanyToast(`这里是空的，已消耗 ${formatCompanyCoins(COMPANY_EXPLORATION_SCAN_COST)}。`);
+    showCompanyToast("这里是空的，继续探索。");
     return;
   }
   showCompanyToast(`找到${department.name}，办公室已经建立。`);
@@ -1404,6 +1398,19 @@ function openCompanyGarden() {
   showDialog(companyDom.companyGardenDialog);
 }
 
+function maybeOpenCompanyGardenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const shouldOpen = params.get("openGarden") === "1" || window.location.hash === "#company-garden";
+  if (!shouldOpen) return;
+  window.requestAnimationFrame(() => {
+    if (lifeCompanyState.company) {
+      openCompanyGarden();
+    } else {
+      showCompanyToast("先创建目标档案，再进入后花园。");
+    }
+  });
+}
+
 function unlockCompanyGarden() {
   const company = lifeCompanyState.company;
   if (!company) return;
@@ -1477,7 +1484,7 @@ function renderCompanyGarden() {
           ${isWarmPixelSkin() ? renderWarmPixelImage("garden/gate_closed.png", "skin-garden-gate-image", "", 'loading="lazy"') : ""}
           <span></span><span></span>
         </div>
-        <h3>开启公司的秘密后花园</h3>
+        <h3>开启秘密后花园</h3>
         <p>把人际关系里的角色放进花园，用共同完成的亲密事件培育关系植物。</p>
         <button type="button" data-company-action="unlock-company-garden">开启后花园</button>
       </section>
@@ -2295,9 +2302,9 @@ function renderCompanyOverview() {
     ? `${formatDateShort(company.mainGoal.deadline)} · ${remaining >= 0 ? `剩余 ${remaining} 天` : `已超期 ${Math.abs(remaining)} 天`}`
     : "先设置截止日期";
 
-  setText(companyDom.companyTypeLabel, type?.name || "人生公司");
+  setText(companyDom.companyTypeLabel, type?.name || "人生计划");
   setText(companyDom.companyName, company.name);
-  setText(companyDom.companyVision, company.vision || "这家公司还没有写愿景。");
+  setText(companyDom.companyVision, company.vision || "这个计划还没有写愿景。");
   setText(companyDom.companyMainGoal, company.mainGoal.title || "未设置大目标");
   setText(companyDom.companyMainGoalMeta, goalMeta);
   setText(companyDom.companyProgress, `${progress}%`);
@@ -2320,14 +2327,14 @@ function renderCompanyEconomy() {
   setText(companyDom.companyAssetValue, formatCompanyCoins(economy.assetValue));
   setText(companyDom.companyLevelLabel, `Lv.${level.level} ${level.name}`);
   setText(companyDom.companyExpLabel, nextLevel ? `经验值 ${economy.companyExp} / ${nextLevel.requiredExp}` : `经验值 ${economy.companyExp} · 已满级`);
-  setText(companyDom.companyNextLevelCost, nextLevel ? companyUpgradeRequirementText(nextLevel) : "已经是最高等级");
-  setText(companyDom.companyTodayIncome, `今日收入 +${formatCompanyCoins(totals.income)}`);
-  setText(companyDom.companyTodaySpend, `今日支出 -${formatCompanyCoins(totals.spend)}`);
+  setText(companyDom.companyNextLevelCost, nextLevel ? "完成项目后可升级" : "已经是最高等级");
+  setText(companyDom.companyTodayIncome, "");
+  setText(companyDom.companyTodaySpend, "");
   if (companyDom.companyExpMeter) companyDom.companyExpMeter.style.width = `${progress.percent}%`;
   const upgradeButton = document.querySelector("[data-company-action='upgrade-company']");
   if (upgradeButton) {
-    upgradeButton.disabled = !nextLevel || !canUpgrade;
-    upgradeButton.textContent = nextLevel ? "升级公司" : "已满级";
+    upgradeButton.disabled = !nextLevel;
+    upgradeButton.textContent = nextLevel ? "升级" : "已满级";
   }
   renderCompanyTransactions();
 }
@@ -2361,7 +2368,7 @@ function renderCompanyDepartments() {
     const projectCount = displayDepartmentProjectCount(department);
     const taskCount = displayDepartmentTaskCount(department);
     const upgradeCost = departmentUpgradeCost(department);
-    const canUpgrade = Boolean(upgradeCost) && company.economy.companyCoins >= upgradeCost;
+    const canUpgrade = Boolean(upgradeCost);
     return `
       <article class="company-department-card" data-department-id="${escapeHtml(department.id)}" tabindex="0" role="button" aria-label="长按编辑 ${escapeHtml(department.name)}">
         <div class="company-department-topline">
@@ -2371,7 +2378,7 @@ function renderCompanyDepartments() {
         <strong>${escapeHtml(department.name)}</strong>
         <i><b style="width: ${department.progress}%"></b></i>
         <small>${projectCount} 个项目 · ${taskCount} 张任务</small>
-        <button type="button" data-company-action="upgrade-department" data-department-id="${escapeHtml(department.id)}" ${canUpgrade ? "" : "disabled"}>${upgradeCost ? `升级 ${formatCompanyCoins(upgradeCost)}` : "已满级"}</button>
+        <button type="button" data-company-action="upgrade-department" data-department-id="${escapeHtml(department.id)}" ${canUpgrade ? "" : "disabled"}>${upgradeCost ? "升级" : "已满级"}</button>
       </article>
     `;
   }).join("");
@@ -2423,8 +2430,8 @@ function renderCompanyTasks() {
   if (!tasks.length) {
     companyDom.companyTaskList.innerHTML = `
       <div class="company-empty-list">
-        <strong>还没有公司任务卡</strong>
-        <p>从小项目里点“生成任务”，这里会出现今天要执行的公司工作。</p>
+        <strong>还没有项目任务卡</strong>
+        <p>从小项目里点“生成任务”，这里会出现今天要执行的计划行动。</p>
       </div>
     `;
     return;
@@ -2437,8 +2444,7 @@ function renderCompanyTasks() {
         <button type="button" data-company-action="toggle-company-task" data-task-id="${escapeHtml(task.id)}" aria-label="切换任务完成状态">${task.done ? "✓" : ""}</button>
         <div>
           <strong>${escapeHtml(task.title)}</strong>
-          <small>来自：${escapeHtml(company?.name || "人生公司")} · ${escapeHtml(task.departmentName || "未分配部门")} · ${formatCompanyTaskMinutes(task.durationMinutes)}</small>
-          <em class="company-task-coin-value">${formatCompanyCoins(companyTaskCoinReward(task))}</em>
+          <small>来自：${escapeHtml(company?.name || "人生计划")} · ${escapeHtml(task.departmentName || "未分配部门")} · ${formatCompanyTaskMinutes(task.durationMinutes)}</small>
         </div>
         <button type="button" data-company-action="delete-company-task" data-task-id="${escapeHtml(task.id)}" aria-label="删除任务">×</button>
       </article>
@@ -2476,8 +2482,8 @@ function openCompanyForm(mode = "create") {
   editingCompanyMode = mode;
   const company = lifeCompanyState.company;
   const type = companyTypeById(company?.type) || COMPANY_TYPES[0];
-  setText(companyDom.companyFormPill, mode === "edit" ? "编辑人生公司" : "创建人生公司");
-  setText(companyDom.companyFormTitle, mode === "edit" ? "调整这家公司的人生方向" : "你正在经营哪种人生公司？");
+  setText(companyDom.companyFormPill, mode === "edit" ? "编辑目标档案" : "创建目标档案");
+  setText(companyDom.companyFormTitle, mode === "edit" ? "调整这个计划的人生方向" : "你正在经营哪种人生计划？");
   const moneyNote = companyDom.companyStartingMoneyNote;
   if (moneyNote) moneyNote.hidden = mode === "edit";
   companyDom.companyNameInput.value = mode === "edit" && company ? company.name : defaultCompanyName(type);
@@ -2555,8 +2561,7 @@ function renderCompanyDepartmentSceneOptions(selectedSceneId) {
   if (!companyDom.companyDepartmentSceneOptions) return;
   const selected = normalizeCompanyDepartmentSceneId(selectedSceneId, 0);
   companyDom.companyDepartmentSceneOptions.innerHTML = COMPANY_DEPARTMENT_SCENES.map((scene) => {
-    const owned = companyOwnsDepartmentScene(scene.id);
-    const canAfford = (lifeCompanyState.company?.economy?.companyCoins || 0) >= scene.price;
+    const owned = companyOwnsDepartmentScene(scene.id) || scene.price <= 0;
     return `
       <article class="company-department-scene-option ${owned ? "is-owned" : "is-locked"}">
         <label>
@@ -2564,10 +2569,10 @@ function renderCompanyDepartmentSceneOptions(selectedSceneId) {
           <span>
             <img src="${escapeHtml(scene.src)}" alt="" loading="lazy" draggable="false" />
             <b>${escapeHtml(scene.name)}</b>
-            <small>${owned ? (scene.price ? "已购买" : "免费") : formatCompanyCoins(scene.price)}</small>
+            <small>${owned ? "可用" : "未解锁"}</small>
           </span>
         </label>
-        ${owned ? "" : `<button type="button" data-company-action="purchase-company-scene" data-scene-id="${escapeHtml(scene.id)}" ${canAfford ? "" : "disabled"}>${canAfford ? `购买 ${formatCompanyCoins(scene.price)}` : `需要 ${formatCompanyCoins(scene.price)}`}</button>`}
+        ${owned ? "" : `<button type="button" data-company-action="purchase-company-scene" data-scene-id="${escapeHtml(scene.id)}">解锁</button>`}
       </article>
     `;
   }).join("");
@@ -2576,30 +2581,22 @@ function renderCompanyDepartmentSceneOptions(selectedSceneId) {
 function purchaseCompanyDepartmentScene(sceneId) {
   const company = lifeCompanyState.company;
   const scene = COMPANY_DEPARTMENT_SCENES.find((item) => item.id === sceneId);
-  if (!company || !scene?.price || companyOwnsDepartmentScene(scene.id)) return;
-  const spent = spendCompanyCoins(scene.price, "decoration", {
-    title: `购买${scene.name}`,
-    note: "部门办公室场景",
-  });
-  if (!spent) {
-    showCompanyToast(`公司金币不足，需要 ${formatCompanyCoins(scene.price)}。`);
-    return;
-  }
+  if (!company || companyOwnsDepartmentScene(scene.id)) return;
   company.ownedSceneIds = normalizeCompanyOwnedSceneIds([...(company.ownedSceneIds || []), scene.id]);
   company.updatedAt = new Date().toISOString();
   saveLifeCompany();
   renderCompanyDepartmentSceneOptions(scene.id);
   renderCompanyEconomy();
-  showCompanyToast(`${scene.name}已购买，可以用于所有部门。`);
+  showCompanyToast(`${scene.name}已解锁，可以用于所有部门。`);
 }
 
 function renderDepartmentEconomyState(department) {
   const cost = departmentUpgradeCost(department);
-  setText(companyDom.companyDepartmentLevelLabel, `Lv.${department.level} · ${cost ? `升级需要 ${formatCompanyCoins(cost)}` : "已满级"}`);
+  setText(companyDom.companyDepartmentLevelLabel, `Lv.${department.level} · ${cost ? "可升级" : "已满级"}`);
   const button = companyDom.companyDepartmentForm?.querySelector("[data-company-action='upgrade-department']");
   if (!button) return;
-  button.disabled = !cost || !lifeCompanyState.company?.economy || lifeCompanyState.company.economy.companyCoins < cost;
-  button.textContent = cost ? `升级部门 ${formatCompanyCoins(cost)}` : "部门已满级";
+  button.disabled = !cost;
+  button.textContent = cost ? "升级部门" : "部门已满级";
 }
 
 function closeCompanyDepartmentForm() {
@@ -2714,11 +2711,11 @@ function saveCompanyFromForm() {
   closeCompanyForm();
   syncCompanyNameToGameTitle();
   renderLifeCompanyPage();
-  showCompanyToast(editingCompanyMode === "edit" ? "公司资料已更新。" : "人生公司创建好了。");
+  showCompanyToast(editingCompanyMode === "edit" ? "计划资料已更新。" : "目标档案创建好了。");
 }
 
-function confirmCompanyStartingStake(companyName = "人生公司") {
-  return window.confirm(`默认个人金币：1000\n建立「${companyName}」需要投入 ${COMPANY_STARTING_STAKE} 金币作为启动资金。\n\n确认创建公司吗？`);
+function confirmCompanyStartingStake(companyName = "人生计划") {
+  return true;
 }
 
 function openCompanyProjectForm(projectId = "") {
@@ -2729,7 +2726,7 @@ function openCompanyProjectForm(projectId = "") {
   }
   const project = lifeCompanyState.company.projects.find((item) => item.id === projectId);
   setText(companyDom.companyProjectFormPill, project ? "编辑小项目" : "新增小项目");
-  setText(companyDom.companyProjectFormTitle, project ? "调整这个小项目" : "这家公司下一步要交付什么？");
+  setText(companyDom.companyProjectFormTitle, project ? "调整这个小项目" : "这个计划下一步要交付什么？");
   companyDom.companyProjectIdInput.value = project?.id || "";
   companyDom.companyProjectTitleInput.value = project?.title || "";
   companyDom.companyProjectDescriptionInput.value = project?.description || "";
@@ -2845,7 +2842,7 @@ function generateCompanyTasksFromProject(projectId) {
   const project = company?.projects.find((item) => item.id === projectId);
   if (!company || !project) return;
   if (lifeCompanyState.tasks.length >= COMPANY_TASK_LIMIT) {
-    showCompanyToast(`今日公司任务最多 ${COMPANY_TASK_LIMIT} 张。`);
+    showCompanyToast(`今日项目任务最多 ${COMPANY_TASK_LIMIT} 张。`);
     return;
   }
   const department = company.departments.find((item) => item.name === project.departmentName);
@@ -2880,7 +2877,7 @@ function generateCompanyTasksFromProject(projectId) {
   project.taskIds = Array.from(new Set([...(project.taskIds || []), task.id]));
   company.updatedAt = new Date().toISOString();
   renderLifeCompanyPage();
-  showCompanyToast("已生成一张公司任务卡。");
+  showCompanyToast("已生成一张项目任务卡。");
 }
 
 function toggleCompanyTask(taskId) {
@@ -2892,7 +2889,7 @@ function toggleCompanyTask(taskId) {
   if (!wasDone && task.done) awardCompanyTaskCompletion(task);
   updateProjectProgressFromTasks(task.projectId);
   renderLifeCompanyPage();
-  showCompanyToast(task.done ? "公司任务完成。" : "公司任务已取消完成。");
+  showCompanyToast(task.done ? "项目任务完成。" : "项目任务已取消完成。");
 }
 
 function deleteCompanyTask(taskId) {
@@ -2911,7 +2908,7 @@ function awardCompanyTaskCompletion(task) {
   if (!company || !task?.id) return false;
   const reward = companyTaskCoinReward(task);
   return earnCompanyCoins(reward, "task", {
-    title: "完成公司项目任务",
+    title: "完成项目任务",
     note: task.title,
     relatedTaskId: `company:${task.id}`,
     relatedProjectId: task.projectId,
@@ -2933,45 +2930,16 @@ function awardProjectCompletion(project) {
 }
 
 function earnCompanyCoins(amount, source = "manual", meta = {}) {
-  const company = lifeCompanyState.company;
-  if (!company?.economy) return false;
-  const economy = company.economy;
-  const cleanAmount = roundCompanyCoins(amount);
-  if (cleanAmount <= 0) return false;
-  if (meta.uniqueKey && hasEconomyTransaction(meta.uniqueKey, source)) return false;
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins + cleanAmount);
-  economy.lifetimeEarned = roundCompanyCoins(economy.lifetimeEarned + cleanAmount);
   earnCompanyExp(meta.exp || 0);
-  pushCompanyTransaction("earn", cleanAmount, source, meta);
-  updateCompanyAssetValue();
   return true;
 }
 
 function spendCompanyCoins(amount, source = "manual", meta = {}) {
-  const company = lifeCompanyState.company;
-  if (!company?.economy) return false;
-  const economy = company.economy;
-  const cleanAmount = roundCompanyCoins(amount);
-  if (cleanAmount <= 0 || economy.companyCoins < cleanAmount) return false;
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins - cleanAmount);
-  economy.lifetimeSpent = roundCompanyCoins(economy.lifetimeSpent + cleanAmount);
-  pushCompanyTransaction("spend", cleanAmount, source, meta);
-  updateCompanyAssetValue();
   return true;
 }
 
 function adjustCompanyCoins(amount, note = "") {
-  const company = lifeCompanyState.company;
-  if (!company?.economy) return false;
-  const economy = company.economy;
-  const cleanAmount = roundCompanyCoins(amount);
-  economy.companyCoins = roundCompanyCoins(Math.max(0, economy.companyCoins + cleanAmount));
-  pushCompanyTransaction("adjust", Math.abs(cleanAmount), "manual", {
-    title: "手动调整金币",
-    note,
-  });
-  updateCompanyAssetValue();
-  return true;
+  return false;
 }
 
 function earnCompanyExp(amount) {
@@ -2983,23 +2951,7 @@ function earnCompanyExp(amount) {
 }
 
 function pushCompanyTransaction(type, amount, source, meta = {}) {
-  const company = lifeCompanyState.company;
-  const economy = company?.economy;
-  if (!economy) return;
-  const transaction = {
-    id: createId("economy"),
-    type,
-    amount: roundCompanyCoins(amount),
-    source,
-    title: meta.title || economySourceLabel(source),
-    note: meta.note || "",
-    relatedCompanyId: company.id,
-    relatedProjectId: meta.relatedProjectId || "",
-    relatedTaskId: meta.relatedTaskId || meta.uniqueKey || "",
-    relatedStockId: meta.relatedStockId || "",
-    createdAt: new Date().toISOString(),
-  };
-  economy.transactions = [transaction, ...(economy.transactions || [])].slice(0, 80);
+  return;
 }
 
 function hasEconomyTransaction(uniqueKey, source = "") {
@@ -3025,7 +2977,7 @@ function canUpgradeCompany() {
   const economy = lifeCompanyState.company?.economy;
   const next = nextCompanyLevel();
   if (!economy || !next) return false;
-  return areAllCompanyProjectsCompleted() && isCompanyUpgradeWeekReady() && economy.companyCoins >= next.requiredCoins;
+  return areAllCompanyProjectsCompleted() && isCompanyUpgradeWeekReady();
 }
 
 function upgradeCompany() {
@@ -3036,20 +2988,11 @@ function upgradeCompany() {
     showCompanyToast(companyUpgradeBlockReason());
     return;
   }
-  const upgradeCost = roundCompanyCoins(next.requiredCoins);
-  if (upgradeCost > 0) {
-    economy.companyCoins = roundCompanyCoins(economy.companyCoins - upgradeCost);
-    economy.lifetimeSpent = roundCompanyCoins(economy.lifetimeSpent + upgradeCost);
-  }
   economy.companyLevel = next.level;
   economy.lastCompanyUpgradeAt = new Date().toISOString();
-  pushCompanyTransaction("spend", upgradeCost, "company-upgrade", {
-    title: `公司升级到 Lv.${next.level}`,
-    note: next.name,
-  });
   lifeCompanyState.company.updatedAt = new Date().toISOString();
   renderLifeCompanyPage();
-  showCompanyToast(`公司升级为 ${next.name}。`);
+  showCompanyToast(`已升级为 ${next.name}。`);
 }
 
 function upgradeCompanyDepartment(departmentId = "") {
@@ -3059,14 +3002,6 @@ function upgradeCompanyDepartment(departmentId = "") {
   const cost = departmentUpgradeCost(department);
   if (!cost) {
     showCompanyToast("这个部门已经满级。");
-    return;
-  }
-  const spent = spendCompanyCoins(cost, "department-upgrade", {
-    title: `升级${department.name}`,
-    note: `Lv.${department.level} → Lv.${department.level + 1}`,
-  });
-  if (!spent) {
-    showCompanyToast("金币不够，暂时不能升级这个部门。");
     return;
   }
   department.level += 1;
@@ -3130,21 +3065,16 @@ function companyUpgradeDaysRemaining() {
 }
 
 function companyUpgradeRequirementText(nextLevel) {
-  if (!areAllCompanyProjectsCompleted()) return "升级条件：完成全部公司项目";
+  if (!areAllCompanyProjectsCompleted()) return "升级条件：完成全部项目";
   const remainingDays = companyUpgradeDaysRemaining();
   if (remainingDays > 0) return `升级冷却：还差 ${remainingDays} 天`;
-  const coins = roundCompanyCoins(lifeCompanyState.company?.economy?.companyCoins || 0);
-  if (coins < nextLevel.requiredCoins) return `升级需要 ${formatCompanyCoins(nextLevel.requiredCoins)}`;
   return `可升级到 Lv.${nextLevel.level}`;
 }
 
 function companyUpgradeBlockReason() {
-  if (!areAllCompanyProjectsCompleted()) return "完成全部公司项目后，公司才能升级。";
+  if (!areAllCompanyProjectsCompleted()) return "完成全部项目后才能升级。";
   const remainingDays = companyUpgradeDaysRemaining();
   if (remainingDays > 0) return `距离上次升级还差 ${remainingDays} 天。`;
-  const next = nextCompanyLevel();
-  const coins = roundCompanyCoins(lifeCompanyState.company?.economy?.companyCoins || 0);
-  if (next && coins < next.requiredCoins) return `金币不足，升级需要 ${formatCompanyCoins(next.requiredCoins)}。`;
   return "暂时不能升级。";
 }
 
@@ -3197,7 +3127,7 @@ function updateCompanyAssetValue() {
   const companyLevelValue = currentCompanyLevel().level * 420;
   const departmentValue = company.departments.reduce((sum, department) => sum + (department.level - 1) * 90, 0);
   const skillHoldingValue = calculateSkillHoldingAssetValue();
-  economy.assetValue = roundCompanyCoins(economy.companyCoins + completedProjectValue + companyLevelValue + departmentValue + skillHoldingValue);
+  economy.assetValue = 0;
   return economy.assetValue;
 }
 
@@ -3217,29 +3147,22 @@ function calculateSkillHoldingAssetValue() {
 }
 
 function todayEconomyTotals() {
-  const today = dateKey(new Date());
-  const transactions = lifeCompanyState.company?.economy?.transactions || [];
-  return transactions.reduce((totals, transaction) => {
-    if (!String(transaction.createdAt || "").startsWith(today)) return totals;
-    if (transaction.type === "earn") totals.income += Number(transaction.amount || 0);
-    if (transaction.type === "spend") totals.spend += Number(transaction.amount || 0);
-    return totals;
-  }, { income: 0, spend: 0 });
+  return { income: 0, spend: 0 };
 }
 
 function economySourceLabel(source) {
   const labels = {
-    task: "任务收入",
-    "company-task-missed": "公司任务未完成",
-    project: "项目收入",
+    task: "任务记录",
+    "company-task-missed": "项目任务未完成",
+    project: "项目记录",
     "skill-stock": "技能股交易",
-    "company-upgrade": "公司升级",
+    "company-upgrade": "等级升级",
     "department-upgrade": "部门升级",
     exploration: "部门扫描",
     decoration: "装饰解锁",
     manual: "手动调整",
   };
-  return labels[source] || "金币变动";
+  return labels[source] || "成长记录";
 }
 
 function initializeCompanyDepartments(companyTypeId) {
@@ -3328,13 +3251,13 @@ function generateCompanyDailyReport() {
   const advice = riskProjects.length
     ? `系统建议：明天优先推进「${riskProjects[0].title}」，否则大目标可能延期。`
     : undoneCount
-      ? `系统建议：先完成 ${undoneCount} 张未完成公司任务，让公司保持运转。`
+      ? `系统建议：先完成 ${undoneCount} 张未完成项目任务，让计划保持运转。`
       : doneCount
-        ? "系统建议：今天公司运转良好，可以做一次短复盘。"
-        : "系统建议：从一个小项目开始生成任务，让公司今天有实际动作。";
+        ? "系统建议：今天计划推进良好，可以做一次短复盘。"
+        : "系统建议：从一个小项目开始生成任务，让计划今天有实际动作。";
 
   return {
-    title: "今日公司运营报告",
+    title: "今日计划推进报告",
     lines,
     advice,
   };
@@ -3464,15 +3387,11 @@ function roundCompanyCoins(value) {
 }
 
 function normalizeCoinName(value) {
-  const name = String(value || "金币").trim();
-  if (!name || ["公司币", "游戏币", "技能币"].includes(name)) return "金币";
-  return name;
+  return "";
 }
 
 function formatCompanyCoins(value) {
-  const economy = lifeCompanyState?.company?.economy;
-  const symbol = economy?.currencySymbol || "◈";
-  return `${symbol} ${roundCompanyCoins(value).toLocaleString("zh-CN")}`;
+  return roundCompanyCoins(value).toLocaleString("zh-CN");
 }
 
 function formatTransactionTime(value) {

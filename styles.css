@@ -261,6 +261,7 @@ h2 {
 
 .section-heading,
 .board-toolbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -681,6 +682,159 @@ textarea:focus {
 
 .note-field {
   margin-top: 14px;
+}
+
+.review-meta-disclosure {
+  margin-top: 12px;
+}
+
+.section-heading .review-meta-disclosure {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.review-meta-disclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 22px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 950;
+  list-style: none;
+  user-select: none;
+}
+
+.section-heading .review-meta-disclosure summary {
+  max-width: 170px;
+}
+
+.section-heading .review-meta-disclosure summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-meta-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.review-meta-disclosure summary b {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.review-meta-disclosure[open] summary b {
+  transform: rotate(180deg);
+}
+
+.review-meta-disclosure .review-meta-panel {
+  margin-top: 10px;
+}
+
+.section-heading .review-meta-disclosure .review-meta-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 12;
+  width: min(328px, calc(100vw - 52px));
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(248, 248, 248, 0.96);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.overview-date-module {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.overview-date-bubbles {
+  display: flex;
+  gap: 6px;
+  width: calc(100% + 14px);
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 1px 14px 4px 0;
+  scrollbar-width: none;
+}
+
+.overview-date-bubbles::-webkit-scrollbar {
+  display: none;
+}
+
+.overview-date-bubble {
+  display: grid;
+  flex: 0 0 29px;
+  grid-template-rows: 7px 12px 4px;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  background: rgba(248, 248, 248, 0.9);
+  color: var(--ink);
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.08);
+}
+
+.overview-date-bubble span {
+  color: var(--muted);
+  font-size: 0.36rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.overview-date-bubble strong {
+  color: inherit;
+  font-size: 0.62rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.overview-date-bubble i {
+  display: flex;
+  gap: 1px;
+  justify-content: center;
+  min-height: 2px;
+  font-style: normal;
+}
+
+.overview-date-bubble i b {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.72;
+}
+
+.overview-date-bubble.active {
+  border-color: var(--ink);
+  background: var(--fruit-lime);
+  color: var(--ink);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.13);
+}
+
+.overview-date-bubble.is-today:not(.active) {
+  border-color: var(--ink);
+  border-width: 2px;
+}
+
+.overview-date-bubble.is-future {
+  opacity: 0.48;
 }
 
 .review-meta-panel {
@@ -2498,6 +2652,19 @@ body.nav-hidden .undo-button {
   overflow-wrap: anywhere;
 }
 
+#createMenu button[data-action="new-sticky-note"] {
+  display: none;
+}
+
+body[data-view="overviewSection"] #createMenu button {
+  display: none;
+}
+
+body[data-view="overviewSection"] #createMenu button[data-action="new-sticky-note"] {
+  display: flex;
+  background: var(--fruit-lime);
+}
+
 .block-action-menu[hidden] {
   display: none;
 }
@@ -3808,6 +3975,59 @@ body[data-view="collaborationSection"] .undo-button {
   white-space: nowrap;
 }
 
+#overviewSection .note-field {
+  gap: 8px;
+  margin-top: 18px;
+}
+
+#overviewSection .note-field > span {
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 950;
+}
+
+#overviewSection #dailyNoteInput {
+  min-height: 156px;
+  border-color: rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 42px),
+    #ffffff;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+#overviewSection #dailyNoteInput:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px rgba(215, 255, 47, 0.42);
+}
+
+#overviewSection .sticky-notes-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+#overviewSection .sticky-note-extra {
+  min-height: 132px;
+  border-color: rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 42px),
+    #ffffff;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+#overviewSection .sticky-note-extra:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px rgba(215, 255, 47, 0.42);
+}
+
 #overviewSection .date-strip {
   max-width: 100%;
   margin: 0 -2px;
@@ -3825,9 +4045,36 @@ body[data-view="collaborationSection"] .undo-button {
   min-height: 98px;
 }
 
-#overviewSection .special-date-editor,
-#overviewSection .report-block {
+#overviewSection .special-date-editor {
   background: rgba(248, 248, 248, 0.88);
+}
+
+#overviewSection .report-block {
+  padding: 1px 0 5px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#overviewSection .report-block h3 {
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+}
+
+#overviewSection .report-list {
+  gap: 6px;
+}
+
+#overviewSection .report-list li {
+  gap: 7px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+#overviewSection .status-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
 }
 
 .journal-panel {

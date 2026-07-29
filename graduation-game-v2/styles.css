@@ -533,7 +533,6 @@ button:active,
 }
 
 .character-return-chip,
-.character-company-chip,
 .character-relationship-chip,
 .character-skill-market-chip,
 .character-tarot-chip,
@@ -556,11 +555,6 @@ button:active,
 .character-relationship-chip {
   color: #2a183d;
   background: #ffd84d;
-}
-
-.character-company-chip {
-  color: #fff8f2;
-  background: #6a2cff;
 }
 
 .character-skill-market-chip {
@@ -16893,7 +16887,6 @@ body.skill-market-page-body .skill-market-add-stock-button {
   }
 
   .character-panel.is-collapsed .character-return-chip,
-  .character-panel.is-collapsed .character-company-chip,
   .character-panel.is-collapsed .character-relationship-chip,
   .character-panel.is-collapsed .character-skill-market-chip,
   .character-panel.is-collapsed .character-tarot-chip,
@@ -17218,6 +17211,649 @@ body.skill-market-page-body .skill-market-add-stock-button {
   justify-self: start;
   min-width: min(100%, 180px);
   background: #193f36;
+}
+
+.ootd-zine-entry-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-color: #193f36;
+  background: #eef8f3;
+}
+
+.ootd-zine-entry-panel h2 {
+  margin: 3px 0;
+  color: #193f36;
+  font-size: 1.25rem;
+}
+
+.ootd-zine-entry-panel span {
+  color: rgba(25, 63, 54, 0.7);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.ootd-zine-entry-panel .ghost-button {
+  min-width: 100px;
+  border-color: #193f36;
+  color: #193f36;
+}
+
+.ootd-zine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 22px 18px;
+  margin-top: 16px;
+}
+
+.ootd-zine-dialog {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #050505;
+}
+
+.ootd-zine-dialog::backdrop {
+  background: #050505;
+}
+
+.ootd-zine-dialog .ootd-dialog-card {
+  position: relative;
+  width: min(100%, 1280px);
+  min-height: 100dvh;
+  max-height: none;
+  margin: 0 auto;
+  padding: 42px 44px 70px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  color: #ffffff;
+  background: #050505;
+  box-shadow: none;
+}
+
+.ootd-zine-dialog .dialog-close {
+  top: 26px;
+  right: 28px;
+  border-color: rgba(255, 255, 255, 0.72);
+  color: #111111;
+  background: #ffffff;
+}
+
+.ootd-zine-dialog .ootd-dialog-card > .black-pill {
+  display: inline-block;
+  margin: 0 auto 22px;
+  padding: 0;
+  border-radius: 0;
+  color: #ffffff;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.ootd-zine-dialog .ootd-dialog-head {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0 auto 18px;
+  text-align: center;
+}
+
+.ootd-zine-dialog .ootd-dialog-head h2 {
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+}
+
+.ootd-zine-dialog .ootd-dialog-head p {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.ootd-zine-dialog .ootd-dialog-head > strong {
+  position: absolute;
+  top: 42px;
+  right: 44px;
+  border-color: rgba(255, 255, 255, 0.46);
+  color: #ffffff;
+  background: transparent;
+}
+
+.ootd-zine-dialog .zine-create-button {
+  display: block;
+  width: auto;
+  min-width: 156px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  color: #ffffff;
+  background: #ef432d;
+}
+
+.ootd-zine-dialog .ootd-zine-grid {
+  width: min(100%, 980px);
+  margin: 34px auto 0;
+}
+
+.ootd-zine-dialog .ootd-zine-empty {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.ootd-zine-card {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #193f36;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #193f36;
+  text-align: left;
+}
+
+.ootd-zine-cover {
+  display: grid;
+  min-height: 132px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 5px;
+  background: #dceee6;
+}
+
+.ootd-zine-cover img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+
+.ootd-zine-cover i {
+  color: #193f36;
+  font-size: 2rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ootd-zine-card > span:last-child {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+}
+
+.ootd-zine-card small,
+.ootd-zine-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ootd-zine-card small {
+  color: rgba(25, 63, 54, 0.68);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.ootd-zine-card strong {
+  font-size: 0.84rem;
+}
+
+.ootd-zine-card em {
+  grid-row: span 2;
+  align-self: center;
+  color: #193f36;
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.ootd-zine-empty {
+  grid-column: 1 / -1;
+  margin: 18px 0;
+  color: rgba(25, 63, 54, 0.68);
+  text-align: center;
+}
+
+.zine-create-button {
+  width: 100%;
+  margin-top: 2px;
+  background: #193f36;
+}
+
+.zine-shelf-book {
+  display: block;
+  min-height: 0;
+  padding: 5px 5px 5px 9px;
+  overflow: hidden;
+  border-color: #1f4239;
+  border-radius: 3px 7px 7px 3px;
+  background: #1a1a1a;
+  box-shadow: 6px 8px 0 rgba(255, 255, 255, 0.1), inset 4px 0 rgba(255, 255, 255, 0.15);
+  touch-action: manipulation;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.zine-shelf-book.is-long-pressing {
+  border-color: #ef432d;
+  box-shadow: 3px 4px 0 rgba(239, 67, 45, 0.35), inset 4px 0 rgba(255, 255, 255, 0.18);
+  transform: translate(2px, 3px) scale(0.985);
+}
+
+.zine-shelf-book .ootd-zine-cover {
+  position: relative;
+  display: block;
+  min-height: 260px;
+  aspect-ratio: 0.72;
+  border: 1px solid rgba(25, 63, 54, 0.4);
+  border-radius: 2px 5px 5px 2px;
+  background: repeating-linear-gradient(0deg, #efe5cf 0 1px, #faf5e8 1px 5px);
+}
+
+.zine-shelf-book .ootd-zine-cover::after {
+  position: absolute;
+  inset: 0;
+  border-left: 4px solid rgba(9, 42, 31, 0.28);
+  background: linear-gradient(180deg, rgba(13, 46, 35, 0.04), rgba(13, 46, 35, 0.62));
+  content: "";
+  pointer-events: none;
+}
+
+.zine-shelf-book .ootd-zine-cover::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 9px;
+  background: #ef432d;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.44);
+  content: "";
+}
+
+.zine-shelf-book .ootd-zine-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.zine-shelf-book .ootd-zine-cover > i {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(25, 63, 54, 0.72);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4.6rem;
+}
+
+.zine-shelf-cover-print {
+  position: absolute;
+  right: 16px;
+  bottom: 17px;
+  left: 17px;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  color: #ffffff;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+}
+
+.zine-shelf-cover-print small,
+.zine-shelf-cover-print em {
+  font-size: 0.66rem;
+  letter-spacing: 0;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.zine-shelf-cover-print strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.52rem;
+  line-height: 1.02;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.zine-shelf-book:not(.has-cover-image) .zine-shelf-cover-print {
+  color: #193f36;
+  text-shadow: none;
+}
+
+.zine-shelf-book:not(.has-cover-image) .zine-shelf-cover-print strong {
+  color: #193f36;
+}
+
+.zine-shelf-book.has-cover-image .zine-shelf-cover-print small {
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.58);
+}
+
+.zine-cover-button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 4px;
+  color: #ffffff;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.zine-delete-button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  color: #ffd7d0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.zine-delete-button:hover {
+  border-color: #ef432d;
+  color: #ffffff;
+  background: #7b2016;
+}
+
+.zine-book-dialog {
+  width: min(calc(100% - 24px), 1120px);
+  max-height: calc(100dvh - 24px);
+}
+
+.zine-style-dialog { width: min(calc(100% - 28px), 620px); }
+.zine-style-dialog-card { padding: 24px; border: 0; border-radius: 0; color: #fff; background: #050505; }
+.zine-style-dialog-card h2 { margin: 8px 42px 20px 0; font-family: Georgia, serif; font-size: 28px; }
+.zine-style-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.zine-style-options button { display: grid; min-height: 190px; align-content: space-between; gap: 12px; padding: 14px; border: 1px solid rgba(255,255,255,.48); border-radius: 2px; color: #fff; background: #151515; text-align: left; }
+.zine-style-options button:not(:disabled):hover { border-color: #ef432d; background: #222; }
+.zine-style-options button:disabled { opacity: .42; }
+.zine-style-options b { color: #ef432d; font-size: 13px; }
+.zine-style-options strong { font-family: Georgia, serif; font-size: 20px; }
+.zine-style-options span { color: rgba(255,255,255,.66); font-size: 12px; line-height: 1.45; }
+
+.zine-magazine-page .zine-image-collage:not(.has-images)::before { display: grid; min-height: 160px; place-items: center; border: 1px dashed #888; color: #777; content: "图片位：加入一张旅行、地点或人物照片"; font: 12px/1.4 Arial, sans-serif; text-align: center; }
+.zine-magazine-page textarea:placeholder-shown { background: repeating-linear-gradient(0deg, transparent 0 22px, rgba(0,0,0,.14) 22px 23px); }
+
+.zine-book-dialog-card {
+  max-height: calc(100dvh - 24px);
+  padding: 18px;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: #000000;
+  box-shadow: none;
+}
+
+.zine-book-dialog-card > .dialog-close {
+  z-index: 2;
+  border-color: #dceee6;
+  color: #193f36;
+  background: #f7fff9;
+}
+
+.zine-book-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 44px 14px 0;
+}
+
+.zine-book-toolbar input {
+  width: min(100%, 440px);
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 0;
+  outline: none;
+  color: #ffffff;
+  background: transparent;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.zine-book-toolbar span {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.zine-book-spread {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 680px;
+  overflow: hidden;
+  border: 1px solid rgba(43, 31, 20, 0.36);
+  border-radius: 3px;
+  background: #d5c6aa;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+}
+
+.zine-page {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 530px;
+  flex-direction: column;
+  padding: 34px 32px 30px;
+  overflow: hidden;
+  color: #2c362e;
+  background: repeating-linear-gradient(0deg, rgba(111, 91, 56, 0.05) 0 1px, transparent 1px 5px), #fffdf5;
+}
+
+.zine-page-left {
+  box-shadow: inset -12px 0 16px -18px rgba(38, 27, 18, 0.9);
+}
+
+.zine-page-right {
+  box-shadow: inset 12px 0 16px -18px rgba(38, 27, 18, 0.9);
+}
+
+.zine-page-right::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  background: linear-gradient(90deg, rgba(42, 31, 21, 0.28), rgba(255, 255, 255, 0.44), rgba(42, 31, 21, 0.16));
+  content: "";
+}
+
+.zine-page-number {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  color: rgba(44, 54, 46, 0.52);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px;
+}
+
+.zine-image-collage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-height: 0;
+}
+
+.zine-image-collage figure {
+  position: relative;
+  min-height: 138px;
+  margin: 0;
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(57, 47, 37, 0.2);
+  background: #ffffff;
+  box-shadow: 2px 3px 0 rgba(57, 47, 37, 0.15);
+}
+
+.zine-image-collage figure:nth-child(3n + 1) { transform: rotate(-1.4deg); }
+.zine-image-collage figure:nth-child(3n + 2) { transform: rotate(1.2deg); }
+.zine-image-collage figure:nth-child(3n) { transform: rotate(0.4deg); }
+
+.zine-image-collage img {
+  display: block;
+  width: 100%;
+  height: 156px;
+  object-fit: cover;
+}
+
+.zine-image-collage button {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 23px;
+  height: 23px;
+  padding: 0;
+  border: 1px solid #31463a;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #31463a;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.zine-add-image {
+  align-self: flex-start;
+  margin: 14px 0 10px;
+  padding: 5px 9px;
+  border: 1px dashed #587065;
+  border-radius: 4px;
+  color: #31463a;
+  background: rgba(232, 244, 236, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.zine-add-image:disabled {
+  opacity: 0.45;
+}
+
+.zine-page textarea {
+  width: 100%;
+  min-height: 112px;
+  flex: 1;
+  resize: vertical;
+  border: 0;
+  border-top: 1px solid rgba(50, 76, 63, 0.26);
+  border-radius: 0;
+  outline: none;
+  color: #2c362e;
+  background: transparent;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.zine-page textarea::placeholder {
+  color: rgba(44, 54, 46, 0.46);
+}
+
+.zine-book-controls {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.zine-book-controls .ghost-button {
+  min-height: 36px;
+  border-color: rgba(255, 255, 255, 0.78);
+  color: #ffffff;
+  background: transparent;
+}
+
+.zine-book-controls .ghost-button:nth-child(2) {
+  color: #000000;
+  background: #ffffff;
+}
+
+/* Magazine: the default editorial layout for the first Zine style. */
+.zine-book-spread[data-zine-style="magazine"] {
+  background: #111111;
+}
+
+.zine-magazine-page {
+  padding: 30px 24px 26px;
+  color: #161616;
+  background: #f7f7f4;
+}
+
+.zine-magazine-page .zine-magazine-running-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #1c1c1c;
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.zine-magazine-running-head i {
+  font-style: normal;
+  font-weight: 500;
+}
+
+.zine-magazine-page .zine-image-collage {
+  margin-top: 18px;
+  gap: 9px;
+}
+
+.zine-magazine-page .zine-image-collage figure {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.zine-magazine-page .zine-image-collage img {
+  height: 172px;
+}
+
+.zine-magazine-page .zine-image-collage.has-images:has(figure:only-child) {
+  grid-template-columns: 1fr;
+}
+
+.zine-magazine-page .zine-image-collage.has-images:has(figure:only-child) img {
+  height: 248px;
+}
+
+.zine-magazine-page .zine-add-image {
+  margin: 12px 0 8px;
+  border-color: #161616;
+  color: #161616;
+  background: transparent;
+}
+
+.zine-magazine-page textarea {
+  min-height: 110px;
+  border-top: 1px solid #1c1c1c;
+  color: #161616;
+  font-family: "Times New Roman", serif;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.zine-magazine-page .zine-page-number {
+  color: #161616;
+  font-family: Arial, sans-serif;
 }
 
 .ootd-dialog {
@@ -17560,6 +18196,14 @@ body.skill-market-page-body .skill-market-add-stock-button {
     width: 100%;
   }
 
+  .ootd-zine-entry-panel {
+    align-items: flex-end;
+  }
+
+  .ootd-zine-entry-panel .ghost-button {
+    min-width: 82px;
+  }
+
   .ootd-dialog {
     width: calc(100% - 12px);
     max-height: calc(100dvh - 12px);
@@ -17591,6 +18235,103 @@ body.skill-market-page-body .skill-market-add-stock-button {
 
   .ootd-result-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .ootd-zine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ootd-zine-dialog {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+  }
+
+  .ootd-zine-dialog .ootd-dialog-card {
+    width: 100%;
+    min-height: 100dvh;
+    max-height: none;
+    padding: 30px 18px 56px;
+    background: #050505;
+  }
+
+  .ootd-zine-dialog .ootd-dialog-head {
+    margin: 0 auto 16px;
+  }
+
+  .ootd-zine-dialog .ootd-dialog-head h2 {
+    font-size: 34px;
+  }
+
+  .ootd-zine-dialog .ootd-zine-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 12px;
+    margin-top: 24px;
+  }
+
+  .ootd-zine-dialog .ootd-dialog-head > strong {
+    top: 30px;
+    right: 64px;
+  }
+
+  .ootd-zine-dialog .zine-create-button {
+    width: 100%;
+  }
+
+  .zine-book-dialog {
+    width: calc(100% - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .zine-book-dialog-card {
+    max-height: calc(100dvh - 12px);
+    padding: 12px;
+  }
+
+  .zine-book-toolbar {
+    gap: 8px;
+    margin: 0 36px 10px 0;
+  }
+
+  .zine-book-toolbar input {
+    flex: 1 1 100%;
+    font-size: 18px;
+  }
+
+  .zine-book-spread {
+    min-width: 570px;
+  }
+
+  .zine-page {
+    min-height: 430px;
+    padding: 26px 16px 25px;
+  }
+
+  .zine-image-collage {
+    gap: 6px;
+  }
+
+  .zine-image-collage figure {
+    min-height: 92px;
+    padding: 3px;
+  }
+
+  .zine-image-collage img {
+    height: 102px;
+  }
+
+  .zine-image-collage button {
+    top: 4px;
+    right: 4px;
+    width: 19px;
+    height: 19px;
+    font-size: 14px;
+  }
+
+  .zine-page textarea {
+    min-height: 86px;
+    font-size: 13px;
   }
 
   .ootd-result-actions .primary-button {

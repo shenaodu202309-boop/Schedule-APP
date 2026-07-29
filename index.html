@@ -77,32 +77,37 @@
         <aside id="overviewSection" class="sidebar">
           <section class="report-panel">
             <div class="section-heading">
-              <h2 data-i18n="dailyReport">日报 / Daily Report</h2>
+              <div class="overview-date-module">
+                <div id="overviewDateBubbles" class="overview-date-bubbles" aria-label="复盘日期"></div>
+              </div>
+              <details class="review-meta-disclosure">
+                <summary>
+                  <span id="reviewMetaSummaryLabel" data-i18n="reviewMetaToggle">心情 · 天气 · 体感</span>
+                  <b aria-hidden="true">⌄</b>
+                </summary>
+                <div class="review-meta-panel">
+                  <div>
+                    <span data-i18n="reviewMood">心情 / Mood</span>
+                    <div id="reviewMoodRow" class="review-chip-row" aria-label="今天的心情 / Today's mood"></div>
+                  </div>
+                  <div>
+                    <span data-i18n="reviewWeather">天气 / Weather</span>
+                    <div id="reviewWeatherRow" class="review-chip-row" aria-label="今天的天气 / Today's weather"></div>
+                  </div>
+                  <div>
+                    <span data-i18n="reviewFeel">体感 / Feels</span>
+                    <div id="reviewFeelRow" class="review-chip-row" aria-label="今天的体感 / Today's feel"></div>
+                  </div>
+                </div>
+              </details>
             </div>
             <div id="dailyReport" class="daily-report"></div>
             <label class="note-field">
-              <span data-i18n="reviewNote">复盘备注 / Review Notes</span>
+              <span data-i18n="reviewNote">便利贴 / Sticky Note</span>
               <textarea id="dailyNoteInput" rows="5" placeholder="今天的状态、卡点、明天要顺手接上的事 / Today's state, blockers, and tomorrow's next step"></textarea>
             </label>
-            <div class="review-meta-panel">
-              <div>
-                <span data-i18n="reviewMood">心情 / Mood</span>
-                <div id="reviewMoodRow" class="review-chip-row" aria-label="今天的心情 / Today's mood"></div>
-              </div>
-              <div>
-                <span data-i18n="reviewWeather">天气 / Weather</span>
-                <div id="reviewWeatherRow" class="review-chip-row" aria-label="今天的天气 / Today's weather"></div>
-              </div>
-              <div>
-                <span data-i18n="reviewFeel">体感 / Feels</span>
-                <div id="reviewFeelRow" class="review-chip-row" aria-label="今天的体感 / Today's feel"></div>
-              </div>
-            </div>
-            <div class="data-actions-panel">
-              <button class="ghost-button" type="button" data-action="export-data" data-i18n="export">导出 / Export</button>
-              <button class="ghost-button" type="button" data-action="import-data" data-i18n="import">导入 / Import</button>
-              <input id="importInput" type="file" accept="application/json" hidden />
-            </div>
+            <div id="stickyNotesList" class="sticky-notes-list" aria-label="新增便利贴"></div>
+            <input id="importInput" type="file" accept="application/json" hidden />
           </section>
         </aside>
 
@@ -513,6 +518,10 @@
       <button type="button" data-action="paste-block" role="menuitem">
         <span aria-hidden="true">⧉</span>
         <strong data-i18n="pasteBlock">粘贴 / Paste</strong>
+      </button>
+      <button type="button" data-action="new-sticky-note" role="menuitem">
+        <span aria-hidden="true">＋</span>
+        <strong data-i18n="newStickyNote">新建便利贴 / New Sticky Note</strong>
       </button>
     </div>
 

@@ -5,6 +5,8 @@ const LIFE_COMPANY_STORAGE_KEY = "life-game-company-v1";
 const RELATIONSHIP_CARDS_KEY = "life-game-relationship-cards-v1";
 const COMIC_DIARY_KEY = "life-game-comic-diary-v1";
 const OOTD_STORAGE_KEY = "life-game-ootd-v1";
+const ZINE_STORAGE_KEY = "life-game-zine-books-v1";
+const ZINE_COVER_TARGET = "__zine_cover__";
 const DAILY_REMINDER_STORAGE_KEY = "private-schedule-daily-reminder-v1";
 const VOICE_TASK_SYNC_KEY = "private-schedule-voice-game-sync-v1";
 const COLLABORATION_GAME_SYNC_KEY = "private-schedule-collaboration-game-sync-v1";
@@ -48,18 +50,18 @@ const ENERGY_DAY_END_HOUR = 24;
 const ENERGY_MAX = 100;
 const ENERGY_DEPLETION_MINUTES = 12 * 60;
 const COMPANY_ECONOMY_LEVELS = [
-  { level: 1, name: "起步公司", requiredExp: 0, requiredCoins: 0 },
+  { level: 1, name: "起步阶段", requiredExp: 0, requiredCoins: 0 },
   { level: 2, name: "小型工作室", requiredExp: 100, requiredCoins: 300 },
   { level: 3, name: "稳定运营", requiredExp: 350, requiredCoins: 800 },
   { level: 4, name: "专业机构", requiredExp: 800, requiredCoins: 1800 },
-  { level: 5, name: "品牌公司", requiredExp: 1500, requiredCoins: 3500 },
-  { level: 6, name: "梦想企业", requiredExp: 3000, requiredCoins: 7000 },
+  { level: 5, name: "品牌阶段", requiredExp: 1500, requiredCoins: 3500 },
+  { level: 6, name: "梦想计划", requiredExp: 3000, requiredCoins: 7000 },
 ];
 const ONBOARDING_COMPANY_TYPES = [
   {
     id: "animation-company",
-    name: "动画公司",
-    defaultName: "星愿动画公司",
+    name: "动画计划",
+    defaultName: "星愿动画计划",
     defaultGoal: "完成第一版动画作品集",
     departments: ["创作部", "动画制作部", "技术研发部", "作品集部", "宣传发行部", "求职商务部"],
     stocks: ["动画股", "绘画股", "分镜股", "3D 动画股", "作品集股", "英语股", "求职股"],
@@ -180,14 +182,14 @@ const GAME_I18N = {
   taskReminders: { zh: "任务提醒", en: "Task Reminders" },
   timeDistribution: { zh: "时间分布", en: "Time Split" },
   back: { zh: "返回", en: "Back" },
-  company: { zh: "公司", en: "Company" },
+  company: { zh: "计划", en: "Plan" },
   relationships: { zh: "人际关系", en: "Relationships" },
   skillMarket: { zh: "人生技能股市", en: "Skill Market" },
   tarot: { zh: "塔罗", en: "Tarot" },
   blessing: { zh: "祈福", en: "Blessing" },
   todayCharacter: { zh: "今日角色", en: "Today's Character" },
   chooseCharacter: { zh: "选择陪你通关的角色", en: "Choose your quest partner" },
-  companyLevel: { zh: "公司等级", en: "Company Level" },
+  companyLevel: { zh: "成长等级", en: "Growth Level" },
   todayProgress: { zh: "今日进度", en: "Today's Progress" },
   protectionStatus: { zh: "保护状态", en: "Protection" },
   redButton: { zh: "红色按钮", en: "Red Button" },
@@ -218,21 +220,21 @@ const GAME_I18N = {
   add: { zh: "新增", en: "Add" },
   bankHelp: { zh: "银行说明", en: "Bank Help" },
   financeNotice: { zh: "你的财务小管家，帮你守护每一份努力", en: "Your finance helper protects every bit of effort" },
-  myCompany: { zh: "我的公司", en: "My Company" },
-  coinBalance: { zh: "金币余额", en: "Coin Balance" },
-  assetValue: { zh: "资产估值", en: "Asset Value" },
-  stockValue: { zh: "股票估值", en: "Stock Value" },
+  myCompany: { zh: "成长记录", en: "Growth Records" },
+  coinBalance: { zh: "成长进度", en: "Growth Progress" },
+  assetValue: { zh: "进度", en: "Progress" },
+  stockValue: { zh: "技能记录", en: "Skill Records" },
   todayIncome: { zh: "今日收入", en: "Today's Income" },
   todayExpense: { zh: "今日支出", en: "Today's Spend" },
-  viewCompanyLedger: { zh: "查看公司账本 ›", en: "Company Ledger ›" },
+  viewCompanyLedger: { zh: "查看成长记录 ›", en: "Growth Records ›" },
   realCard: { zh: "现实卡", en: "Real Card" },
   accountBalance: { zh: "账户余额", en: "Account Balance" },
   monthIncome: { zh: "本月收入", en: "Month Income" },
   monthExpense: { zh: "本月支出", en: "Month Spend" },
   adjustBalance: { zh: "调整金额", en: "Adjust Balance" },
   viewLifeLedger: { zh: "查看生活账本 ›", en: "Life Ledger ›" },
-  financeSafetyNote: { zh: "金币是游戏内成长资源；现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。", en: "Coins are in-game growth resources. The real-life ledger is manual only and never connects to real bank cards or payments." },
-  virtualFinanceNotice: { zh: "公司金币、任务收入、项目收入和技能股交易都在这里", en: "Company coins, task income, project income, and skill trades live here" },
+  financeSafetyNote: { zh: "现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。", en: "The real-life ledger is manual only and never connects to real bank cards or payments." },
+  virtualFinanceNotice: { zh: "任务、项目和技能记录都在这里", en: "Tasks, projects, and skill records live here" },
   ledgerNotice: { zh: "真实生活账本只做手动记录，不连接真实银行卡", en: "Real-life ledger is manual only and does not connect to real bank cards" },
   income: { zh: "收入", en: "Income" },
   expense: { zh: "支出", en: "Expense" },
@@ -250,14 +252,14 @@ const GAME_I18N = {
   tasks: { zh: "任务", en: "Tasks" },
   finance: { zh: "财务", en: "Finance" },
   onboardingDeploy: { zh: "新手部署", en: "Setup" },
-  createLifeCompany: { zh: "先创建你的人生公司", en: "Create your life company first" },
-  onboardingSummary: { zh: "选一个人生方向，写下第一个目标，系统会自动帮你完成公司和作战台部署。", en: "Choose a life direction and first goal. The app will set up your company and battle board." },
-  companyStartingMoneyNote: { zh: "默认个人金币 1000。建立公司会投入 600 金币作为启动资金。", en: "You start with 1000 coins. Creating a company invests 600 coins as startup funds." },
-  stepCreateCompany: { zh: "1 创建公司", en: "1 Create Company" },
+  createLifeCompany: { zh: "先创建你的目标档案", en: "Create your goal profile first" },
+  onboardingSummary: { zh: "选一个人生方向，写下第一个目标，系统会自动帮你完成作战台部署。", en: "Choose a life direction and first goal. The app will set up your battle board." },
+  companyStartingMoneyNote: { zh: "建立目标档案后，系统会帮你生成作战台。", en: "After creating a goal profile, the app will set up your battle board." },
+  stepCreateCompany: { zh: "1 创建档案", en: "1 Create Profile" },
   stepSetGoal: { zh: "2 设置目标", en: "2 Set Goal" },
   stepFinishDeploy: { zh: "3 完成部署", en: "3 Finish Setup" },
-  companyName: { zh: "公司名称", en: "Company Name" },
-  companyDirection: { zh: "公司方向", en: "Company Direction" },
+  companyName: { zh: "计划名称", en: "Plan Name" },
+  companyDirection: { zh: "成长方向", en: "Growth Direction" },
   firstBigGoal: { zh: "第一个大目标", en: "First Big Goal" },
   goalDate: { zh: "目标日期", en: "Goal Date" },
   later: { zh: "稍后", en: "Later" },
@@ -301,7 +303,7 @@ const GAME_I18N = {
   settledToday: { zh: "今日已结算", en: "Settled today" },
   myBank: { zh: "我的银行", en: "My Bank" },
   asset: { zh: "资产", en: "Assets" },
-  noCoinFlow: { zh: "还没有金币流水。完成主线、公司任务或技能股交易后，这里会出现记录。", en: "No coin flow yet. Finish main quests, company tasks, or skill trades to see records here." },
+  noCoinFlow: { zh: "还没有成长记录。完成主线、项目任务或技能记录后，这里会出现记录。", en: "No growth records yet. Finish main quests, project tasks, or skill records to see entries here." },
   noLedger: { zh: "本月还没有现实记账。这里只做手动记录，不连接真实银行卡。", en: "No real-life ledger records this month. This is manual only and does not connect to real bank cards." },
   invoiceCount: { zh: "{count} 张", en: "{count} saved" },
   noInvoices: { zh: "还没有保存过发票。回到首页按发票机，就可以把选中日期打印成发票。", en: "No saved invoices yet. Use the printer on the home page to print the selected date." },
@@ -447,6 +449,14 @@ let currentInvoiceDraft = null;
 let currentOotdPhotoDataUrl = "";
 let currentOotdResult = null;
 let ootdAnalysisRunning = false;
+let activeZineBookId = "";
+let activeZinePageIndex = 0;
+let pendingZinePageId = "";
+let zineShelfLongPressTimer = null;
+let zineShelfLongPressButton = null;
+let zineShelfLongPressStart = null;
+let zineShelfLongPressFired = false;
+let zineShelfSuppressClickBookId = "";
 let invoiceAnimationTimer = null;
 let invoiceBookInteraction = null;
 let invoiceBookLongPressTimer = null;
@@ -596,6 +606,15 @@ function cacheDom() {
     "ootdEntryStatus",
     "ootdEntryPreview",
     "ootdDialog",
+    "ootdZineDialog",
+    "ootdZineCount",
+    "ootdZineGrid",
+    "zineBookDialog",
+    "zineStyleDialog",
+    "zineBookTitleInput",
+    "zinePageLabel",
+    "zineBookSpread",
+    "zineImageInput",
     "ootdDateLabel",
     "ootdPhotoPreview",
     "ootdPhotoPlaceholder",
@@ -811,6 +830,26 @@ function bindEvents() {
     if (action === "submit-finance-password") submitFinancePassword();
     if (action === "open-ootd") openOotdDialog();
     if (action === "close-ootd") closeOotdDialog();
+    if (action === "open-ootd-zine") openOotdZineDialog();
+    if (action === "close-ootd-zine") closeOotdZineDialog();
+    if (action === "create-zine-book") openZineStyleDialog();
+    if (action === "close-zine-style") closeZineStyleDialog();
+    if (action === "create-zine-with-style") createZineBook(button.dataset.style);
+    if (action === "open-zine-book" && zineShelfLongPressFired && button.dataset.id === zineShelfSuppressClickBookId) {
+      zineShelfLongPressFired = false;
+      zineShelfSuppressClickBookId = "";
+      event.preventDefault();
+      return;
+    }
+    if (action === "open-zine-book") openZineBook(button.dataset.id);
+    if (action === "close-zine-book") closeZineBook();
+    if (action === "delete-zine-book") deleteActiveZineBook();
+    if (action === "zine-previous-page") changeZineSpread(-1);
+    if (action === "zine-next-page") changeZineSpread(1);
+    if (action === "zine-add-page") addZineSpread();
+    if (action === "choose-zine-cover") chooseZineCover();
+    if (action === "add-zine-image") chooseZineImages(button.dataset.pageId);
+    if (action === "remove-zine-image") removeZineImage(button.dataset.pageId, Number(button.dataset.index));
     if (action === "capture-ootd") dom.ootdCameraInput?.click();
     if (action === "choose-ootd-photo") dom.ootdGalleryInput?.click();
     if (action === "analyze-ootd") void analyzeCurrentOotd();
@@ -827,6 +866,7 @@ function bindEvents() {
   });
 
   document.addEventListener("input", handleEditableInput);
+  document.addEventListener("input", handleZinePageInput);
   document.addEventListener("input", handleTimelineZoomInput);
   document.addEventListener("blur", handleEditableBlur, true);
   document.addEventListener("keydown", handleEditableKeydown);
@@ -847,7 +887,15 @@ function bindEvents() {
   document.addEventListener("pointermove", moveCardLongPress);
   document.addEventListener("pointerup", cancelCardLongPress);
   document.addEventListener("pointercancel", cancelCardLongPress);
+  document.addEventListener("pointerdown", startZineShelfLongPress);
+  document.addEventListener("pointermove", moveZineShelfLongPress);
+  document.addEventListener("pointerup", finishZineShelfLongPress);
+  document.addEventListener("pointercancel", cancelZineShelfLongPress);
   document.addEventListener("contextmenu", (event) => {
+    if (event.target.closest(".zine-shelf-book")) {
+      event.preventDefault();
+      return;
+    }
     const scheduleBar = event.target.closest(".schedule-bar");
     if (scheduleBar) {
       event.preventDefault();
@@ -895,6 +943,8 @@ function bindEvents() {
   dom.invoiceDiyImageInput?.addEventListener("change", importInvoiceDiyImage);
   dom.ootdCameraInput?.addEventListener("change", handleOotdPhotoSelection);
   dom.ootdGalleryInput?.addEventListener("change", handleOotdPhotoSelection);
+  dom.zineImageInput?.addEventListener("change", handleZineImageSelection);
+  dom.zineBookTitleInput?.addEventListener("input", saveZineBookTitle);
   dom.gameDailyReminderSoundInput?.addEventListener("change", previewGameDailyReminderSound);
   dom.onboardingForm?.addEventListener("submit", completeOnboarding);
   dom.onboardingCompanyTypeInput?.addEventListener("change", updateOnboardingDefaults);
@@ -1629,14 +1679,14 @@ function createOnboardingCompany({ name, typeId, goal, deadline }) {
       : [],
     linkedSkillStocks: type.stocks,
     economy: {
-      currencyName: "金币",
-      currencySymbol: "◈",
-      companyCoins: COMPANY_STARTING_STAKE,
-      lifetimeEarned: COMPANY_STARTING_STAKE,
+      currencyName: "",
+      currencySymbol: "",
+      companyCoins: 0,
+      lifetimeEarned: 0,
       lifetimeSpent: 0,
       companyLevel: 1,
       companyExp: 0,
-      assetValue: COMPANY_STARTING_STAKE,
+      assetValue: 0,
       lastCompanyUpgradeAt: "",
       lastSettledDate: "",
       transactions: [],
@@ -1661,109 +1711,24 @@ function ensureLifeCompanyEconomy(company) {
     : {};
   company.economy = {
     currencyName: normalizeCoinName(economy.currencyName),
-    currencySymbol: String(economy.currencySymbol || "◈"),
-    companyCoins: roundCompanyCoins(economy.companyCoins !== undefined ? economy.companyCoins : COMPANY_STARTING_STAKE),
-    lifetimeEarned: roundCompanyCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : COMPANY_STARTING_STAKE),
-    lifetimeSpent: roundCompanyCoins(economy.lifetimeSpent || 0),
+    currencySymbol: "",
+    companyCoins: 0,
+    lifetimeEarned: 0,
+    lifetimeSpent: 0,
     companyLevel: clamp(Math.floor(Number(economy.companyLevel || 1)), 1, COMPANY_ECONOMY_LEVELS.length),
     companyExp: Math.max(0, Math.floor(Number(economy.companyExp || 0))),
-    assetValue: roundCompanyCoins(economy.assetValue || 0),
-    transactions: Array.isArray(economy.transactions) ? economy.transactions.slice(0, 80) : [],
+    assetValue: 0,
+    transactions: [],
   };
   return company.economy;
 }
 
 function awardCompanyEconomyForTask(kind, meta = {}) {
-  const rewardMap = {
-    normal: { coins: 5, exp: 5, title: "完成普通任务" },
-    company: { coins: 10, exp: 10, title: "完成公司项目任务" },
-    skill: { coins: 8, exp: 8, title: "完成技能股任务" },
-    pressure: { coins: 15, exp: 10, title: "完成高压任务" },
-  };
-  const reward = rewardMap[kind] || rewardMap.normal;
-  const rewardCoins = roundCompanyCoins(meta.coins ?? reward.coins);
-  const rewardExp = Math.max(0, Math.floor(Number(meta.exp ?? reward.exp)));
-  const companyState = readLifeCompanyState();
-  const company = companyState?.company;
-  const economy = ensureLifeCompanyEconomy(company);
-  if (!companyState || !company || !economy) return false;
-  const taskKey = meta.relatedTaskId || meta.id || "";
-  const uniqueKey = meta.uniqueKey || taskKey;
-  const exists = economy.transactions.some((transaction) =>
-    transaction.source === "task" &&
-    (
-      transaction.relatedTaskId === uniqueKey ||
-      transaction.relatedTaskId === taskKey ||
-      transaction.relatedTaskId === meta.relatedTaskId
-    )
-  );
-  if (exists) return false;
-  const energyBonus = Boolean(meta.energyBonus);
-  const finalCoins = energyBonus ? rewardCoins * 2 : rewardCoins;
-  const finalExp = energyBonus ? rewardExp * 2 : rewardExp;
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins + finalCoins);
-  economy.lifetimeEarned = roundCompanyCoins(economy.lifetimeEarned + finalCoins);
-  economy.companyExp = Math.max(0, Math.floor(Number(economy.companyExp || 0))) + finalExp;
-  economy.transactions = [{
-    id: makeId("economy"),
-    type: "earn",
-    amount: finalCoins,
-    source: "task",
-    title: energyBonus ? `${reward.title} · 能量耗尽加成` : reward.title,
-    note: meta.title || "",
-    relatedCompanyId: company.id || "",
-    relatedProjectId: meta.relatedProjectId || "",
-    relatedTaskId: uniqueKey,
-    relatedStockId: meta.relatedStockId || "",
-    createdAt: new Date().toISOString(),
-  }, ...economy.transactions].slice(0, 80);
-  company.updatedAt = new Date().toISOString();
-  updateLifeCompanyAssetValue(companyState);
-  writeLifeCompanyState(companyState);
-  return true;
+  return false;
 }
 
 function applyEnergyDepletionIncomeBonus(dayKey = selectedDate) {
-  if (!isEnergyDepletedForDate(dayKey)) return false;
-  const companyState = readLifeCompanyState();
-  const company = companyState?.company;
-  const economy = ensureLifeCompanyEconomy(company);
-  if (!companyState || !company || !economy) return false;
-  const createdAt = new Date().toISOString();
-  const bonusTransactions = economy.transactions
-    .filter((transaction) =>
-      transaction.source === "task" &&
-      transaction.type === "earn" &&
-      transactionDateKey(transaction.createdAt) === dayKey &&
-      !String(transaction.relatedTaskId || "").startsWith("energy-bonus:")
-    )
-    .filter((transaction) => !economy.transactions.some((item) =>
-      item.source === "task" && item.relatedTaskId === `energy-bonus:${dayKey}:${transaction.relatedTaskId}`
-    ))
-    .map((transaction) => ({
-      id: makeId("economy"),
-      type: "earn",
-      amount: roundCompanyCoins(transaction.amount),
-      source: "task",
-      title: "能量耗尽收入翻倍",
-      note: transaction.note || transaction.title || "任务收入",
-      relatedCompanyId: company.id || "",
-      relatedProjectId: transaction.relatedProjectId || "",
-      relatedTaskId: `energy-bonus:${dayKey}:${transaction.relatedTaskId}`,
-      relatedStockId: transaction.relatedStockId || "",
-      createdAt,
-    }))
-    .filter((transaction) => transaction.amount > 0);
-
-  if (!bonusTransactions.length) return false;
-  const totalBonus = bonusTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins + totalBonus);
-  economy.lifetimeEarned = roundCompanyCoins(economy.lifetimeEarned + totalBonus);
-  economy.transactions = [...bonusTransactions, ...economy.transactions].slice(0, 80);
-  company.updatedAt = createdAt;
-  updateLifeCompanyAssetValue(companyState);
-  writeLifeCompanyState(companyState);
-  return true;
+  return false;
 }
 
 function awardCompanyEconomyForCompletedTask(type, id, task = {}) {
@@ -1804,85 +1769,33 @@ function awardCompanyEconomyForCompletedTask(type, id, task = {}) {
 }
 
 function penalizeCompanyEconomyForMissedMainTasks(dayKey = selectedDate) {
-  const missedTasks = getVisibleMainTasks().filter((task) => task.lockedFromCompany && !task.companyDone);
-  if (!missedTasks.length) return { count: 0, coins: 0 };
-  const companyState = readLifeCompanyState();
-  const company = companyState?.company;
-  const economy = ensureLifeCompanyEconomy(company);
-  if (!companyState || !company || !economy) return { count: 0, coins: 0 };
-
-  const createdAt = new Date().toISOString();
-  const transactions = [];
-  let totalPenalty = 0;
-
-  missedTasks.forEach((task) => {
-    const companyTaskId = task.companyTaskId || lifeCompanyTaskIdFromMainTaskId(task.id);
-    if (!companyTaskId) return;
-    const uniqueKey = `${dayKey}:company-missed:${companyTaskId}`;
-    const exists = economy.transactions.some((transaction) =>
-      transaction.source === "company-task-missed" && transaction.relatedTaskId === uniqueKey
-    );
-    if (exists) return;
-
-    const penalty = roundCompanyCoins(taskCoinReward(task));
-    if (penalty <= 0) return;
-    totalPenalty += penalty;
-    transactions.push({
-      id: makeId("economy"),
-      type: "spend",
-      amount: penalty,
-      source: "company-task-missed",
-      title: "公司任务未完成",
-      note: task.title || "",
-      relatedCompanyId: company.id || "",
-      relatedProjectId: task.projectId || "",
-      relatedTaskId: uniqueKey,
-      relatedStockId: "",
-      createdAt,
-    });
-  });
-
-  if (!transactions.length) return { count: 0, coins: 0 };
-  economy.companyCoins = roundCompanyCoins(economy.companyCoins - totalPenalty);
-  economy.lifetimeSpent = roundCompanyCoins(economy.lifetimeSpent + totalPenalty);
-  economy.transactions = [...transactions, ...economy.transactions].slice(0, 80);
-  company.updatedAt = createdAt;
-  updateLifeCompanyAssetValue(companyState);
-  writeLifeCompanyState(companyState);
-  return { count: transactions.length, coins: totalPenalty };
+  return { count: 0, coins: 0 };
 }
 
 function updateLifeCompanyAssetValue(companyState) {
   const company = companyState?.company;
   const economy = ensureLifeCompanyEconomy(company);
   if (!company || !economy) return;
-  const completedProjectValue = Array.isArray(company.projects)
-    ? company.projects.filter((project) => project?.status === "completed").length * 120
-    : 0;
-  const level = clamp(Math.floor(Number(economy.companyLevel || 1)), 1, COMPANY_ECONOMY_LEVELS.length);
-  const departmentValue = Array.isArray(company.departments)
-    ? company.departments.reduce((sum, department) => sum + Math.max(0, Number(department?.level || 1) - 1) * 90, 0)
-    : 0;
-  const skillHoldingValue = calculateStoredSkillHoldingValue();
-  economy.assetValue = roundCompanyCoins(economy.companyCoins + completedProjectValue + level * 420 + departmentValue + skillHoldingValue);
+  economy.assetValue = 0;
 }
 
 function getCompanyLevelStatus() {
-  const companyState = readLifeCompanyState();
-  const company = companyState?.company;
-  const economy = ensureLifeCompanyEconomy(company);
-  const levelValue = clamp(Math.floor(Number(economy?.companyLevel || 1)), 1, COMPANY_ECONOMY_LEVELS.length);
+  const xp = Math.max(0, Math.floor(allXP()));
+  const levelValue = clamp(
+    COMPANY_ECONOMY_LEVELS.reduce((level, item) => (xp >= item.requiredExp ? item.level : level), 1),
+    1,
+    COMPANY_ECONOMY_LEVELS.length
+  );
   const currentLevel = COMPANY_ECONOMY_LEVELS.find((item) => item.level === levelValue) || COMPANY_ECONOMY_LEVELS[0];
   const nextLevel = COMPANY_ECONOMY_LEVELS.find((item) => item.level === levelValue + 1) || null;
-  const coins = roundCompanyCoins(economy?.companyCoins || 0);
-  const requiredCoins = nextLevel ? roundCompanyCoins(nextLevel.requiredCoins) : coins;
-  const percent = nextLevel && requiredCoins > 0 ? clamp((coins / requiredCoins) * 100, 0, 100) : 100;
+  const requiredExp = nextLevel ? Math.max(1, Math.floor(nextLevel.requiredExp)) : xp;
+  const percent = nextLevel ? clamp((xp / requiredExp) * 100, 0, 100) : 100;
   return {
     level: currentLevel.level,
     levelName: currentLevel.name,
     nextLevelName: nextLevel?.name || "",
-    coins,
-    requiredCoins,
+    xp,
+    requiredExp,
     percent,
     isMax: !nextLevel,
   };
@@ -1929,9 +1842,7 @@ function normalizedSideTaskDuration(value) {
 }
 
 function normalizeCoinName(value) {
-  const name = String(value || "金币").trim();
-  if (!name || ["公司币", "游戏币", "技能币"].includes(name)) return "金币";
-  return name;
+  return "";
 }
 
 function handleSharedStorageChange(event) {
@@ -2087,13 +1998,13 @@ function getLifeCompanyMainTasks() {
     .filter((task) => task?.id && task?.title)
     .map((task, index) => ({
       id: `${LIFE_COMPANY_MAIN_PREFIX}${task.id}`,
-      title: cleanEditableText(task.title, `公司任务 ${index + 1}`, 36),
+      title: cleanEditableText(task.title, `项目任务 ${index + 1}`, 36),
       icon: "司",
       art: defaultTaskIconFor("main", mainTasks.length + index),
       xp: 15,
       durationMinutes: normalizedMainTaskDuration(task.durationMinutes),
       companyTaskId: task.id,
-      companyName: company.name || "人生公司",
+      companyName: company.name || "人生计划",
       companyDepartmentName: task.departmentName || "未分配部门",
       companyDone: Boolean(task.done),
       coinReward: taskCoinReward(task),
@@ -2165,7 +2076,7 @@ function deleteLifeCompanyTaskFromMain(id) {
   removeGameTaskFromBaseScheduleEverywhere("main", id);
   saveState();
   render();
-  showToast(`${task.title} 已从公司任务删除。`);
+  showToast(`${task.title} 已从项目任务删除。`);
   return true;
 }
 
@@ -2961,8 +2872,8 @@ function applyGameTranslations() {
   }
   if (dom.onboardingCompanyNameInput) {
     dom.onboardingCompanyNameInput.placeholder = currentGameLanguage === "en"
-      ? "e.g. Starwish Animation Co."
-      : "例如：星愿动画公司";
+      ? "e.g. Starwish Animation Plan"
+      : "例如：星愿动画计划";
   }
   if (dom.onboardingGoalInput) {
     dom.onboardingGoalInput.placeholder = currentGameLanguage === "en"
@@ -3315,7 +3226,7 @@ function defaultEditableState() {
       lifeTitle: "本周固定任务",
     },
     statusCards: {
-      level: { icon: "★", label: "公司等级" },
+      level: { icon: "★", label: "成长等级" },
       animation: { icon: "⌚", label: "今日进度" },
       protect: { icon: "盾", label: "保护状态" },
     },
@@ -4095,8 +4006,8 @@ function render() {
   dom.levelValue.textContent = `Lv.${companyLevelStatus.level}`;
   dom.xpMeter.style.width = `${companyLevelStatus.percent}%`;
   dom.xpLabel.textContent = companyLevelStatus.isMax
-    ? `${formatCoins(companyLevelStatus.coins)} · ${gameText("maxLevel")}`
-    : `${formatCoins(companyLevelStatus.coins)} / ${formatCoins(companyLevelStatus.requiredCoins)}`;
+    ? `${companyLevelStatus.xp} XP · ${gameText("maxLevel")}`
+    : `${companyLevelStatus.xp} / ${companyLevelStatus.requiredExp} XP`;
 
   dom.animationHours.textContent = `${formatDuration(mainDone * 60)} / ${formatDuration(mainTarget * 60)}`;
   dom.animationMeter.style.width = `${mainTarget ? (mainDone / mainTarget) * 100 : 0}%`;
@@ -4299,7 +4210,7 @@ function renderMainTasks(day) {
             ${lifeMaintenance ? `<span class="life-maintenance-badge">生命维护</span>` : ""}
             ${renderTaskArt("main", edited, index)}
             <h3>${escapeHtml(edited.title)}</h3>
-            ${task.lockedFromCompany ? `<small class="task-source-line">公司 · ${escapeHtml(task.companyDepartmentName)}</small>` : ""}
+            ${task.lockedFromCompany ? `<small class="task-source-line">项目 · ${escapeHtml(task.companyDepartmentName)}</small>` : ""}
             <div class="task-runner" aria-label="${runner.active ? "计时中" : "计时记录"}">
               <i style="width:${runner.percent}%"></i>
               <span>${escapeHtml(runner.label)}</span>
@@ -5315,7 +5226,6 @@ function buildDiyInvoice(target) {
 function buildDailyInvoice(dayKey = selectedDate) {
   const day = ensureDay(dayKey);
   const date = parseDate(dayKey);
-  const virtual = getVirtualFinanceSummaryForDate(dayKey);
   const energy = calculateDailyEnergy(dayKey);
   const mood = calculateDailyMood(dayKey);
   const mainTasksForInvoice = getVisibleMainTasks().map((task) => {
@@ -5337,9 +5247,9 @@ function buildDailyInvoice(dayKey = selectedDate) {
     dateLabel: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`,
     weekday: weekdayLabel(date),
     createdAt: new Date().toISOString(),
-    companyIncome: virtual.companyIncome,
-    stockIncome: virtual.stockIncome,
-    totalIncome: virtual.companyIncome + virtual.stockIncome,
+    companyIncome: 0,
+    stockIncome: 0,
+    totalIncome: 0,
     taskMinutes: energy.workMinutes,
     energy: energy.energy,
     mood: mood.mood,
@@ -5409,10 +5319,6 @@ function renderInvoiceHtml(invoice) {
     <div class="invoice-dot-field" aria-hidden="true"></div>
     <div class="invoice-divider"></div>
     <div class="invoice-row"><strong>范围：</strong><span>${escapeHtml(safe.dateLabel || safe.date.replaceAll("-", "/"))} ${escapeHtml(safe.weekday || "")}</span></div>
-    <div class="invoice-divider"></div>
-    <div class="invoice-row"><strong>公司收入</strong><span>${formatCoins(safe.companyIncome)}</span></div>
-    <div class="invoice-row"><strong>股票收益</strong><span>${formatCoins(safe.stockIncome)}</span></div>
-    <div class="invoice-divider"></div>
     <section class="invoice-stats">
       <div class="invoice-row"><strong>任务总时长</strong><span>${formatClockDuration(safe.taskMinutes)}</span></div>
       <div class="invoice-row"><strong>能量 ⚡</strong><span>${energyBlocks} ${safe.energy}%</span></div>
@@ -5422,7 +5328,6 @@ function renderInvoiceHtml(invoice) {
     <ul class="invoice-task-list">${mainRows.map(renderInvoiceTaskRow).join("")}</ul>
     <h3 class="invoice-section-title">生命值维护</h3>
     <ul class="invoice-task-list">${lifeRows.map(renderInvoiceTaskRow).join("")}</ul>
-    <div class="invoice-row invoice-total"><strong>合计</strong><span>${formatCoins(safe.totalIncome)}</span></div>
     <p class="invoice-footer">辛苦啦！明天也要元气满满哦！</p>
     <div class="invoice-barcode" aria-hidden="true"></div>
     <div class="invoice-stamp" aria-hidden="true">GOOD<br />JOB</div>
@@ -6072,12 +5977,6 @@ function drawInvoiceCanvasContent(context, invoice, layout, style) {
     drawCanvasBarcode(context, contentX, bodyY + bodyHeight - 62, inkColor);
     return;
   }
-  drawCanvasInvoiceRow(context, "公司收入", formatCoins(invoice.companyIncome), contentX, y, contentWidth, inkColor);
-  y += 21;
-  drawCanvasInvoiceRow(context, "股票收益", formatCoins(invoice.stockIncome), contentX, y, contentWidth, inkColor);
-  y += 28;
-  drawCanvasDivider(context, contentX, y, contentWidth, inkColor);
-  y += 13;
   y = drawCanvasStatsBox(context, invoice, contentX, y, contentWidth, inkColor);
   y += 14;
   drawCanvasSectionTitle(context, "主线任务", contentX, y, contentWidth, inkColor);
@@ -6089,8 +5988,6 @@ function drawInvoiceCanvasContent(context, invoice, layout, style) {
   y += 27;
   const lifeRows = invoice.lifeTasks?.length ? invoice.lifeTasks : [{ title: "今天还没有生命维护记录", duration: 0, done: false }];
   y = drawCanvasTaskRows(context, lifeRows, contentX, y, contentWidth, inkColor, "task");
-  y += 16;
-  drawCanvasInvoiceRow(context, "合计", formatCoins(invoice.totalIncome), contentX, y, contentWidth, inkColor, 17);
   drawCanvasText(context, "辛苦啦！明天也要元气满满哦！", center, bodyY + bodyHeight - 88, {
     size: 8,
     weight: 1000,
@@ -6501,7 +6398,7 @@ function renderReport(day) {
 }
 
 function selectFinanceCard(card) {
-  activeFinanceScreen = card === "real" ? "real" : "virtual";
+  activeFinanceScreen = card === "real" ? "real" : "home";
   updatePageNav("finance", true);
   renderFinanceCenter();
   renderLedger();
@@ -6531,7 +6428,6 @@ function showFinanceHome() {
 }
 
 function renderFinanceCenter() {
-  const virtual = getVirtualFinanceSummary();
   const real = getRealFinanceSummary();
   state.financeSettings = normalizeFinanceSettings(state.financeSettings);
   const realBalanceVisible = state.financeSettings.realBalanceVisible;
@@ -6539,15 +6435,8 @@ function renderFinanceCenter() {
   if (dom.financeActiveBadge) {
     dom.financeActiveBadge.textContent = activeFinanceScreen === "real"
       ? gameText("realCard")
-      : activeFinanceScreen === "virtual"
-        ? gameText("coinBalance")
-        : gameText("myBank");
+      : gameText("myBank");
   }
-  if (dom.virtualCardBalance) dom.virtualCardBalance.textContent = formatCoins(virtual.balance);
-  if (dom.virtualCardAsset) dom.virtualCardAsset.textContent = formatCoins(virtual.assetValue);
-  if (dom.virtualCardIncome) dom.virtualCardIncome.textContent = `+${formatCoins(virtual.todayIncome)}`;
-  if (dom.virtualCardSpend) dom.virtualCardSpend.textContent = `-${formatCoins(virtual.todaySpend)}`;
-  if (dom.virtualCardFlow) dom.virtualCardFlow.textContent = `今日 +${formatCoins(virtual.todayIncome)} / -${formatCoins(virtual.todaySpend)}`;
   if (dom.realCardBalance) dom.realCardBalance.textContent = realBalanceVisible ? formatRealCurrency(real.balance) : "£••••••";
   if (dom.realBalanceToggle) {
     dom.realBalanceToggle.classList.toggle("is-hidden", !realBalanceVisible);
@@ -6560,12 +6449,6 @@ function renderFinanceCenter() {
   if (dom.realCardExpense) dom.realCardExpense.textContent = formatRealCurrency(real.monthExpense);
   if (dom.realCardBudget) dom.realCardBudget.textContent = formatRealCurrency(real.weekBalance);
   if (dom.realCardFlow) dom.realCardFlow.textContent = `${gameText("monthExpense")} ${formatRealCurrency(real.monthExpense)}`;
-  if (dom.virtualAssetBadge) dom.virtualAssetBadge.textContent = `${gameText("asset")} ${formatCoins(virtual.assetValue)}`;
-  if (dom.virtualBalanceValue) dom.virtualBalanceValue.textContent = formatCoins(virtual.balance);
-  if (dom.virtualStockValue) dom.virtualStockValue.textContent = formatCoins(virtual.stockValue);
-  if (dom.virtualTodayIncome) dom.virtualTodayIncome.textContent = `+${formatCoins(virtual.todayIncome)}`;
-  if (dom.virtualTodaySpend) dom.virtualTodaySpend.textContent = `-${formatCoins(virtual.todaySpend)}`;
-
   document.querySelectorAll("[data-finance-card]").forEach((card) => {
     card.classList.toggle("is-active", card.dataset.financeCard === activeFinanceScreen);
   });
@@ -6575,8 +6458,6 @@ function renderFinanceCenter() {
   document.querySelectorAll("[data-finance-home-only]").forEach((panel) => {
     panel.hidden = activeFinanceScreen !== "home";
   });
-
-  renderVirtualFinanceList(virtual);
 }
 
 function getVirtualFinanceSummary() {
@@ -6904,7 +6785,7 @@ function transactionDateKey(value) {
 }
 
 function formatCoins(value) {
-  return `◈ ${roundCompanyCoins(value).toLocaleString("zh-CN")}`;
+  return roundCompanyCoins(value).toLocaleString("zh-CN");
 }
 
 function formatRealCurrency(value) {
@@ -6915,16 +6796,16 @@ function formatRealCurrency(value) {
 
 function virtualTransactionSourceLabel(source) {
   const labels = {
-    task: "任务收入",
-    "company-task-missed": "公司任务未完成",
-    project: "项目收入",
+    task: "任务记录",
+    "company-task-missed": "任务记录",
+    project: "项目记录",
     "skill-stock": "技能股交易",
-    "company-upgrade": "公司升级",
+    "company-upgrade": "等级升级",
     "department-upgrade": "部门升级",
-    decoration: "装饰支出",
+    decoration: "装饰记录",
     manual: "手动调整",
   };
-  return labels[source] || "金币流水";
+  return labels[source] || "成长记录";
 }
 
 function virtualTransactionIcon(source) {
@@ -7713,26 +7594,20 @@ function settleDay() {
   if (day.risk >= 6 || day.safeMode) {
     day.safeMode = true;
     day.protectionOpen = true;
-    const penalty = penalizeCompanyEconomyForMissedMainTasks(selectedDate);
     day.settled = true;
     saveState();
     render();
-    showToast(penalty.count ? `保护模式结算完成，未完成公司任务 -${formatCoins(penalty.coins)}。` : "今天按保护模式结算：安全优先，也算通关。");
+    showToast("今天按保护模式结算：安全优先，也算通关。");
     return;
   }
   if (mainDone < mainTarget && day.energy > 20 && day.mood > 20) {
     showToast(`还没完成 ${formatDuration(mainDone * 60)} / ${formatDuration(mainTarget * 60)}。也可以先写战报，或把能量调成低能量版本。`);
     return;
   }
-  const penalty = penalizeCompanyEconomyForMissedMainTasks(selectedDate);
   day.settled = true;
   saveState();
   render();
-  if (penalty.count) {
-    showToast(`今日已结算，未完成公司任务 -${formatCoins(penalty.coins)}。`);
-  } else {
-    showToast(mainDone >= mainTarget ? "今日通关结算完成，额外 +25 XP。" : "低能量日已结算，明天继续接上。");
-  }
+  showToast(mainDone >= mainTarget ? "今日通关结算完成，额外 +25 XP。" : "低能量日已结算，明天继续接上。");
 }
 
 function openGrowthDialog() {
@@ -7829,8 +7704,6 @@ function completeOnboarding(event) {
   const deadline = isDateKey(dom.onboardingDeadlineInput?.value)
     ? dom.onboardingDeadlineInput.value
     : addDays(selectedDate, TOTAL_DAYS - 1);
-  if (!confirmCompanyStartingStake(companyName)) return;
-
   createOnboardingCompany({
     name: companyName,
     typeId: type.id,
@@ -7862,11 +7735,11 @@ function completeOnboarding(event) {
   saveState();
   render();
   closeOnboardingDialog();
-  showToast("目标部署完成，公司已经启动。");
+  showToast("目标部署完成，作战台已经启动。");
 }
 
-function confirmCompanyStartingStake(companyName = "人生公司") {
-  return window.confirm(`默认个人金币：${PLAYER_STARTING_COINS}\n建立「${companyName}」需要投入 ${COMPANY_STARTING_STAKE} 金币作为启动资金。\n\n确认创建公司吗？`);
+function confirmCompanyStartingStake(companyName = "人生计划") {
+  return true;
 }
 
 function openBlessingDialog() {
@@ -7964,6 +7837,345 @@ function openOotdDialog() {
   } else {
     dom.ootdDialog?.setAttribute("open", "");
   }
+}
+
+function openOotdZineDialog() {
+  renderOotdZine();
+  if (typeof dom.ootdZineDialog?.showModal === "function") {
+    if (!dom.ootdZineDialog.open) dom.ootdZineDialog.showModal();
+  } else {
+    dom.ootdZineDialog?.setAttribute("open", "");
+  }
+}
+
+function closeOotdZineDialog() {
+  if (typeof dom.ootdZineDialog?.close === "function") dom.ootdZineDialog.close();
+  else dom.ootdZineDialog?.removeAttribute("open");
+}
+
+function renderOotdZine() {
+  const books = loadZineBooks();
+  if (dom.ootdZineCount) dom.ootdZineCount.textContent = `${books.length} ${ootdUiText("本", "books")}`;
+  if (!dom.ootdZineGrid) return;
+  dom.ootdZineGrid.innerHTML = books.length
+    ? books.map((book) => {
+      const coverImage = book.coverImage || book.pages.flatMap((page) => page.images).find(Boolean) || "";
+      const date = formatZineDateLabel(book.updatedAt);
+      return `<button class="ootd-zine-card zine-shelf-book ${coverImage ? "has-cover-image" : ""}" type="button" data-action="open-zine-book" data-id="${escapeHtml(book.id)}" aria-label="${escapeHtml(`${book.title} · ${ootdUiText("长按删除", "long press to delete")}`)}"><span class="ootd-zine-cover">${coverImage ? `<img src="${escapeHtml(coverImage)}" alt="${escapeHtml(book.title)}" />` : `<i>${escapeHtml(book.title.slice(0, 1) || "Z")}</i>`}<span class="zine-shelf-cover-print"><small>${escapeHtml(date)}</small><strong>${escapeHtml(book.title)}</strong><em>${book.pages.length} ${ootdUiText("页", "pages")}</em></span></span></button>`;
+    }).join("")
+    : `<p class="ootd-zine-empty">${ootdUiText("新建一本 Zine，开始记录生活。", "Create a Zine to start recording life.")}</p>`;
+}
+
+function startZineShelfLongPress(event) {
+  const button = event.target.closest?.(".zine-shelf-book[data-id]");
+  if (!button || event.button > 0) return;
+  cancelZineShelfLongPress();
+  zineShelfLongPressFired = false;
+  zineShelfSuppressClickBookId = "";
+  zineShelfLongPressButton = button;
+  zineShelfLongPressStart = { x: event.clientX, y: event.clientY };
+  button.classList.add("is-long-pressing");
+  zineShelfLongPressTimer = window.setTimeout(() => {
+    const bookId = zineShelfLongPressButton?.dataset.id || "";
+    zineShelfLongPressFired = true;
+    zineShelfSuppressClickBookId = bookId;
+    cancelZineShelfLongPress(false);
+    confirmDeleteZineBookById(bookId);
+    window.setTimeout(() => {
+      zineShelfLongPressFired = false;
+      zineShelfSuppressClickBookId = "";
+    }, 900);
+  }, 680);
+}
+
+function moveZineShelfLongPress(event) {
+  if (!zineShelfLongPressStart) return;
+  const dx = Math.abs(event.clientX - zineShelfLongPressStart.x);
+  const dy = Math.abs(event.clientY - zineShelfLongPressStart.y);
+  if (dx > 12 || dy > 12) cancelZineShelfLongPress();
+}
+
+function finishZineShelfLongPress() {
+  cancelZineShelfLongPress();
+}
+
+function cancelZineShelfLongPress(resetFired = true) {
+  window.clearTimeout(zineShelfLongPressTimer);
+  zineShelfLongPressTimer = null;
+  zineShelfLongPressButton?.classList.remove("is-long-pressing");
+  zineShelfLongPressButton = null;
+  zineShelfLongPressStart = null;
+  if (resetFired && !zineShelfLongPressFired) zineShelfLongPressFired = false;
+}
+
+function normalizeZineTimestamp(value, fallback = new Date().toISOString()) {
+  const text = cleanEditableText(value, "", 60);
+  const date = text ? new Date(text) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : fallback;
+}
+
+function formatZineDateLabel(value) {
+  const date = new Date(normalizeZineTimestamp(value));
+  return new Intl.DateTimeFormat(currentGameLanguage === "en" ? "en-GB" : "zh-CN", { year: "numeric", month: "short", day: "numeric" }).format(date);
+}
+
+function normalizeZinePage(page) {
+  if (!page || typeof page !== "object") return null;
+  return {
+    id: cleanEditableText(page.id, makeId("zine-page"), 100),
+    text: cleanEditableText(page.text, "", 1600),
+    images: Array.isArray(page.images) ? page.images.filter((image) => typeof image === "string" && image.startsWith("data:image/")).slice(0, 4) : [],
+  };
+}
+
+function normalizeZineBook(book) {
+  if (!book || typeof book !== "object") return null;
+  const now = new Date().toISOString();
+  const createdAt = normalizeZineTimestamp(book.createdAt, now);
+  const updatedAt = normalizeZineTimestamp(book.updatedAt, createdAt);
+  const pages = Array.isArray(book.pages) ? book.pages.map(normalizeZinePage).filter(Boolean) : [];
+  while (pages.length < 2) pages.push({ id: makeId("zine-page"), text: "", images: [] });
+  if (pages.length % 2) pages.push({ id: makeId("zine-page"), text: "", images: [] });
+  return {
+    id: cleanEditableText(book.id, makeId("zine-book"), 100),
+    style: "magazine",
+    title: cleanEditableText(book.title, ootdUiText("未命名 Zine", "Untitled Zine"), 36),
+    coverImage: typeof book.coverImage === "string" && book.coverImage.startsWith("data:image/") ? book.coverImage : "",
+    createdAt,
+    updatedAt,
+    pages,
+  };
+}
+
+function loadZineBooks() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ZINE_STORAGE_KEY) || "[]");
+    return (Array.isArray(parsed) ? parsed : []).map(normalizeZineBook).filter(Boolean).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveZineBooks(books) {
+  const normalized = (Array.isArray(books) ? books : []).map(normalizeZineBook).filter(Boolean);
+  try {
+    localStorage.setItem(ZINE_STORAGE_KEY, JSON.stringify(normalized));
+  } catch (error) {
+    showToast(ootdUiText("Zine 存储空间不足，请移除一些图片后再试。", "Zine storage is full. Remove some images and try again."));
+    throw error;
+  }
+}
+
+function activeZineBook() {
+  return loadZineBooks().find((book) => book.id === activeZineBookId) || null;
+}
+
+function updateActiveZineBook(transform) {
+  const books = loadZineBooks();
+  const index = books.findIndex((book) => book.id === activeZineBookId);
+  if (index < 0) return null;
+  const next = transform(books[index]);
+  if (!next) return null;
+  next.updatedAt = new Date().toISOString();
+  books[index] = normalizeZineBook(next);
+  try {
+    saveZineBooks(books);
+  } catch (error) {
+    return null;
+  }
+  return books[index];
+}
+
+function openZineStyleDialog() {
+  if (typeof dom.zineStyleDialog?.showModal === "function") { if (!dom.zineStyleDialog.open) dom.zineStyleDialog.showModal(); }
+  else dom.zineStyleDialog?.setAttribute("open", "");
+}
+
+function closeZineStyleDialog() {
+  if (typeof dom.zineStyleDialog?.close === "function") dom.zineStyleDialog.close();
+  else dom.zineStyleDialog?.removeAttribute("open");
+}
+
+function createZineBook(style = "magazine") {
+  const now = new Date().toISOString();
+  const book = normalizeZineBook({ id: makeId("zine-book"), style, title: ootdUiText("新的生活记录", "New Life Notes"), createdAt: now, updatedAt: now, pages: [] });
+  const books = loadZineBooks();
+  books.unshift(book);
+  try {
+    saveZineBooks(books);
+    renderOotdZine();
+    closeZineStyleDialog();
+    openZineBook(book.id);
+  } catch (error) {
+    // Storage feedback is shown in saveZineBooks.
+  }
+}
+
+function openZineBook(bookId) {
+  if (!loadZineBooks().some((book) => book.id === bookId)) return;
+  activeZineBookId = bookId;
+  activeZinePageIndex = 0;
+  renderZineBook();
+  if (typeof dom.zineBookDialog?.showModal === "function") {
+    if (!dom.zineBookDialog.open) dom.zineBookDialog.showModal();
+  } else {
+    dom.zineBookDialog?.setAttribute("open", "");
+  }
+}
+
+function closeZineBook() {
+  if (typeof dom.zineBookDialog?.close === "function") dom.zineBookDialog.close();
+  else dom.zineBookDialog?.removeAttribute("open");
+  activeZineBookId = "";
+  activeZinePageIndex = 0;
+  pendingZinePageId = "";
+  renderOotdZine();
+}
+
+function renderZineBook() {
+  const book = activeZineBook();
+  if (!book) return;
+  activeZinePageIndex = Math.max(0, Math.min(book.pages.length - 2, Math.floor(activeZinePageIndex / 2) * 2));
+  if (dom.zineBookTitleInput) dom.zineBookTitleInput.value = book.title;
+  if (dom.zinePageLabel) dom.zinePageLabel.textContent = `${activeZinePageIndex + 1} - ${activeZinePageIndex + 2}`;
+  if (!dom.zineBookSpread) return;
+  const pages = book.pages.slice(activeZinePageIndex, activeZinePageIndex + 2);
+  dom.zineBookSpread.dataset.zineStyle = book.style;
+  dom.zineBookSpread.innerHTML = pages.map((page, pageOffset) => `<section class="zine-page zine-magazine-page zine-page-${pageOffset === 0 ? "left" : "right"}" aria-label="第 ${activeZinePageIndex + pageOffset + 1} 页"><div class="zine-magazine-running-head">${escapeHtml(book.title)} <i>Issue ${String(Math.floor(activeZinePageIndex / 2) + 1).padStart(2, "0")}</i></div><div class="zine-page-number">${activeZinePageIndex + pageOffset + 1}</div><div class="zine-image-collage zine-magazine-images ${page.images.length ? "has-images" : ""}">${page.images.map((image, index) => `<figure><img src="${escapeHtml(image)}" alt="Zine photo ${index + 1}" /><button type="button" data-action="remove-zine-image" data-page-id="${escapeHtml(page.id)}" data-index="${index}" aria-label="删除图片">×</button></figure>`).join("")}</div><button class="zine-add-image" type="button" data-action="add-zine-image" data-page-id="${escapeHtml(page.id)}" ${page.images.length >= 4 ? "disabled" : ""}>+ 图片</button><textarea data-zine-page-text="${escapeHtml(page.id)}" maxlength="1600" placeholder="写下今天发生的事...">${escapeHtml(page.text)}</textarea></section>`).join("");
+}
+
+function changeZineSpread(direction) {
+  const book = activeZineBook();
+  if (!book) return;
+  activeZinePageIndex = Math.max(0, Math.min(book.pages.length - 2, activeZinePageIndex + direction * 2));
+  renderZineBook();
+}
+
+function addZineSpread() {
+  const book = updateActiveZineBook((current) => ({ ...current, pages: [...current.pages, { id: makeId("zine-page"), text: "", images: [] }, { id: makeId("zine-page"), text: "", images: [] }] }));
+  if (!book) return;
+  activeZinePageIndex = book.pages.length - 2;
+  renderOotdZine();
+  renderZineBook();
+}
+
+function saveZineBookTitle() {
+  const title = cleanEditableText(dom.zineBookTitleInput?.value, ootdUiText("未命名 Zine", "Untitled Zine"), 36);
+  if (updateActiveZineBook((book) => ({ ...book, title }))) renderOotdZine();
+}
+
+function handleZinePageInput(event) {
+  const field = event.target.closest?.("[data-zine-page-text]");
+  if (!field) return;
+  const pageId = field.dataset.zinePageText;
+  updateActiveZineBook((book) => ({ ...book, pages: book.pages.map((page) => page.id === pageId ? { ...page, text: field.value.slice(0, 1600) } : page) }));
+}
+
+function chooseZineImages(pageId) {
+  pendingZinePageId = pageId || "";
+  if (dom.zineImageInput) {
+    dom.zineImageInput.value = "";
+    dom.zineImageInput.click();
+  }
+}
+
+function chooseZineCover() {
+  pendingZinePageId = ZINE_COVER_TARGET;
+  if (dom.zineImageInput) {
+    dom.zineImageInput.value = "";
+    dom.zineImageInput.click();
+  }
+}
+
+async function handleZineImageSelection(event) {
+  const files = Array.from(event.currentTarget?.files || []).filter((file) => String(file.type || "").startsWith("image/"));
+  const pageId = pendingZinePageId;
+  event.currentTarget.value = "";
+  pendingZinePageId = "";
+  if (!files.length || !pageId) return;
+  if (pageId === ZINE_COVER_TARGET) {
+    try {
+      const coverImage = await compressZineImage(files[0]);
+      updateActiveZineBook((book) => ({ ...book, coverImage }));
+      renderOotdZine();
+      renderZineBook();
+      showToast(ootdUiText("Zine 封面已更新。", "Zine cover updated."));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : ootdUiText("封面图片添加失败。", "Cover image could not be added."));
+    }
+    return;
+  }
+  const book = activeZineBook();
+  const page = book?.pages.find((item) => item.id === pageId);
+  if (!page) return;
+  const room = Math.max(0, 4 - page.images.length);
+  if (!room) return;
+  try {
+    const images = await Promise.all(files.slice(0, room).map(compressZineImage));
+    updateActiveZineBook((current) => ({ ...current, pages: current.pages.map((item) => item.id === pageId ? { ...item, images: [...item.images, ...images] } : item) }));
+    renderOotdZine();
+    renderZineBook();
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : ootdUiText("图片添加失败。", "Image could not be added."));
+  }
+}
+
+function removeZineImage(pageId, index) {
+  updateActiveZineBook((book) => ({ ...book, pages: book.pages.map((page) => page.id === pageId ? { ...page, images: page.images.filter((_, imageIndex) => imageIndex !== index) } : page) }));
+  renderOotdZine();
+  renderZineBook();
+}
+
+function deleteActiveZineBook() {
+  const book = activeZineBook();
+  if (book) confirmDeleteZineBook(book);
+}
+
+function confirmDeleteZineBookById(bookId) {
+  const book = loadZineBooks().find((item) => item.id === bookId);
+  if (book) confirmDeleteZineBook(book);
+}
+
+function confirmDeleteZineBook(book) {
+  if (!book) return;
+  const confirmed = window.confirm(ootdUiText(
+    `删除「${book.title}」吗？这本 Zine 的页面和图片都会删除。`,
+    `Delete "${book.title}"? Its pages and photos will be removed.`
+  ));
+  if (!confirmed) return;
+  try {
+    saveZineBooks(loadZineBooks().filter((item) => item.id !== book.id));
+  } catch (error) {
+    return;
+  }
+  if (activeZineBookId === book.id || dom.zineBookDialog?.open) {
+    closeZineBook();
+  } else {
+    renderOotdZine();
+  }
+  showToast(ootdUiText("Zine 已删除。", "Zine deleted."));
+}
+
+function compressZineImage(file) {
+  if (file.size > 12 * 1024 * 1024) return Promise.reject(new Error(ootdUiText("图片太大，请选择小于 12MB 的图片。", "Choose an image under 12 MB.")));
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  return new Promise((resolve, reject) => {
+    image.onload = () => {
+      const scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#fffdf6";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      resolve(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error(ootdUiText("无法读取这张图片。", "This image cannot be read."))); };
+    image.src = objectUrl;
+  });
 }
 
 function closeOotdDialog() {
@@ -8457,8 +8669,8 @@ function renderGrowthDialog() {
 
   dom.growthTitle.textContent = `Lv.${companyLevelStatus.level} ${companyLevelStatus.levelName}`;
   dom.growthSummary.textContent = companyLevelStatus.isMax
-    ? `公司已满级，当前金币 ${formatCoins(companyLevelStatus.coins)}。`
-    : `当前金币 ${formatCoins(companyLevelStatus.coins)}，升级到 ${companyLevelStatus.nextLevelName} 需要 ${formatCoins(companyLevelStatus.requiredCoins)}。`;
+    ? `成长等级已满级，当前 ${companyLevelStatus.xp} XP。`
+    : `当前 ${companyLevelStatus.xp} XP，升级到 ${companyLevelStatus.nextLevelName} 需要 ${companyLevelStatus.requiredExp} XP。`;
   dom.achievementList.innerHTML = achievements
     .map(
       (item) => `
@@ -8622,7 +8834,7 @@ function pageDefaultSelector(pageId = "home") {
 function gamePageForSelector(selector = "") {
   if (selector === "#time-distribution-zone") return "home";
   if (["#mainline", "#sidequests", "#daily-goals", "#timeline-zone"].includes(selector)) return "tasks";
-  if (["#finance-zone", "#virtual-finance-zone", "#ledger-zone", "#archive-zone"].includes(selector)) return "finance";
+  if (["#finance-zone", "#ledger-zone", "#archive-zone"].includes(selector)) return "finance";
   return "home";
 }
 

@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="../icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png" />
     <title>30天计划 · 动画主线作战台</title>
-    <link rel="stylesheet" href="./styles.css?v=215" />
+    <link rel="stylesheet" href="./styles.css?v=228" />
   </head>
   <body>
     <main class="phone-shell" id="top">
@@ -40,7 +40,6 @@
 
       <section class="character-panel is-collapsed" id="characterPanel" aria-labelledby="characterTitle">
         <a class="character-return-chip" href="../index.html#timelineSection" data-i18n="back">返回</a>
-        <a class="character-company-chip" href="./company.html" aria-label="打开人生公司" data-i18n="company">公司</a>
         <a class="character-relationship-chip" href="./relationships.html" aria-label="打开人际关系卡" data-i18n="relationships">人际关系</a>
         <a class="character-skill-market-chip" href="./skill-market.html" aria-label="打开人生技能股市" data-i18n="skillMarket">人生技能股市</a>
         <a class="character-tarot-chip" href="./tarot.html" aria-label="打开塔罗牌占卜" data-i18n="tarot">塔罗</a>
@@ -64,10 +63,10 @@
         <section class="status-grid" aria-label="角色状态卡">
           <button class="status-card level-card" type="button" data-action="open-growth">
             <span class="mini-icon editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="icon" data-edit-max="2">★</span>
-            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="label" data-edit-max="8" data-i18n-default="companyLevel">公司等级</span>
+            <span class="label editable-text" contenteditable="true" spellcheck="false" data-edit-group="statusCards" data-edit-id="level" data-edit-field="label" data-edit-max="8" data-i18n-default="companyLevel">成长等级</span>
             <strong id="levelValue">Lv.1</strong>
             <span class="meter"><i id="xpMeter"></i></span>
-            <small id="xpLabel">◈ 0 / ◈ 300</small>
+            <small id="xpLabel">0 / 100 XP</small>
           </button>
 
           <button class="status-card animation-card" type="button" data-jump="#mainline">
@@ -267,35 +266,6 @@
         </div>
         <p class="bank-notice" id="financeTitle" data-i18n="financeNotice">你的财务小管家，帮你守护每一份努力</p>
         <div class="finance-card-grid" aria-label="银行卡">
-          <article class="finance-bank-card virtual" data-finance-card="virtual">
-            <span class="finance-card-spark">✦</span>
-            <img class="finance-card-chip-img" src="./assets/bank-ui/bank_ui_assets_pack_v2/purple_bank_ui_assets/20_card_chip.png" alt="" aria-hidden="true" />
-            <img class="finance-card-contactless" src="./assets/bank-ui/bank_ui_assets_pack_v2/purple_bank_ui_assets/21_card_contactless.png" alt="" aria-hidden="true" />
-            <img class="finance-card-mascot" src="./assets/bank-ui/bank_ui_assets_pack_v2/purple_bank_ui_assets/19_card_mascot_scene.png" alt="" aria-hidden="true" />
-            <span class="finance-card-badge-cover" aria-hidden="true"></span>
-            <span class="finance-card-seal" data-i18n="myCompany">我的公司</span>
-            <span class="finance-card-title">
-              <strong>星愿银行</strong>
-              <small>COMPANY COIN CARD</small>
-            </span>
-            <span class="finance-card-main-balance">
-              <small data-i18n="coinBalance">金币余额</small>
-              <strong id="virtualCardBalance">◈ 0</strong>
-            </span>
-            <span class="finance-card-side-balance">
-              <small data-i18n="assetValue">资产估值</small>
-              <strong id="virtualCardAsset">◈ 0</strong>
-            </span>
-            <span class="finance-card-stat income">
-              <small data-i18n="todayIncome">今日收入</small>
-              <strong id="virtualCardIncome">+◈ 0</strong>
-            </span>
-            <span class="finance-card-stat expense">
-              <small data-i18n="todayExpense">今日支出</small>
-              <strong id="virtualCardSpend">-◈ 0</strong>
-            </span>
-            <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="virtual" data-i18n="viewCompanyLedger">查看公司账本 ›</button>
-          </article>
           <article class="finance-bank-card real" data-finance-card="real">
             <span class="finance-card-spark">✧</span>
             <img class="finance-card-chip-img" src="./assets/bank-ui/bank_ui_assets_pack_v2/cyan_bank_ui_assets/20_card_chip.png" alt="" aria-hidden="true" />
@@ -324,35 +294,7 @@
             <button class="finance-card-action" type="button" data-action="select-finance-card" data-finance-card="real" data-i18n="viewLifeLedger">查看生活账本 ›</button>
           </article>
         </div>
-        <p class="finance-safety-note" data-i18n="financeSafetyNote">金币是游戏内成长资源；现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。</p>
-      </section>
-
-      <section class="panel finance-detail-panel bank-screen bank-screen-purple" id="virtual-finance-zone" data-finance-screen="virtual" aria-labelledby="virtualFinanceTitle" hidden>
-        <div class="bank-page-head">
-          <button class="bank-back-button" type="button" data-action="back-finance-home" aria-label="返回财务首页">←</button>
-          <img class="finance-title-banner" src="./assets/bank-ui/my-bank-title-banner.png" alt="我的银行" />
-          <span class="bank-help-pill" id="virtualAssetBadge">资产 ◈ 0</span>
-        </div>
-        <p class="bank-notice" id="virtualFinanceTitle" data-i18n="virtualFinanceNotice">公司金币、任务收入、项目收入和技能股交易都在这里</p>
-        <div class="finance-summary-grid" aria-label="金币汇总">
-          <span>
-            <small data-i18n="coinBalance">金币余额</small>
-            <strong id="virtualBalanceValue">◈ 0</strong>
-          </span>
-          <span>
-            <small data-i18n="stockValue">股票估值</small>
-            <strong id="virtualStockValue">◈ 0</strong>
-          </span>
-          <span>
-            <small data-i18n="todayIncome">今日收入</small>
-            <strong id="virtualTodayIncome">+◈ 0</strong>
-          </span>
-          <span>
-            <small data-i18n="todayExpense">今日支出</small>
-            <strong id="virtualTodaySpend">-◈ 0</strong>
-          </span>
-        </div>
-        <div class="finance-list" id="virtualFinanceList" aria-label="金币流水"></div>
+        <p class="finance-safety-note" data-i18n="financeSafetyNote">现实账本仅用于手动记录，不会连接真实银行卡，也不会处理真实支付。</p>
       </section>
 
       <section class="panel ledger-panel finance-detail-panel bank-screen bank-screen-cyan" id="ledger-zone" data-finance-screen="real" aria-labelledby="ledgerTitle" hidden>
@@ -421,6 +363,15 @@
         <div class="ledger-list" id="ledgerList" aria-label="账本记录列表"></div>
       </section>
 
+      <section class="panel ootd-zine-entry-panel" id="ootd-zine-zone" data-finance-home-only aria-labelledby="ootdZineEntryTitle">
+        <div>
+          <p class="eyebrow">Zine</p>
+          <h2 id="ootdZineEntryTitle">Zine Library</h2>
+          <span>把照片和日常收进一本本生活杂志。</span>
+        </div>
+        <button class="ghost-button" type="button" data-action="open-ootd-zine">Zine</button>
+      </section>
+
       <section class="panel ootd-entry-panel" id="ootd-zone" data-finance-home-only aria-labelledby="ootdEntryTitle">
         <div class="ootd-entry-copy">
           <p class="eyebrow">OOTD</p>
@@ -458,23 +409,22 @@
       <form class="dialog-card edit-card-form onboarding-card" id="onboardingForm" method="dialog">
         <button class="dialog-close" type="button" data-action="skip-onboarding" aria-label="稍后">×</button>
         <p class="onboarding-pill" data-i18n="onboardingDeploy">新手部署</p>
-        <h2 data-i18n="createLifeCompany">先创建你的人生公司</h2>
-        <p class="dialog-summary" data-i18n="onboardingSummary">选一个人生方向，写下第一个目标，系统会自动帮你完成公司和作战台部署。</p>
-        <p class="company-starting-money-note" data-i18n="companyStartingMoneyNote">默认个人金币 1000。建立公司会投入 600 金币作为启动资金。</p>
+        <h2 data-i18n="createLifeCompany">先创建你的目标档案</h2>
+        <p class="dialog-summary" data-i18n="onboardingSummary">选一个人生方向，写下第一个目标，系统会自动帮你完成作战台部署。</p>
 
         <div class="onboarding-steps" aria-label="新手部署步骤">
-          <span data-i18n="stepCreateCompany">1 创建公司</span>
+          <span data-i18n="stepCreateCompany">1 创建档案</span>
           <span data-i18n="stepSetGoal">2 设置目标</span>
           <span data-i18n="stepFinishDeploy">3 完成部署</span>
         </div>
 
         <label>
-          <span data-i18n="companyName">公司名称</span>
-          <input id="onboardingCompanyNameInput" type="text" maxlength="24" placeholder="例如：星愿动画公司" required />
+          <span data-i18n="companyName">计划名称</span>
+          <input id="onboardingCompanyNameInput" type="text" maxlength="24" placeholder="例如：星愿动画计划" required />
         </label>
 
         <label>
-          <span data-i18n="companyDirection">公司方向</span>
+          <span data-i18n="companyDirection">成长方向</span>
           <select id="onboardingCompanyTypeInput"></select>
         </label>
 
@@ -520,8 +470,8 @@
       <div class="dialog-card">
         <button class="dialog-close" type="button" data-action="close-growth" aria-label="关闭">×</button>
         <p class="black-pill">成长记录</p>
-        <h2 id="growthTitle">Lv.1 起步公司</h2>
-        <p id="growthSummary" class="dialog-summary">继续完成任务来积累金币。</p>
+        <h2 id="growthTitle">Lv.1 起步阶段</h2>
+        <p id="growthSummary" class="dialog-summary">继续完成任务来提升成长等级。</p>
         <div class="achievement-list" id="achievementList"></div>
       </div>
     </dialog>
@@ -640,6 +590,54 @@
         </section>
       </div>
     </dialog>
+
+    <dialog class="edit-card-dialog ootd-dialog ootd-zine-dialog" id="ootdZineDialog">
+      <div class="dialog-card ootd-dialog-card">
+        <button class="dialog-close" type="button" data-action="close-ootd-zine" aria-label="关闭">×</button>
+        <p class="black-pill">(ZINE)</p>
+        <div class="ootd-dialog-head">
+          <div>
+            <h2>My Zines</h2>
+            <p>每一本都是一段生活的杂志封面和故事。</p>
+          </div>
+          <strong id="ootdZineCount">0</strong>
+        </div>
+        <button class="primary-button zine-create-button" type="button" data-action="create-zine-book">新建一本 Zine</button>
+        <div id="ootdZineGrid" class="ootd-zine-grid" aria-label="Zine 书架"></div>
+      </div>
+    </dialog>
+
+    <dialog class="edit-card-dialog zine-style-dialog" id="zineStyleDialog">
+      <div class="dialog-card zine-style-dialog-card">
+        <button class="dialog-close" type="button" data-action="close-zine-style" aria-label="关闭">×</button>
+        <p class="black-pill">NEW ZINE</p>
+        <h2>选择内页排版</h2>
+        <div class="zine-style-options">
+          <button type="button" data-action="create-zine-with-style" data-style="magazine"><b>01</b><strong>杂志纪实</strong><span>白底编辑式双页、图片块与窄文字栏</span></button>
+          <button type="button" disabled><b>02</b><strong>即将推出</strong><span>新的视觉方向正在制作</span></button>
+          <button type="button" disabled><b>03</b><strong>即将推出</strong><span>新的视觉方向正在制作</span></button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="edit-card-dialog zine-book-dialog" id="zineBookDialog">
+      <div class="dialog-card zine-book-dialog-card">
+        <button class="dialog-close" type="button" data-action="close-zine-book" aria-label="关闭">×</button>
+        <div class="zine-book-toolbar">
+          <input id="zineBookTitleInput" type="text" maxlength="36" aria-label="Zine 名称" />
+          <button class="zine-cover-button" type="button" data-action="choose-zine-cover">封面图片</button>
+          <button class="zine-delete-button" type="button" data-action="delete-zine-book">删除</button>
+          <span id="zinePageLabel">1 - 2</span>
+        </div>
+        <div id="zineBookSpread" class="zine-book-spread" aria-label="Zine 双页"></div>
+        <div class="zine-book-controls">
+          <button class="ghost-button" type="button" data-action="zine-previous-page">‹</button>
+          <button class="ghost-button" type="button" data-action="zine-add-page">新增页面</button>
+          <button class="ghost-button" type="button" data-action="zine-next-page">›</button>
+        </div>
+      </div>
+    </dialog>
+    <input id="zineImageInput" type="file" accept="image/*" multiple hidden />
 
     <dialog class="edit-card-dialog" id="balanceAdjustDialog">
       <form class="dialog-card edit-card-form balance-adjust-form" method="dialog">
@@ -942,6 +940,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="./app.js?v=225"></script>
+    <script src="./app.js?v=237"></script>
   </body>
 </html>

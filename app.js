@@ -93,21 +93,39 @@ const JOURNAL_MOODS = Object.keys(JOURNAL_MOOD_EMOJI);
 const REVIEW_MOODS = [
   { id: "happy", emoji: "😊", zh: "开心", en: "Happy" },
   { id: "calm", emoji: "😌", zh: "平静", en: "Calm" },
+  { id: "excited", emoji: "🤩", zh: "兴奋", en: "Excited" },
+  { id: "focused", emoji: "🧐", zh: "专注", en: "Focused" },
   { id: "tired", emoji: "😴", zh: "疲惫", en: "Tired" },
   { id: "sensitive", emoji: "🥺", zh: "敏感", en: "Sensitive" },
+  { id: "stressed", emoji: "😵‍💫", zh: "压力", en: "Stressed" },
+  { id: "sad", emoji: "😢", zh: "低落", en: "Sad" },
+  { id: "angry", emoji: "😤", zh: "烦躁", en: "Frustrated" },
+  { id: "proud", emoji: "😎", zh: "得意", en: "Proud" },
   { id: "idea", emoji: "✨", zh: "灵感", en: "Inspired" },
 ];
 const REVIEW_WEATHER = [
   { id: "sunny", emoji: "☀️", zh: "晴", en: "Sunny" },
+  { id: "partly-cloudy", emoji: "⛅", zh: "多云", en: "Partly cloudy" },
   { id: "cloudy", emoji: "☁️", zh: "阴", en: "Cloudy" },
+  { id: "foggy", emoji: "🌫️", zh: "雾", en: "Fog" },
+  { id: "drizzle", emoji: "🌦️", zh: "阵雨", en: "Showers" },
   { id: "rainy", emoji: "🌧️", zh: "雨", en: "Rain" },
+  { id: "stormy", emoji: "⛈️", zh: "雷雨", en: "Storm" },
   { id: "snowy", emoji: "❄️", zh: "雪", en: "Snow" },
   { id: "windy", emoji: "🍃", zh: "风", en: "Wind" },
+  { id: "hot-sun", emoji: "🌞", zh: "暴晒", en: "Hot sun" },
 ];
 const REVIEW_FEELS = [
+  { id: "freezing", emoji: "🧊", zh: "很冷", en: "Freezing" },
   { id: "cold", emoji: "🥶", zh: "偏冷", en: "Cold" },
+  { id: "cool", emoji: "😮‍💨", zh: "凉爽", en: "Cool" },
   { id: "ok", emoji: "🙂", zh: "刚好", en: "Just right" },
+  { id: "warm", emoji: "😊", zh: "微暖", en: "Warm" },
   { id: "hot", emoji: "🥵", zh: "偏热", en: "Hot" },
+  { id: "humid", emoji: "💦", zh: "闷湿", en: "Humid" },
+  { id: "dry", emoji: "🏜️", zh: "干燥", en: "Dry" },
+  { id: "sleepy", emoji: "😪", zh: "困倦", en: "Sleepy" },
+  { id: "light", emoji: "🪽", zh: "轻松", en: "Light" },
 ];
 const FIXED_HOLIDAYS = {
   "01-01": { zh: "元旦", en: "New Year", type: "holiday" },
@@ -150,7 +168,9 @@ const I18N = {
   plannedMetric: { zh: "计划", en: "Planned" },
   dates: { zh: "日期", en: "Dates" },
   dailyReport: { zh: "日报", en: "Daily Report" },
-  reviewNote: { zh: "复盘备注", en: "Review Notes" },
+  reviewNote: { zh: "便利贴", en: "Sticky Note" },
+  newStickyNote: { zh: "新建便利贴", en: "New Sticky Note" },
+  reviewMetaToggle: { zh: "心情 · 天气 · 体感", en: "Mood · Weather · Feel" },
   reviewMood: { zh: "心情", en: "Mood" },
   reviewWeather: { zh: "天气", en: "Weather" },
   reviewFeel: { zh: "体感", en: "Feels" },
@@ -394,6 +414,7 @@ let suppressNextClick = false;
 let lastDateTap = { date: "", time: 0 };
 let longPressTimer = null;
 let longPressStart = null;
+let stickyNoteLongPress = null;
 let contextTarget = null;
 let copiedBlock = null;
 let undoStack = [];
@@ -513,7 +534,10 @@ function cacheDom() {
   dom.daySchedule = document.querySelector("#daySchedule");
   dom.taskList = document.querySelector("#taskList");
   dom.dailyReport = document.querySelector("#dailyReport");
+  dom.overviewDateBubbles = document.querySelector("#overviewDateBubbles");
   dom.dailyNoteInput = document.querySelector("#dailyNoteInput");
+  dom.stickyNotesList = document.querySelector("#stickyNotesList");
+  dom.reviewMetaSummaryLabel = document.querySelector("#reviewMetaSummaryLabel");
   dom.reviewMoodRow = document.querySelector("#reviewMoodRow");
   dom.reviewWeatherRow = document.querySelector("#reviewWeatherRow");
   dom.reviewFeelRow = document.querySelector("#reviewFeelRow");
@@ -700,6 +724,7 @@ function bindEvents() {
   document.addEventListener("pointerdown", handlePointerDown);
   document.addEventListener("pointerdown", prepareCollaborationWorkspaceLongPress);
   document.addEventListener("pointerdown", prepareWorkspaceMemberLongPress);
+  document.addEventListener("pointerdown", prepareStickyNoteLongPress);
   document.addEventListener("pointerdown", handleJournalLongPressStart);
   document.addEventListener("pointermove", handleJournalLongPressMove);
   document.addEventListener("dragstart", handleDateMarkDragStart);
@@ -730,6 +755,7 @@ function bindEvents() {
     state.notes[state.selectedDate] = dom.dailyNoteInput.value;
     saveState();
   });
+  dom.stickyNotesList?.addEventListener("input", handleStickyNoteInput);
   dom.reviewMoodRow?.addEventListener("click", handleReviewMetaClick);
   dom.reviewWeatherRow?.addEventListener("click", handleReviewMetaClick);
   dom.reviewFeelRow?.addEventListener("click", handleReviewMetaClick);
@@ -793,16 +819,19 @@ function bindEvents() {
   dom.collaborationTimeline?.addEventListener("scroll", handleTimelineScroll, { passive: true });
   window.addEventListener("hashchange", applyAppView);
   document.addEventListener("pointermove", handlePointerMove);
+  document.addEventListener("pointermove", handleStickyNoteLongPressMove);
   document.addEventListener("pointermove", handleJournalCanvasItemMove);
   document.addEventListener("pointerup", stopDrag);
   document.addEventListener("pointerup", cancelCollaborationWorkspaceLongPress);
   document.addEventListener("pointerup", cancelWorkspaceMemberLongPress);
+  document.addEventListener("pointerup", cancelStickyNoteLongPress);
   document.addEventListener("pointerup", handleJournalCanvasItemEnd);
   document.addEventListener("pointerup", clearJournalLongPressTimers);
   document.addEventListener("pointercancel", handleJournalCanvasItemEnd);
   document.addEventListener("pointercancel", cancelTimelineStubLongPress);
   document.addEventListener("pointercancel", cancelCollaborationWorkspaceLongPress);
   document.addEventListener("pointercancel", cancelWorkspaceMemberLongPress);
+  document.addEventListener("pointercancel", cancelStickyNoteLongPress);
   document.addEventListener("pointercancel", clearJournalLongPressTimers);
   document.addEventListener("contextmenu", handleJournalNativeMenu);
   document.addEventListener("selectstart", handleJournalNativeSelection);
@@ -835,6 +864,7 @@ function createSeedState() {
     },
     selectedDate: today,
     notes: {},
+    stickyNotes: {},
     journal: {
       entries: [],
     },
@@ -921,6 +951,14 @@ function normalizeState() {
   state.settings.language = LANGUAGES.includes(state.settings.language) ? state.settings.language : "zh";
   state.selectedDate ||= today;
   state.notes ||= {};
+  state.stickyNotes = state.stickyNotes && typeof state.stickyNotes === "object" && !Array.isArray(state.stickyNotes)
+    ? state.stickyNotes
+    : {};
+  Object.keys(state.stickyNotes).forEach((date) => {
+    state.stickyNotes[date] = Array.isArray(state.stickyNotes[date])
+      ? state.stickyNotes[date].map(normalizeStickyNote).filter(Boolean)
+      : [];
+  });
   state.dayMeta = state.dayMeta && typeof state.dayMeta === "object" && !Array.isArray(state.dayMeta)
     ? state.dayMeta
     : {};
@@ -1271,7 +1309,11 @@ function updateCreateFab(viewId) {
     if (dom.collaborationCreateFab) dom.collaborationCreateFab.hidden = true;
     closeCollaborationCreateMenu();
   }
-  const label = viewId === "todaySection" ? text("taskDialogTodayNew") : localizedPair("新建", "Create");
+  const label = viewId === "todaySection"
+    ? text("taskDialogTodayNew")
+    : viewId === "overviewSection"
+      ? text("newStickyNote")
+      : localizedPair("新建", "Create");
   dom.createFab.setAttribute("aria-label", label);
   dom.createFab.setAttribute("aria-haspopup", viewId === "todaySection" ? "dialog" : "menu");
 }
@@ -1330,6 +1372,7 @@ function renderSummary() {
   const report = getDayReport(date);
   const selectedProjects = new Set(getTasksForDate(date).map((item) => item.project.id));
   report.completedProjects.forEach((project) => selectedProjects.add(project.id));
+  renderOverviewDateBubbles(date);
   dom.selectedDateLabel.textContent = formatDateLong(date);
   dom.dayBoardTitle.textContent = `${formatDateShort(date)} ${text("planSuffix")}`;
   dom.scoreValue.textContent = report.hasTasks ? report.score : "-";
@@ -1339,6 +1382,7 @@ function renderSummary() {
   dom.metricTasks.textContent = report.totalTasks;
   dom.metricHours.textContent = `${trimNumber(report.plannedHours)}h`;
   dom.dailyNoteInput.value = state.notes[date] || "";
+  renderStickyNotes(date);
   renderTodayVictory(report);
   renderReviewMeta(date);
   renderDailyReport(report);
@@ -1363,11 +1407,56 @@ function renderTodayVictory(report) {
   `;
 }
 
+function renderOverviewDateBubbles(selectedDate = state.selectedDate) {
+  if (!dom.overviewDateBubbles) return;
+  const today = todayISO();
+  const startDate = addDays(selectedDate, -3);
+  const days = Array.from({ length: 8 }, (_, index) => addDays(startDate, index));
+  dom.overviewDateBubbles.innerHTML = days.map((date) => {
+    const report = getDayReport(date);
+    const active = date === selectedDate ? "active" : "";
+    const todayClass = date === today ? "is-today" : "";
+    const futureClass = date > today ? "is-future" : "";
+    const parsed = parseDate(date);
+    const dayLetter = ["S", "M", "T", "W", "T", "F", "S"][parsed.getDay()];
+    const dotCount = clamp(Math.ceil(report.totalTasks / 2), report.hasTasks ? 1 : 0, 3);
+    const dots = Array.from({ length: dotCount }, () => "<b></b>").join("");
+    return `
+      <button class="overview-date-bubble ${active} ${todayClass} ${futureClass}" type="button" data-action="select-date" data-date="${date}" aria-label="${escapeHtml(formatDateLong(date))}">
+        <span>${dayLetter}</span>
+        <strong>${parsed.getDate()}</strong>
+        <i aria-hidden="true">${dots}</i>
+      </button>
+    `;
+  }).join("");
+  requestAnimationFrame(() => {
+    dom.overviewDateBubbles
+      ?.querySelector(".overview-date-bubble.active")
+      ?.scrollIntoView({ block: "nearest", inline: "center" });
+  });
+}
+
 function renderReviewMeta(date = state.selectedDate) {
   const meta = state.dayMeta?.[date] || {};
+  renderReviewMetaSummary(meta);
   renderReviewChipRow(dom.reviewMoodRow, "mood", REVIEW_MOODS, meta.mood);
   renderReviewChipRow(dom.reviewWeatherRow, "weather", REVIEW_WEATHER, meta.weather);
   renderReviewChipRow(dom.reviewFeelRow, "feel", REVIEW_FEELS, meta.feel);
+}
+
+function renderReviewMetaSummary(meta = {}) {
+  if (!dom.reviewMetaSummaryLabel) return;
+  const mood = REVIEW_MOODS.find((item) => item.id === meta.mood);
+  const weather = REVIEW_WEATHER.find((item) => item.id === meta.weather);
+  const feel = REVIEW_FEELS.find((item) => item.id === meta.feel);
+  const hasSelection = Boolean(mood || weather || feel);
+  dom.reviewMetaSummaryLabel.textContent = hasSelection
+    ? [
+      mood?.emoji || localizedPair("心情", "Mood"),
+      weather?.emoji || localizedPair("天气", "Weather"),
+      feel?.emoji || localizedPair("体感", "Feel"),
+    ].join(" · ")
+    : text("reviewMetaToggle");
 }
 
 function renderReviewChipRow(container, type, items, activeId) {
@@ -1388,6 +1477,85 @@ function handleReviewMetaClick(event) {
   state.dayMeta[date][type] = state.dayMeta[date][type] === value ? "" : value;
   saveState();
   renderReviewMeta(date);
+}
+
+function normalizeStickyNote(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  return {
+    id: source.id || makeId("sticky"),
+    text: String(source.text || ""),
+  };
+}
+
+function getStickyNotes(date = state.selectedDate) {
+  state.stickyNotes ||= {};
+  state.stickyNotes[date] = Array.isArray(state.stickyNotes[date])
+    ? state.stickyNotes[date].map(normalizeStickyNote).filter(Boolean)
+    : [];
+  return state.stickyNotes[date];
+}
+
+function renderStickyNotes(date = state.selectedDate) {
+  if (!dom.stickyNotesList) return;
+  const notes = getStickyNotes(date);
+  dom.stickyNotesList.innerHTML = notes.map((note) => `
+    <textarea
+      class="sticky-note-extra"
+      rows="4"
+      data-sticky-note-id="${note.id}"
+      placeholder="${escapeHtml(text("notePlaceholder"))}"
+    >${escapeHtml(note.text)}</textarea>
+  `).join("");
+}
+
+function handleStickyNoteInput(event) {
+  const input = event.target.closest("[data-sticky-note-id]");
+  if (!input) return;
+  const note = getStickyNotes(state.selectedDate).find((item) => item.id === input.dataset.stickyNoteId);
+  if (!note) return;
+  note.text = input.value;
+  saveState();
+}
+
+function prepareStickyNoteLongPress(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const input = event.target.closest("#dailyNoteInput, .sticky-note-extra");
+  if (!input || !input.closest("#overviewSection")) return;
+  cancelStickyNoteLongPress();
+  stickyNoteLongPress = {
+    x: event.clientX,
+    y: event.clientY,
+    target: input,
+    timer: window.setTimeout(() => confirmDeleteStickyNote(input), 650),
+  };
+}
+
+function handleStickyNoteLongPressMove(event) {
+  if (!stickyNoteLongPress) return;
+  const distance = Math.hypot(event.clientX - stickyNoteLongPress.x, event.clientY - stickyNoteLongPress.y);
+  if (distance > 10) cancelStickyNoteLongPress();
+}
+
+function cancelStickyNoteLongPress() {
+  if (stickyNoteLongPress?.timer) window.clearTimeout(stickyNoteLongPress.timer);
+  stickyNoteLongPress = null;
+}
+
+function confirmDeleteStickyNote(input) {
+  const target = stickyNoteLongPress?.target === input ? input : null;
+  cancelStickyNoteLongPress();
+  if (!target) return;
+  suppressNextClick = true;
+  if (!window.confirm("确定删除这张便利贴吗？")) return;
+  rememberUndo();
+  if (target.id === "dailyNoteInput") {
+    state.notes[state.selectedDate] = "";
+    target.value = "";
+  } else {
+    state.stickyNotes[state.selectedDate] = getStickyNotes(state.selectedDate).filter((note) => note.id !== target.dataset.stickyNoteId);
+    renderStickyNotes(state.selectedDate);
+  }
+  saveState();
 }
 
 function renderDailyReport(report) {
@@ -6639,6 +6807,21 @@ function moodLabel(mood) {
   return text(key);
 }
 
+function openStickyNoteComposer() {
+  closeCreateMenu();
+  showAppView("overviewSection");
+  const notes = getStickyNotes(state.selectedDate);
+  const note = normalizeStickyNote({ text: "" });
+  notes.push(note);
+  saveState();
+  renderStickyNotes(state.selectedDate);
+  requestAnimationFrame(() => {
+    const input = dom.stickyNotesList?.querySelector(`[data-sticky-note-id="${note.id}"]`);
+    input?.scrollIntoView({ block: "center", behavior: "smooth" });
+    input?.focus();
+  });
+}
+
 function handleDocumentClick(event) {
   if (suppressNextClick) {
     suppressNextClick = false;
@@ -7152,6 +7335,10 @@ function handleDocumentClick(event) {
     toggleCreateMenu();
     return;
   }
+  if (action === "new-sticky-note") {
+    openStickyNoteComposer();
+    return;
+  }
   if (action === "open-voice-task") {
     closeCreateMenu();
     openVoiceTaskDialog();
@@ -7184,6 +7371,7 @@ function handleDocumentClick(event) {
     const shouldEditDate = lastDateTap.date === date && now - lastDateTap.time < 700;
     lastDateTap = { date, time: now };
     state.selectedDate = date;
+    keepDateInVisibleRange(date);
     saveAndRender();
     if (shouldEditDate) {
       requestAnimationFrame(() => openDateMarkDialog(date));
@@ -7191,7 +7379,9 @@ function handleDocumentClick(event) {
     return;
   }
   if (action === "select-plan-date") {
-    state.selectedDate = button.dataset.date;
+    const date = button.dataset.date;
+    state.selectedDate = date;
+    keepDateInVisibleRange(date);
     saveAndRender();
     return;
   }
@@ -9078,6 +9268,15 @@ function handleImport() {
 
 function getVisibleDays() {
   return Array.from({ length: state.settings.rangeDays }, (_, index) => addDays(state.settings.rangeStart, index));
+}
+
+function keepDateInVisibleRange(date) {
+  if (!isValidISODate(date)) return;
+  const rangeStart = state.settings.rangeStart;
+  const rangeEnd = addDays(rangeStart, state.settings.rangeDays);
+  if (date < rangeStart || date >= rangeEnd) {
+    state.settings.rangeStart = date;
+  }
 }
 
 function getAllTasks() {

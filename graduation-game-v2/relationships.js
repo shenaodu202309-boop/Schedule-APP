@@ -1483,7 +1483,7 @@ function handleRelationshipClick(event) {
   const action = button.dataset.action;
   if (action === "create-card") openCharacterCreator();
   if (action === "create-self-card") openSelfCharacterCreator();
-  if (action === "open-guide-pool") showToast("攻略池暂时还没有内容。");
+  if (action === "open-guide-pool") openCompanyGardenFromGuidePool();
   if (action === "open-virtual-story") showToast("虚拟故事暂时还没有内容。");
   if (action === "open-card") {
     if (suppressRelationshipCardClick) {
@@ -2040,10 +2040,6 @@ function addRelationshipReaction(characterId, type) {
 function applyRelationshipReaction(characterId, type, sourceElement = null, effectPoint = null) {
   const index = relationshipCards.findIndex((card) => card.id === characterId);
   if (index < 0) return false;
-  if (!spendRelationshipReactionCoin(characterId, type)) {
-    showToast("金币不足，无法送出。");
-    return false;
-  }
   const card = normalizeRelationshipCard(relationshipCards[index]);
   card.reactionStats = normalizeRelationshipReactionStats(card.reactionStats);
   if (type === "flower") card.reactionStats.flowers += 1;
@@ -2174,31 +2170,6 @@ function normalizeRelationshipReactionStats(stats) {
 }
 
 function spendRelationshipReactionCoin(characterId, type) {
-  const companyState = ensureRelationshipCompanyState();
-  const company = companyState.company;
-  const economy = ensureRelationshipCompanyEconomy(company);
-  if (!companyState || !company || !economy) return false;
-  if (economy.companyCoins < relationshipReactionCost) return false;
-  economy.companyCoins = roundRelationshipCoins(economy.companyCoins - relationshipReactionCost);
-  economy.lifetimeSpent = roundRelationshipCoins(economy.lifetimeSpent + relationshipReactionCost);
-  economy.transactions = [{
-    id: createId(),
-    type: "spend",
-    amount: relationshipReactionCost,
-    source: "relationship-reaction",
-    title: type === "flower" ? "送鲜花" : "扔鸡蛋",
-    note: displayName(relationshipCards.find((card) => card.id === characterId) || { basic: { name: "" } }),
-    relatedCompanyId: company.id || "",
-    relatedProjectId: "",
-    relatedTaskId: "",
-    relatedStockId: "",
-    relatedCharacterId: characterId,
-    createdAt: new Date().toISOString(),
-  }, ...(economy.transactions || [])].slice(0, 80);
-  updateRelationshipCompanyAssetValue(companyState);
-  company.updatedAt = new Date().toISOString();
-  writeRelationshipCompanyState(companyState);
-  window.dispatchEvent(new CustomEvent("life-company-updated"));
   return true;
 }
 
@@ -2215,20 +2186,18 @@ function ensureRelationshipCompanyState() {
   const existing = readRelationshipCompanyState();
   if (existing?.company && typeof existing.company === "object" && !Array.isArray(existing.company)) {
     if (!existing.company.economy || typeof existing.company.economy !== "object" || Array.isArray(existing.company.economy)) {
-      existing.company.economy = createDefaultRelationshipEconomy(isRelationshipFallbackCompany(existing.company) ? PLAYER_STARTING_COINS : COMPANY_STARTING_STAKE);
+      existing.company.economy = createDefaultRelationshipEconomy();
       existing.company.updatedAt = new Date().toISOString();
       writeRelationshipCompanyState(existing);
     } else if (isRelationshipFallbackCompany(existing.company)) {
       existing.company.relationshipFallbackOnly = true;
       const economy = ensureRelationshipCompanyEconomy(existing.company);
-      const shouldInitializeFallbackCoins = economy
-        && economy.companyCoins < relationshipReactionCost
-        && !economy.lifetimeSpent
-        && (!Array.isArray(economy.transactions) || !economy.transactions.length);
-      if (shouldInitializeFallbackCoins) {
-        economy.companyCoins = PLAYER_STARTING_COINS;
-        economy.lifetimeEarned = Math.max(economy.lifetimeEarned, PLAYER_STARTING_COINS);
-        economy.assetValue = Math.max(economy.assetValue, PLAYER_STARTING_COINS);
+      if (economy) {
+        economy.companyCoins = 0;
+        economy.lifetimeEarned = 0;
+        economy.lifetimeSpent = 0;
+        economy.assetValue = 0;
+        economy.transactions = [];
         existing.company.updatedAt = new Date().toISOString();
         writeRelationshipCompanyState(existing);
       }
@@ -2239,7 +2208,7 @@ function ensureRelationshipCompanyState() {
   const companyState = {
     company: {
       id: createId(),
-      name: "我的人生公司",
+      name: "关系后花园",
       typeId: "personal",
       relationshipFallbackOnly: true,
       createdAt: now,
@@ -2258,19 +2227,19 @@ function isRelationshipFallbackCompany(company) {
   if (!company || typeof company !== "object") return false;
   if (company.relationshipFallbackOnly) return true;
   const hasCompanyShape = Array.isArray(company.departments) || Array.isArray(company.projects) || company.mainGoal;
-  return company.name === "我的人生公司" && company.typeId === "personal" && !hasCompanyShape;
+  return ["我的人生公司", "关系后花园"].includes(company.name) && company.typeId === "personal" && !hasCompanyShape;
 }
 
-function createDefaultRelationshipEconomy(initialCoins = PLAYER_STARTING_COINS) {
+function createDefaultRelationshipEconomy(initialCoins = 0) {
   return {
-    currencyName: "金币",
-    currencySymbol: "◈",
-    companyCoins: initialCoins,
-    lifetimeEarned: initialCoins,
+    currencyName: "",
+    currencySymbol: "",
+    companyCoins: 0,
+    lifetimeEarned: 0,
     lifetimeSpent: 0,
     companyLevel: 1,
     companyExp: 0,
-    assetValue: initialCoins,
+    assetValue: 0,
     lastCompanyUpgradeAt: "",
     transactions: [],
   };
@@ -2286,13 +2255,12 @@ function ensureRelationshipCompanyEconomy(company) {
     ? company.economy
     : null;
   if (!economy) return null;
-  const initialCoins = isRelationshipFallbackCompany(company) ? PLAYER_STARTING_COINS : COMPANY_STARTING_STAKE;
-  economy.currencyName = clean(economy.currencyName, "金币");
-  economy.currencySymbol = clean(economy.currencySymbol, "◈");
-  economy.companyCoins = roundRelationshipCoins(economy.companyCoins !== undefined ? economy.companyCoins : initialCoins);
-  economy.lifetimeEarned = roundRelationshipCoins(economy.lifetimeEarned !== undefined ? economy.lifetimeEarned : initialCoins);
+  economy.currencyName = clean(economy.currencyName, "");
+  economy.currencySymbol = clean(economy.currencySymbol, "");
+  economy.companyCoins = 0;
+  economy.lifetimeEarned = 0;
   economy.lifetimeSpent = roundRelationshipCoins(economy.lifetimeSpent);
-  economy.assetValue = roundRelationshipCoins(economy.assetValue);
+  economy.assetValue = 0;
   economy.transactions = Array.isArray(economy.transactions) ? economy.transactions : [];
   return economy;
 }
@@ -2300,7 +2268,7 @@ function ensureRelationshipCompanyEconomy(company) {
 function updateRelationshipCompanyAssetValue(companyState) {
   const economy = companyState?.company?.economy;
   if (!economy) return;
-  economy.assetValue = roundRelationshipCoins(Math.max(0, Number(economy.assetValue || 0) - relationshipReactionCost));
+  economy.assetValue = 0;
 }
 
 function roundRelationshipCoins(value) {
@@ -4653,17 +4621,17 @@ function renderRelationshipReactionToolbelt(extraClass = "", id = "") {
       <button class="relationship-reaction-tool is-flower" type="button" data-reaction-tool="flower" aria-label="拖动鲜花到角色身上">
         <span>🌸</span>
         <b>鲜花</b>
-        <small>-1 金币</small>
+        <small>道具</small>
       </button>
       <button class="relationship-reaction-tool is-egg" type="button" data-reaction-tool="egg" aria-label="拖动鸡蛋到角色身上">
         <span>🥚</span>
         <b>鸡蛋</b>
-        <small>-1 金币</small>
+        <small>道具</small>
       </button>
-      <button class="relationship-guide-pool-button" type="button" data-action="open-guide-pool" aria-label="打开攻略池">
+      <button class="relationship-guide-pool-button" type="button" data-action="open-guide-pool" aria-label="从攻略池打开后花园">
         <span>✦</span>
         <b>攻略池</b>
-        <small>暂无内容</small>
+        <small>后花园</small>
       </button>
       <button class="relationship-guide-pool-button is-virtual-story" type="button" data-action="open-virtual-story" aria-label="打开虚拟故事">
         <span>◆</span>
@@ -4672,6 +4640,10 @@ function renderRelationshipReactionToolbelt(extraClass = "", id = "") {
       </button>
     </section>
   `;
+}
+
+function openCompanyGardenFromGuidePool() {
+  window.location.href = "./company.html?openGarden=1#company-garden";
 }
 
 function renderRelationshipMapPreview() {
